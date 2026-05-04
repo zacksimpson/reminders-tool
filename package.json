@@ -34,7 +34,8 @@
     "canvas": "^3.2.1",
     "typescript": "~5.9.2",
     "ultracite": "^7.4.0",
-    "@react-native-community/cli": "latest"
+    "@react-native-community/cli": "latest",
+    "@react-native/metro-config": "latest"
   },
   "private": true
 }
