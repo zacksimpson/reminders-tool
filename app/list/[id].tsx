@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   taskDone: { opacity: 0.4 },
   taskMeta: { fontSize: n(16), opacity: 0.5, marginTop: n(2) },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
-  emptyText: { fontSize: n(20), opacity: 0.4 },
+  emptyText: { fontSize: n(24) },
   completedHeader: { paddingHorizontal: n(22), paddingVertical: n(14) },
   completedLabel: { fontSize: n(18), opacity: 0.5 },
 });
