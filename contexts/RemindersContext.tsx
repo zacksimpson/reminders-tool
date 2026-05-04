@@ -215,7 +215,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
   // ── Task operations ──────────────────────────────────────────────────────
 
   const addTask = useCallback((
-    task: Omit<Task, "id" | "createdAt" | "order" | "subtasks" | "completed">
+    task: Omit<Task, "id" | "createdAt" | "order" | "completed"> & { subtasks?: Subtask[] }
   ): Task => {
     const listTasks = tasks.filter(t => t.listId === task.listId);
     const isTop = settings.addPosition === "top";
@@ -236,7 +236,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       id: generateId(),
       createdAt: Date.now(),
       order,
-      subtasks: [],
+      subtasks: task.subtasks ?? [],
       completed: false,
     };
     persistTasks([...tasks, newTask]);

@@ -64,7 +64,7 @@ export interface TaskFormProps {
 
 export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps) {
   const { invertColors } = useInvertColors();
-  const { lists, settings, addTask, addSubtask } = useReminders();
+  const { lists, settings, addTask } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
@@ -105,14 +105,18 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
   const handleSave = useCallback(() => {
     if (!canSave) return;
     Keyboard.dismiss();
-    const task = addTask({
+    addTask({
       title: title.trim(),
       listId: selectedListId,
       date,
       time: confirmedTime,
+      subtasks: subtasks.map(s => ({
+        id: s.id,
+        title: s.title,
+        completed: s.completed,
+        createdAt: Date.now(),
+      })),
     });
-    // Add subtasks if any
-    subtasks.forEach(s => addSubtask(task.id, s.title));
 
     if (settings.afterAddBehavior === "toast") {
       setToastVisible(true);
