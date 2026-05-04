@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
   scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
   field: { paddingHorizontal: n(22), paddingVertical: n(18) },
-  fieldLabel: { fontSize: n(14), opacity: 0.4, marginBottom: n(4) },
+  fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   clearBtn: { fontSize: n(14), opacity: 0.4 },
