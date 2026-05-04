@@ -2,9 +2,11 @@
 
 A reminders app for the Light Phone III.
 
-Organize tasks into lists, add due dates and times, and check things off as you go. Supports nested subtasks and a Today view for time-sensitive tasks.
+Organize tasks into lists, add due dates and times, check things off as you go, and get notified when it matters.
 
 Built with [vandamd's light-template](https://github.com/vandamd/light-template) — a community-made Expo template for building LightOS-style apps for the Light Phone III.
+
+![Reminders screenshots](assets/images/screenshots.png)
 
 ---
 
@@ -13,13 +15,14 @@ Built with [vandamd's light-template](https://github.com/vandamd/light-template)
 * Organize tasks into multiple lists
 * Add due dates and times to any task
 * Today view shows only tasks due today
-* Subtasks on any task
+* Subtasks on any task, including when adding a new task
 * Check off tasks and subtasks with a tap
 * Completed tasks move to a collapsible group at the bottom
-* Long-press a list to rename, reorder, or delete it
+* Long-press a list to rename, reorder, clear completed, or delete it
+* Notifications for tasks with a set time
+* Daily bundled notification for today's untimed tasks
 * Custom LightOS-style date and time pickers
 * Respects LightOS theme (black/white mode)
-* Haptic feedback on every tap
 
 ---
 
