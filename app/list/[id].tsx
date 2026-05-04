@@ -85,7 +85,7 @@ export default function ListScreen() {
     action?: string;
   }>();
   const { invertColors } = useInvertColors();
-  const { lists, tasks, toggleTask, deleteTask, updateTask } = useReminders();
+  const { lists, tasks, toggleTask, deleteTask, swapTaskOrder } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const [showCompleted, setShowCompleted] = useState(false);
@@ -119,19 +119,13 @@ export default function ListScreen() {
   const moveTaskUp = (taskId: string) => {
     const idx = active.findIndex(t => t.id === taskId);
     if (idx <= 0) return;
-    const above = active[idx - 1];
-    const current = active[idx];
-    updateTask(current.id, { order: above.order });
-    updateTask(above.id, { order: current.order });
+    swapTaskOrder(taskId, active[idx - 1].id);
   };
 
   const moveTaskDown = (taskId: string) => {
     const idx = active.findIndex(t => t.id === taskId);
     if (idx < 0 || idx >= active.length - 1) return;
-    const below = active[idx + 1];
-    const current = active[idx];
-    updateTask(current.id, { order: below.order });
-    updateTask(below.id, { order: current.order });
+    swapTaskOrder(taskId, active[idx + 1].id);
   };
 
   return (

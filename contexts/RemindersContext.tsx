@@ -102,6 +102,9 @@ interface RemindersContextType {
   toggleSubtask: (taskId: string, subtaskId: string) => void;
   deleteSubtask: (taskId: string, subtaskId: string) => void;
 
+  // Task reordering
+  swapTaskOrder: (idA: string, idB: string) => void;
+
   // Settings
   updateSettings: (updates: Partial<Settings>) => void;
 }
@@ -314,6 +317,19 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     }));
   }, [tasks, persistTasks]);
 
+  const swapTaskOrder = useCallback((idA: string, idB: string) => {
+    const taskA = tasks.find(t => t.id === idA);
+    const taskB = tasks.find(t => t.id === idB);
+    if (!taskA || !taskB) return;
+    const orderA = taskA.order;
+    const orderB = taskB.order;
+    persistTasks(tasks.map(t => {
+      if (t.id === idA) return { ...t, order: orderB };
+      if (t.id === idB) return { ...t, order: orderA };
+      return t;
+    }));
+  }, [tasks, persistTasks]);
+
   // ── Settings ─────────────────────────────────────────────────────────────
 
   const updateSettings = useCallback((updates: Partial<Settings>) => {
@@ -325,7 +341,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     <RemindersContext.Provider value={{
       lists, tasks, settings, loaded,
       addList, renameList, deleteList, moveListUp, moveListDown,
-      addTask, updateTask, deleteTask, toggleTask,
+      addTask, updateTask, deleteTask, toggleTask, swapTaskOrder,
       addSubtask, toggleSubtask, deleteSubtask,
       updateSettings,
     }}>
