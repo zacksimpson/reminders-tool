@@ -47,7 +47,7 @@ function TaskRow({ task, listTitle, onToggle, onPress, dimmed }: TaskRowProps) {
     <View style={[styles.taskRow, dimmed && styles.taskRowDimmed]}>
       <TaskCheckbox checked={task.completed} onToggle={onToggle} />
       <HapticPressable onPress={onPress} style={styles.taskContent}>
-        <StyledText style={[styles.taskTitle, task.completed && styles.taskDone]}>{task.title}</StyledText>
+        <StyledText style={styles.taskTitle}>{task.title}</StyledText>
         {meta ? <StyledText style={styles.taskMeta}>{meta}</StyledText> : null}
       </HapticPressable>
     </View>
@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
   taskRowDimmed: { opacity: 0.4 },
   taskContent: { flex: 1, paddingVertical: n(11) },
   taskTitle: { fontSize: n(23) },
-  taskDone: { opacity: 0.4 },
   taskMeta: { fontSize: n(16), marginTop: n(2) },
   completedHeader: { paddingHorizontal: n(22), paddingVertical: n(14) },
   completedLabel: { fontSize: n(18), opacity: 0.5 },
