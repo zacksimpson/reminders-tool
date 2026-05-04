@@ -124,7 +124,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
       resetForm();
       onSaved();
     }
-  }, [canSave, title, selectedListId, date, confirmedTime, settings, addTask, resetForm, onSaved]);
+  }, [canSave, title, selectedListId, date, confirmedTime, subtasks, settings, addTask, resetForm, onSaved]);
 
   const handleTimeConfirm = useCallback(() => {
     if (timeDigits.length !== 3 && timeDigits.length !== 4) return;
