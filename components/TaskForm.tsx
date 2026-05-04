@@ -151,7 +151,9 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               allowFontScaling={false}
               autoFocus
               multiline
-              blurOnSubmit={false}
+              blurOnSubmit
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
           </View>
 
