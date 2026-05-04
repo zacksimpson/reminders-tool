@@ -50,6 +50,14 @@ export default function SettingsScreen() {
           <StyledText style={styles.selectorValue}>{defaultList?.title ?? "Inbox"}</StyledText>
         </HapticPressable>
 
+        {/* Notifications */}
+        <HapticPressable
+          onPress={() => router.push("/settings/notifications")}
+          style={styles.row}
+        >
+          <StyledText style={styles.selectorLabel}>Notifications</StyledText>
+        </HapticPressable>
+
         {/* After Quick Add */}
         <HapticPressable
           onPress={() => router.push("/settings/after-quick-add")}

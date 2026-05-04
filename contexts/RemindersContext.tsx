@@ -67,6 +67,17 @@ const DEFAULT_SETTINGS: Settings = {
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
+export type NotificationScheduler = {
+  scheduleForTask: (task: Task, lists: ReminderList[]) => Promise<void>;
+  cancelForTask: (taskId: string) => Promise<void>;
+  rescheduleAll: (tasks: Task[], lists: ReminderList[]) => Promise<void>;
+} | null;
+
+let notificationScheduler: NotificationScheduler = null;
+export function setNotificationScheduler(s: NotificationScheduler) {
+  notificationScheduler = s;
+}
+
 interface RemindersContextType {
   lists: ReminderList[];
   tasks: Task[];
@@ -229,28 +240,45 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       completed: false,
     };
     persistTasks([...tasks, newTask]);
+    // Schedule notification if needed
+    notificationScheduler?.scheduleForTask(newTask, lists);
     return newTask;
-  }, [tasks, settings.addPosition, persistTasks]);
+  }, [tasks, lists, settings.addPosition, persistTasks]);
 
   const updateTask = useCallback((id: string, updates: Partial<Omit<Task, "id" | "createdAt">>) => {
-    persistTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
-  }, [tasks, persistTasks]);
+    const updatedTasks = tasks.map(t => t.id === id ? { ...t, ...updates } : t);
+    persistTasks(updatedTasks);
+    // Reschedule notification for updated task
+    const updated = updatedTasks.find(t => t.id === id);
+    if (updated) {
+      notificationScheduler?.cancelForTask(id);
+      notificationScheduler?.scheduleForTask(updated, lists);
+    }
+  }, [tasks, lists, persistTasks]);
 
   const deleteTask = useCallback((id: string) => {
     persistTasks(tasks.filter(t => t.id !== id));
+    notificationScheduler?.cancelForTask(id);
   }, [tasks, persistTasks]);
 
   const toggleTask = useCallback((id: string) => {
-    persistTasks(tasks.map(t => {
+    const updatedTasks = tasks.map(t => {
       if (t.id !== id) return t;
       if (t.completed) {
-        // Uncomplete: restore to original order position
         const { completedAt: _, ...rest } = t;
         return { ...rest, completed: false };
       }
       return { ...t, completed: true, completedAt: Date.now() };
-    }));
-  }, [tasks, persistTasks]);
+    });
+    persistTasks(updatedTasks);
+    // Cancel notification if completing, reschedule if uncompleting
+    const updated = updatedTasks.find(t => t.id === id);
+    if (updated?.completed) {
+      notificationScheduler?.cancelForTask(id);
+    } else if (updated) {
+      notificationScheduler?.scheduleForTask(updated, lists);
+    }
+  }, [tasks, lists, persistTasks]);
 
   // ── Subtask operations ───────────────────────────────────────────────────
 

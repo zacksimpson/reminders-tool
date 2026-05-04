@@ -8,7 +8,12 @@
     "icon": "./assets/images/icon.png",
     "android": {
       "backgroundColor": "#000000",
-      "package": "com.im360noscope.reminderstool"
+      "package": "com.im360noscope.reminderstool",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -21,7 +26,15 @@
         }
       ],
       "./plugins/withAndroidConfigChanges",
-      "./plugins/withAndroidTheme"
+      "./plugins/withAndroidTheme",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#000000",
+          "androidMode": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
