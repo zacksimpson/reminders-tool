@@ -33,7 +33,8 @@
     "@types/react": "~19.2.0",
     "canvas": "^3.2.1",
     "typescript": "~5.9.2",
-    "ultracite": "^7.4.0"
+    "ultracite": "^7.4.0",
+    "@react-native-community/cli": "latest"
   },
   "private": true
 }
