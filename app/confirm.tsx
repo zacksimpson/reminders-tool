@@ -22,8 +22,15 @@ export default function ConfirmScreen() {
   const textColor = invertColors ? "black" : "white";
 
   const handleConfirm = () => {
-    const path = params.returnPath || "/(tabs)/";
-    router.navigate(`${path}?confirmed=true&action=${encodeURIComponent(params.action ?? "")}` as Href);
+    const path = (params.returnPath || "/(tabs)/") as Href;
+    // Navigate back and pass confirmed + action as params
+    router.navigate({
+      pathname: path,
+      params: {
+        confirmed: "true",
+        action: params.action ?? "",
+      },
+    } as any);
   };
 
   const handleBack = () => {

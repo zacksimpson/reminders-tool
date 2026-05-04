@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Keyboard,
   Animated,
   KeyboardAvoidingView,
@@ -64,7 +63,7 @@ function formatDisplayTime(digits: string, ampm: "AM" | "PM"): string {
 }
 
 export default function TaskScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, confirmed, action } = useLocalSearchParams<{ id: string; confirmed?: string; action?: string }>();
   const { invertColors } = useInvertColors();
   const { tasks, lists, updateTask, deleteTask, toggleSubtask, addSubtask, deleteSubtask } = useReminders();
   const bg = invertColors ? "white" : "black";
@@ -74,6 +73,14 @@ export default function TaskScreen() {
   const { handleScroll, scrollIndicatorHeight, scrollIndicatorPosition, setContentHeight, setScrollViewHeight } = useScrollIndicator();
 
   const task = tasks.find(t => t.id === id);
+
+  // Handle returning from confirm screen
+  useEffect(() => {
+    if (confirmed === "true" && action === `delete-task:${id}`) {
+      deleteTask(id);
+      router.back();
+    }
+  }, [confirmed, action, id, deleteTask]);
   const [title, setTitle] = useState(task?.title ?? "");
   const [listId, setListId] = useState(task?.listId ?? "");
   const [date, setDate] = useState<string | undefined>(task?.date);
@@ -103,11 +110,16 @@ export default function TaskScreen() {
 
   const handleDelete = useCallback(() => {
     if (!task) return;
-    Alert.alert("Delete Task", `Delete "${task.title}"?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "DELETE", style: "destructive", onPress: () => { deleteTask(task.id); router.back(); } },
-    ]);
-  }, [task, deleteTask]);
+    router.push({
+      pathname: "/confirm",
+      params: {
+        message: `Are you sure you want to delete "${task.title}"?`,
+        confirmText: "Delete",
+        action: `delete-task:${task.id}`,
+        returnPath: `/task/${id}` as any,
+      },
+    });
+  }, [task]);
 
   const handleRenameSubtask = useCallback((subtaskId: string) => {
     const t = editingSubtaskTitle.trim();
@@ -282,7 +294,7 @@ const styles = StyleSheet.create({
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(14) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
   deleteRow: { paddingHorizontal: n(22), paddingVertical: n(28), alignItems: "center" },
-  deleteText: { fontSize: n(18), opacity: 0.3 },
+  deleteText: { fontSize: n(18) },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { fontSize: n(20), opacity: 0.4 },
 });
