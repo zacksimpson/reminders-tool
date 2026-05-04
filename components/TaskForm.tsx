@@ -150,8 +150,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               style={[styles.titleInput, { color: textColor }]}
               allowFontScaling={false}
               autoFocus
-              returnKeyType="done"
-              onSubmitEditing={Keyboard.dismiss}
+              multiline
+              blurOnSubmit={false}
             />
           </View>
 
