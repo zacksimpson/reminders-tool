@@ -34,7 +34,7 @@ export default function ListActionsScreen() {
           onPress={() => router.navigate({ pathname: "/(tabs)/", params: { startReorder: "true" } })}
           style={styles.option}
         >
-          <StyledText style={styles.optionText}>Reorder</StyledText>
+          <StyledText style={styles.optionText}>Reorder Lists</StyledText>
         </HapticPressable>
 
         <HapticPressable
