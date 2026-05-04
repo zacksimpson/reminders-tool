@@ -69,7 +69,8 @@ const styles = StyleSheet.create({
   messageContainer: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: n(80),
     paddingHorizontal: n(40),
   },
   messageText: {
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     alignItems: "center",
-    paddingBottom: n(64),
+    paddingBottom: n(40),
   },
   confirmText: {
     fontSize: n(28),
