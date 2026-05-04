@@ -37,7 +37,7 @@ export default function SettingsScreen() {
           onPress={() => router.push("/settings/notifications")}
           style={styles.row}
         >
-          <StyledText style={styles.selectorLabel}>Notifications</StyledText>
+          <StyledText style={styles.selectorValue}>Notifications</StyledText>
         </HapticPressable>
 
         {/* Default List */}

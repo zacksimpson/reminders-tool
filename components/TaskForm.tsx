@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { DatePicker } from "@/components/DatePicker";
 import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
@@ -63,7 +64,7 @@ export interface TaskFormProps {
 
 export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps) {
   const { invertColors } = useInvertColors();
-  const { lists, settings, addTask } = useReminders();
+  const { lists, settings, addTask, addSubtask } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
@@ -83,6 +84,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showListPicker, setShowListPicker] = useState(false);
+  const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; completed: boolean }>>([]);
+  const [newSubtask, setNewSubtask] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
 
   const selectedList = lists.find(l => l.id === selectedListId) ?? lists[0];
@@ -95,17 +98,21 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
     setConfirmedTime(undefined);
     setTimeDigits("");
     setAmPm("AM");
+    setSubtasks([]);
+    setNewSubtask("");
   }, [resolvedListId, defaultDate]);
 
   const handleSave = useCallback(() => {
     if (!canSave) return;
     Keyboard.dismiss();
-    addTask({
+    const task = addTask({
       title: title.trim(),
       listId: selectedListId,
       date,
       time: confirmedTime,
     });
+    // Add subtasks if any
+    subtasks.forEach(s => addSubtask(task.id, s.title));
 
     if (settings.afterAddBehavior === "toast") {
       setToastVisible(true);
@@ -185,6 +192,42 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               )}
             </HapticPressable>
           )}
+          {/* Subtasks */}
+          <View style={styles.field}>
+            <StyledText style={[styles.fieldLabel, { color: textColor }]}>Subtasks</StyledText>
+            {subtasks.map((sub) => (
+              <View key={sub.id} style={styles.subtaskRow}>
+                <TaskCheckbox
+                  checked={sub.completed}
+                  onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
+                  size={20}
+                  paddingTop={14}
+                />
+                <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
+                <HapticPressable
+                  onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
+                  style={styles.deleteSubtask}
+                >
+                  <StyledText style={styles.deleteSubtaskText}>×</StyledText>
+                </HapticPressable>
+              </View>
+            ))}
+            <RNTextInput
+              value={newSubtask}
+              onChangeText={setNewSubtask}
+              placeholder="Add subtask…"
+              placeholderTextColor={dimColor}
+              style={[styles.subtaskInput, { color: textColor }]}
+              allowFontScaling={false}
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                const t = newSubtask.trim();
+                if (!t) return;
+                setSubtasks(prev => [...prev, { id: `${Date.now()}`, title: t, completed: false }]);
+                setNewSubtask("");
+              }}
+            />
+          </View>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 
@@ -242,4 +285,9 @@ const styles = StyleSheet.create({
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   clearBtn: { fontSize: n(14), opacity: 0.4 },
   titleInput: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingVertical: n(4) },
+  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(8) },
+  subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
+  deleteSubtask: { padding: n(8) },
+  deleteSubtaskText: { fontSize: n(24) },
+  subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
 });

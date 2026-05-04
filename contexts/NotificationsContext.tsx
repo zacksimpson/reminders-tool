@@ -14,10 +14,10 @@ import type { Task, ReminderList } from "@/contexts/RemindersContext";
 
 const NOTIF_ENABLED_KEY = "notifications:enabled";
 const TODAYS_TASKS_ENABLED_KEY = "notifications:todaysTasks:enabled";
-const TODAYS_TASKS_TIME_KEY = "notifications:todaysTasks:time"; // "HH:MM" 24h
+const TODAYS_TASKS_TIME_KEY = "notifications:todaysTasks:time";
 const TODAYS_TASKS_NOTIF_ID_KEY = "notifications:todaysTasks:id";
 
-// ─── Default handler ──────────────────────────────────────────────────────────
+// ─── Foreground handler — show alerts even when app is open ──────────────────
 
 ExpoNotifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -26,6 +26,16 @@ ExpoNotifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+// ─── Action categories ────────────────────────────────────────────────────────
+
+ExpoNotifications.setNotificationCategoryAsync("task", [
+  {
+    identifier: "complete",
+    buttonTitle: "Complete",
+    options: { isDestructive: false, isAuthenticationRequired: false },
+  },
+]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,7 +66,7 @@ function isFuture(dateStr: string, time24: string): boolean {
 interface NotificationsContextType {
   enabled: boolean;
   todaysTasksEnabled: boolean;
-  todaysTasksTime: string; // "HH:MM" 24h
+  todaysTasksTime: string;
   permissionDenied: boolean;
   setEnabled: (v: boolean, tasks: Task[], lists: ReminderList[]) => Promise<void>;
   setTodaysTasksEnabled: (v: boolean, tasks: Task[], lists: ReminderList[]) => Promise<void>;
@@ -64,6 +74,7 @@ interface NotificationsContextType {
   scheduleForTask: (task: Task, lists: ReminderList[]) => Promise<void>;
   cancelForTask: (taskId: string) => Promise<void>;
   rescheduleAll: (tasks: Task[], lists: ReminderList[]) => Promise<void>;
+  handleCompleteAction: (taskId: string) => void;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | null>(null);
@@ -76,7 +87,13 @@ export const useNotifications = () => {
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
-export function NotificationsProvider({ children }: { children: ReactNode }) {
+export function NotificationsProvider({
+  children,
+  onCompleteTask,
+}: {
+  children: ReactNode;
+  onCompleteTask: (taskId: string) => void;
+}) {
   const [enabled, setEnabledState] = useState(false);
   const [todaysTasksEnabled, setTodaysTasksEnabledState] = useState(false);
   const [todaysTasksTime, setTodaysTasksTimeState] = useState("09:00");
@@ -97,33 +114,35 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     load();
   }, []);
 
-  // Request permission and return whether granted
+  // Handle notification action buttons
+  useEffect(() => {
+    const sub = ExpoNotifications.addNotificationResponseReceivedListener((response) => {
+      const actionId = response.actionIdentifier;
+      const data = response.notification.request.content.data as Record<string, unknown>;
+      if (actionId === "complete" && data?.taskId) {
+        onCompleteTask(data.taskId as string);
+      }
+    });
+    return () => sub.remove();
+  }, [onCompleteTask]);
+
   const requestPermission = useCallback(async (): Promise<boolean> => {
     const { status: existing } = await ExpoNotifications.getPermissionsAsync();
-    if (existing === "granted") {
-      setPermissionDenied(false);
-      return true;
-    }
+    if (existing === "granted") { setPermissionDenied(false); return true; }
     const { status } = await ExpoNotifications.requestPermissionsAsync();
-    if (status === "granted") {
-      setPermissionDenied(false);
-      return true;
-    }
+    if (status === "granted") { setPermissionDenied(false); return true; }
     setPermissionDenied(true);
     return false;
   }, []);
 
-  // Cancel all scheduled notifications
   const cancelAll = useCallback(async () => {
     await ExpoNotifications.cancelAllScheduledNotificationsAsync();
   }, []);
 
-  // Schedule a notification for a single task with a specific time
   const scheduleForTask = useCallback(async (task: Task, lists: ReminderList[]) => {
     if (!enabled || !task.date || !task.time || task.completed) return;
     if (!isFuture(task.date, task.time)) return;
 
-    // Cancel any existing notification for this task first
     await ExpoNotifications.cancelScheduledNotificationAsync(task.id).catch(() => {});
 
     const list = lists.find(l => l.id === task.listId);
@@ -135,7 +154,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       content: {
         title: task.title,
         body: list?.title ?? "",
-        data: { listId: task.listId },
+        data: { listId: task.listId, taskId: task.id },
+        vibrationPattern: [0, 80],  // single short pulse
+        categoryIdentifier: "task",
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
@@ -144,26 +165,31 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     });
   }, [enabled]);
 
-  // Cancel notification for a specific task
   const cancelForTask = useCallback(async (taskId: string) => {
     await ExpoNotifications.cancelScheduledNotificationAsync(taskId).catch(() => {});
   }, []);
 
-  // Schedule the Today's Tasks bundle notification
-  const scheduleTodaysBundle = useCallback(async (tasks: Task[], lists: ReminderList[]) => {
+  const scheduleTodaysBundle = useCallback(async (
+    tasks: Task[],
+    lists: ReminderList[],
+    isEnabled: boolean,
+    isTodaysTasksEnabled: boolean,
+    time: string,
+  ) => {
     // Cancel existing bundle
     const existingId = await AsyncStorage.getItem(TODAYS_TASKS_NOTIF_ID_KEY);
     if (existingId) {
       await ExpoNotifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
+      await AsyncStorage.removeItem(TODAYS_TASKS_NOTIF_ID_KEY);
     }
 
-    if (!enabled || !todaysTasksEnabled) return;
-    if (!isFuture(getTodayStr(), todaysTasksTime)) return;
+    if (!isEnabled || !isTodaysTasksEnabled) return;
+    if (!isFuture(getTodayStr(), time)) return;
 
     const todayStr = getTodayStr();
-    const todayUntimed = tasks.filter(
-      t => t.date === todayStr && !t.time && !t.completed
-    ).sort((a, b) => a.order - b.order);
+    const todayUntimed = tasks
+      .filter(t => t.date === todayStr && !t.time && !t.completed)
+      .sort((a, b) => a.order - b.order);
 
     if (todayUntimed.length === 0) return;
 
@@ -171,7 +197,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const rest = todayUntimed.length - 1;
     const body = rest > 0 ? `and ${rest} other Task${rest === 1 ? "" : "s"}` : "";
 
-    const { hour, minute } = parseTime(todaysTasksTime);
+    const { hour, minute } = parseTime(time);
     const now = new Date();
     const trigger = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
 
@@ -180,6 +206,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         title: first.title,
         body,
         data: { openToday: true },
+        vibrationPattern: [0, 80],
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
@@ -188,27 +215,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     });
 
     await AsyncStorage.setItem(TODAYS_TASKS_NOTIF_ID_KEY, id);
-  }, [enabled, todaysTasksEnabled, todaysTasksTime]);
+  }, []);
 
-  // Reschedule everything from scratch
   const rescheduleAll = useCallback(async (tasks: Task[], lists: ReminderList[]) => {
-    if (!enabled) {
-      await cancelAll();
-      return;
-    }
-    // Cancel all first
+    if (!enabled) { await cancelAll(); return; }
     await cancelAll();
-    // Schedule individual timed tasks
     for (const task of tasks) {
       if (task.date && task.time && !task.completed) {
         await scheduleForTask(task, lists);
       }
     }
-    // Schedule today's bundle
-    await scheduleTodaysBundle(tasks, lists);
-  }, [enabled, cancelAll, scheduleForTask, scheduleTodaysBundle]);
+    await scheduleTodaysBundle(tasks, lists, enabled, todaysTasksEnabled, todaysTasksTime);
+  }, [enabled, todaysTasksEnabled, todaysTasksTime, cancelAll, scheduleForTask, scheduleTodaysBundle]);
 
-  // Enable/disable master toggle
   const setEnabled = useCallback(async (v: boolean, tasks: Task[], lists: ReminderList[]) => {
     if (v) {
       const granted = await requestPermission();
@@ -219,44 +238,35 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     if (!v) {
       await cancelAll();
     } else {
-      await rescheduleAll(tasks, lists);
+      await cancelAll();
+      for (const task of tasks) {
+        if (task.date && task.time && !task.completed) await scheduleForTask(task, lists);
+      }
+      await scheduleTodaysBundle(tasks, lists, v, todaysTasksEnabled, todaysTasksTime);
     }
-  }, [requestPermission, cancelAll, rescheduleAll]);
+  }, [requestPermission, cancelAll, scheduleForTask, scheduleTodaysBundle, todaysTasksEnabled, todaysTasksTime]);
 
-  // Enable/disable today's tasks toggle
   const setTodaysTasksEnabled = useCallback(async (v: boolean, tasks: Task[], lists: ReminderList[]) => {
     setTodaysTasksEnabledState(v);
     await AsyncStorage.setItem(TODAYS_TASKS_ENABLED_KEY, String(v));
-    if (v) {
-      await scheduleTodaysBundle(tasks, lists);
-    } else {
-      const existingId = await AsyncStorage.getItem(TODAYS_TASKS_NOTIF_ID_KEY);
-      if (existingId) {
-        await ExpoNotifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
-        await AsyncStorage.removeItem(TODAYS_TASKS_NOTIF_ID_KEY);
-      }
-    }
-  }, [scheduleTodaysBundle]);
+    await scheduleTodaysBundle(tasks, lists, enabled, v, todaysTasksTime);
+  }, [enabled, todaysTasksTime, scheduleTodaysBundle]);
 
-  // Update today's tasks time
   const setTodaysTasksTime = useCallback(async (time: string, tasks: Task[], lists: ReminderList[]) => {
     setTodaysTasksTimeState(time);
     await AsyncStorage.setItem(TODAYS_TASKS_TIME_KEY, time);
-    await scheduleTodaysBundle(tasks, lists);
-  }, [scheduleTodaysBundle]);
+    await scheduleTodaysBundle(tasks, lists, enabled, todaysTasksEnabled, time);
+  }, [enabled, todaysTasksEnabled, scheduleTodaysBundle]);
+
+  const handleCompleteAction = useCallback((taskId: string) => {
+    onCompleteTask(taskId);
+  }, [onCompleteTask]);
 
   return (
     <NotificationsContext.Provider value={{
-      enabled,
-      todaysTasksEnabled,
-      todaysTasksTime,
-      permissionDenied,
-      setEnabled,
-      setTodaysTasksEnabled,
-      setTodaysTasksTime,
-      scheduleForTask,
-      cancelForTask,
-      rescheduleAll,
+      enabled, todaysTasksEnabled, todaysTasksTime, permissionDenied,
+      setEnabled, setTodaysTasksEnabled, setTodaysTasksTime,
+      scheduleForTask, cancelForTask, rescheduleAll, handleCompleteAction,
     }}>
       {children}
     </NotificationsContext.Provider>

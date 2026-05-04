@@ -1,6 +1,6 @@
 import * as ExpoNotifications from "expo-notifications";
 import { router, Stack } from "expo-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -9,14 +9,18 @@ import {
 } from "@/contexts/InvertColorsContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { NotificationsBridge } from "@/components/NotificationsBridge";
-import { RemindersProvider } from "@/contexts/RemindersContext";
+import { RemindersProvider, useReminders } from "@/contexts/RemindersContext";
 
 function RootLayout() {
   const { invertColors } = useInvertColors();
 
-  // Handle notification taps
+  // Handle notification taps (navigation)
   useEffect(() => {
     const sub = ExpoNotifications.addNotificationResponseReceivedListener((response) => {
+      const actionId = response.actionIdentifier;
+      // Only navigate on default tap, not action buttons
+      if (actionId !== ExpoNotifications.DEFAULT_ACTION_IDENTIFIER) return;
+
       const data = response.notification.request.content.data as Record<string, unknown>;
       if (data?.openToday) {
         router.navigate("/(tabs)/today");
@@ -43,16 +47,28 @@ function RootLayout() {
   );
 }
 
+function AppWithReminders() {
+  const { toggleTask } = useReminders();
+
+  const handleCompleteTask = useCallback((taskId: string) => {
+    toggleTask(taskId);
+  }, [toggleTask]);
+
+  return (
+    <NotificationsProvider onCompleteTask={handleCompleteTask}>
+      <NotificationsBridge />
+      <StatusBar hidden />
+      <RootLayout />
+    </NotificationsProvider>
+  );
+}
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <InvertColorsProvider>
         <RemindersProvider>
-          <NotificationsProvider>
-            <NotificationsBridge />
-            <StatusBar hidden />
-            <RootLayout />
-          </NotificationsProvider>
+          <AppWithReminders />
         </RemindersProvider>
       </InvertColorsProvider>
     </GestureHandlerRootView>
