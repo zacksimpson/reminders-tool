@@ -58,7 +58,7 @@ function TaskRow({ task, listTitle, isReordering, isFirst, isLast, onToggle, onP
         onPress={onPress}
         onLongPress={onLongPress}
         delayLongPress={400}
-        style={styles.taskContent}
+        style={[styles.taskContent, isReordering && styles.taskContentReordering]}
       >
         <StyledText style={styles.taskTitle}>{task.title}</StyledText>
         {meta ? <StyledText style={styles.taskMeta}>{meta}</StyledText> : null}
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
   taskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
   taskRowDimmed: { opacity: 0.4 },
   taskContent: { flex: 1, paddingVertical: n(11) },
+  taskContentReordering: { paddingLeft: n(22) },
   taskTitle: { fontSize: n(23) },
   taskMeta: { fontSize: n(16), marginTop: n(2) },
   arrowGroup: { flexDirection: "row", gap: n(8), paddingRight: n(12), paddingTop: n(11) },
