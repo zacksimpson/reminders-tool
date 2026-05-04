@@ -73,13 +73,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: n(40),
   },
   messageText: {
-    fontSize: n(30),
+    fontSize: n(22),
     textAlign: "center",
-    lineHeight: n(42),
+    lineHeight: n(32),
   },
   confirmBtn: {
     alignItems: "center",
-    paddingBottom: n(48),
+    paddingBottom: n(64),
   },
   confirmText: {
     fontSize: n(28),
