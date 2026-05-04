@@ -32,14 +32,13 @@ export default function SettingsScreen() {
 
       <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
 
-        {/* Invert Colors */}
-        <View style={styles.row}>
-          <ToggleSwitch
-            label="Invert Colors"
-            value={invertColors}
-            onValueChange={setInvertColors}
-          />
-        </View>
+        {/* Notifications */}
+        <HapticPressable
+          onPress={() => router.push("/settings/notifications")}
+          style={styles.row}
+        >
+          <StyledText style={styles.selectorLabel}>Notifications</StyledText>
+        </HapticPressable>
 
         {/* Default List */}
         <HapticPressable
@@ -48,14 +47,6 @@ export default function SettingsScreen() {
         >
           <StyledText style={styles.selectorLabel}>Default List</StyledText>
           <StyledText style={styles.selectorValue}>{defaultList?.title ?? "Inbox"}</StyledText>
-        </HapticPressable>
-
-        {/* Notifications */}
-        <HapticPressable
-          onPress={() => router.push("/settings/notifications")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorLabel}>Notifications</StyledText>
         </HapticPressable>
 
         {/* After Quick Add */}
@@ -79,6 +70,15 @@ export default function SettingsScreen() {
             {ADD_POSITION_LABELS[settings.addPosition ?? "bottom"] ?? "Bottom of List"}
           </StyledText>
         </HapticPressable>
+
+        {/* Invert Colors */}
+        <View style={styles.row}>
+          <ToggleSwitch
+            label="Invert Colors"
+            value={invertColors}
+            onValueChange={setInvertColors}
+          />
+        </View>
 
       </ScrollView>
     </SafeAreaView>
