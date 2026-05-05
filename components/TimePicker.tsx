@@ -32,9 +32,9 @@ function isValidNextDigit(current: string, next: string): boolean {
       return true;
 
     case 2:
-      // d[1] will always be the minutes-TENS digit regardless of
-      // whether we end up with 3 or 4 digits total.
-      // Minutes tens must be 0-5.
+      // If first digit is 0, second digit is the hour (1-9)
+      if (proposed[0] === "0") return parseInt(next, 10) >= 1 && parseInt(next, 10) <= 9;
+      // Otherwise second digit is always minutes-tens (0-5)
       return parseInt(next, 10) <= 5;
 
     case 3: {
