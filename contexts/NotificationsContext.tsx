@@ -27,22 +27,13 @@ ExpoNotifications.setNotificationHandler({
   }),
 });
 
-// Set up notification channel once — only recreate if not already configured
-const CHANNEL_VERSION_KEY = "notifications:channelVersion";
-const CURRENT_CHANNEL_VERSION = "2"; // bump this if channel settings change
-
-AsyncStorage.getItem(CHANNEL_VERSION_KEY).then((version) => {
-  if (version === CURRENT_CHANNEL_VERSION) return;
-  ExpoNotifications.deleteNotificationChannelAsync("default").catch(() => {}).then(() => {
-    ExpoNotifications.setNotificationChannelAsync("default", {
-      name: "Reminders",
-      importance: ExpoNotifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 80],
-      enableVibrate: true,
-      sound: null,
-    });
-    AsyncStorage.setItem(CHANNEL_VERSION_KEY, CURRENT_CHANNEL_VERSION);
-  });
+// Set up notification channel — Android ignores this if channel already exists
+ExpoNotifications.setNotificationChannelAsync("default", {
+  name: "Reminders",
+  importance: ExpoNotifications.AndroidImportance.HIGH,
+  vibrationPattern: [0, 80],
+  enableVibrate: true,
+  sound: null,
 });
 
 // ─── Action categories ────────────────────────────────────────────────────────
