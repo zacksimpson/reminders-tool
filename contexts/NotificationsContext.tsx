@@ -28,7 +28,7 @@ ExpoNotifications.setNotificationHandler({
 });
 
 // Set up notification channel
-ExpoNotifications.setNotificationChannelAsync("reminders-v1", {
+ExpoNotifications.setNotificationChannelAsync("reminders-v2", {
   name: "Reminders",
   importance: ExpoNotifications.AndroidImportance.HIGH,
   vibrationPattern: [0, 80],
@@ -164,7 +164,7 @@ export function NotificationsProvider({
         body: list?.title ?? "",
         data: { listId: task.listId, taskId: task.id },
         categoryIdentifier: "task",
-        channelId: "reminders-v1",
+        channelId: "reminders-v2",
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
@@ -214,7 +214,7 @@ export function NotificationsProvider({
         title: first.title,
         body,
         data: { openToday: true },
-        channelId: "reminders-v1",
+        channelId: "reminders-v2",
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
