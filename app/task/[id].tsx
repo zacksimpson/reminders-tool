@@ -177,7 +177,7 @@ export default function TaskScreen() {
               <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
 
                 <View style={styles.field}>
-                  <RNTextInput value={title} onChangeText={setTitle} placeholder="Task name" placeholderTextColor={dimColor} style={[styles.titleInput, { color: textColor }]} allowFontScaling={false} multiline blurOnSubmit returnKeyType="done" onSubmitEditing={Keyboard.dismiss} onFocus={triggerHaptic} />
+                  <RNTextInput value={title} onChangeText={setTitle} placeholder="Task name" placeholderTextColor={dimColor} style={[styles.titleInput, { color: textColor }]} allowFontScaling={false} multiline blurOnSubmit returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
                 </View>
 
                 <HapticPressable onPress={() => setShowListPicker(true)} style={styles.field}>
