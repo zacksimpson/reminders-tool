@@ -20,6 +20,7 @@ import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { TimePicker } from "@/components/TimePicker";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
+import { triggerHaptic } from "@/utils/haptics";
 import { useReminders } from "@/contexts/RemindersContext";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
@@ -176,7 +177,7 @@ export default function TaskScreen() {
               <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
 
                 <View style={styles.field}>
-                  <RNTextInput value={title} onChangeText={setTitle} placeholder="Task name" placeholderTextColor={dimColor} style={[styles.titleInput, { color: textColor }]} allowFontScaling={false} multiline blurOnSubmit returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
+                  <RNTextInput value={title} onChangeText={setTitle} placeholder="Task name" placeholderTextColor={dimColor} style={[styles.titleInput, { color: textColor }]} allowFontScaling={false} multiline blurOnSubmit returnKeyType="done" onSubmitEditing={Keyboard.dismiss} onFocus={triggerHaptic} />
                 </View>
 
                 <HapticPressable onPress={() => setShowListPicker(true)} style={styles.field}>

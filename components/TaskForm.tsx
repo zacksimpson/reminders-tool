@@ -18,6 +18,7 @@ import { StyledText } from "@/components/StyledText";
 import { TimePicker } from "@/components/TimePicker";
 import { Toast } from "@/components/Toast";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
+import { triggerHaptic } from "@/utils/haptics";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
 import { useReminders } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
@@ -171,6 +172,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               blurOnSubmit
               returnKeyType="done"
               onSubmitEditing={Keyboard.dismiss}
+              onFocus={triggerHaptic}
             />
           </View>
 
