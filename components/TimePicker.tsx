@@ -1,5 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, View } from "react-native";
+import { HapticPressable } from "@/components/HapticPressable";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -103,19 +104,19 @@ export function TimePicker({
 
         {/* AM/PM + time display */}
         <View style={styles.topSection}>
-          <TouchableOpacity onPress={() => onAmPm("AM")} style={styles.ampmBtn} activeOpacity={1}>
+          <HapticPressable onPress={() => onAmPm("AM")} style={styles.ampmBtn}>
             <StyledText style={styles.ampmText}>AM</StyledText>
             {ampm === "AM" && <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />}
-          </TouchableOpacity>
+          </HapticPressable>
 
           <StyledText style={styles.timeDisplay}>
             {buildDisplay(digits)}
           </StyledText>
 
-          <TouchableOpacity onPress={() => onAmPm("PM")} style={styles.ampmBtn} activeOpacity={1}>
+          <HapticPressable onPress={() => onAmPm("PM")} style={styles.ampmBtn}>
             <StyledText style={styles.ampmText}>PM</StyledText>
             {ampm === "PM" && <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />}
-          </TouchableOpacity>
+          </HapticPressable>
         </View>
 
         {/* Numpad */}
@@ -123,14 +124,13 @@ export function TimePicker({
           {numRows.map((row, ri) => (
             <View key={`row-${ri}`} style={styles.numRow}>
               {row.map((d) => (
-                <TouchableOpacity
+                <HapticPressable
                   key={d}
                   onPress={() => handleDigit(d)}
                   style={styles.numBtn}
-                  activeOpacity={0.6}
                 >
                   <StyledText style={styles.numText}>{d}</StyledText>
-                </TouchableOpacity>
+                </HapticPressable>
               ))}
             </View>
           ))}
@@ -138,25 +138,25 @@ export function TimePicker({
           {/* Bottom row */}
           <View style={styles.numRow}>
             {canConfirm ? (
-              <TouchableOpacity onPress={onConfirm} style={styles.numBtn} activeOpacity={0.6}>
+              <HapticPressable onPress={onConfirm} style={styles.numBtn}>
                 <StyledText style={styles.saveText}>SAVE</StyledText>
-              </TouchableOpacity>
+              </HapticPressable>
             ) : !hasDigits ? (
-              <TouchableOpacity onPress={onDismiss} style={styles.numBtn} activeOpacity={0.6}>
+              <HapticPressable onPress={onDismiss} style={styles.numBtn}>
                 <StyledText style={styles.dismissX}>✕</StyledText>
-              </TouchableOpacity>
+              </HapticPressable>
             ) : (
               <View style={styles.numBtn} />
             )}
 
-            <TouchableOpacity onPress={() => handleDigit("0")} style={styles.numBtn} activeOpacity={0.6}>
+            <HapticPressable onPress={() => handleDigit("0")} style={styles.numBtn}>
               <StyledText style={styles.numText}>0</StyledText>
-            </TouchableOpacity>
+            </HapticPressable>
 
             {hasDigits ? (
-              <TouchableOpacity onPress={onBackspace} style={styles.numBtn} activeOpacity={0.6}>
+              <HapticPressable onPress={onBackspace} style={styles.numBtn}>
                 <MaterialIcons name="chevron-left" size={n(44)} color={textColor} />
-              </TouchableOpacity>
+              </HapticPressable>
             ) : (
               <View style={styles.numBtn} />
             )}
