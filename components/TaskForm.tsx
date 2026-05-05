@@ -296,11 +296,11 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  clearBtn: { fontSize: n(14), opacity: 0.4 },
+  clearBtn: { fontSize: n(14), opacity: 0.4, paddingRight: n(18) },
   titleInput: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingVertical: n(4) },
   subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(8) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
-  deleteSubtask: { padding: n(8) },
+  deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(24) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
 });
