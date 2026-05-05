@@ -27,13 +27,12 @@ ExpoNotifications.setNotificationHandler({
   }),
 });
 
-// Set up notification channel — Android ignores this if channel already exists
-ExpoNotifications.setNotificationChannelAsync("default", {
+// Set up notification channel
+ExpoNotifications.setNotificationChannelAsync("reminders-v1", {
   name: "Reminders",
   importance: ExpoNotifications.AndroidImportance.HIGH,
   vibrationPattern: [0, 80],
   enableVibrate: true,
-  sound: null,
 });
 
 // ─── Action categories ────────────────────────────────────────────────────────
@@ -165,6 +164,7 @@ export function NotificationsProvider({
         body: list?.title ?? "",
         data: { listId: task.listId, taskId: task.id },
         categoryIdentifier: "task",
+        channelId: "reminders-v1",
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
@@ -214,6 +214,7 @@ export function NotificationsProvider({
         title: first.title,
         body,
         data: { openToday: true },
+        channelId: "reminders-v1",
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
