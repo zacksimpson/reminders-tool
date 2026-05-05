@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     paddingTop: n(32),
     paddingBottom: n(8),
     position: "relative",
+    marginHorizontal: n(-32),
   },
   ampmLeft: { alignItems: "center", width: n(60), paddingLeft: n(8) },
   ampmRight: { alignItems: "center", width: n(60), paddingRight: n(8) },
