@@ -90,11 +90,10 @@ export function DatePicker({
                 const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 const isSelected = dateStr === value;
                 return (
-                  <TouchableOpacity
+                  <HapticPressable
                     key={`d-${day}`}
                     onPress={() => handleDayPress(day)}
                     style={styles.cell}
-                    activeOpacity={1}
                   >
                     <StyledText style={[styles.dayText, isSelected && styles.daySelected]}>
                       {day}
