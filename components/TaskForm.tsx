@@ -172,7 +172,6 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               blurOnSubmit
               returnKeyType="done"
               onSubmitEditing={Keyboard.dismiss}
-              onFocus={triggerHaptic}
             />
           </View>
 
