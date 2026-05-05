@@ -178,7 +178,7 @@ export function TimePicker({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: n(40) },
+  container: { flex: 1, paddingHorizontal: n(48) },
   topSection: {
     flexDirection: "row",
     alignItems: "center",
@@ -205,8 +205,8 @@ const styles = StyleSheet.create({
   },
   numpad: { flex: 1, justifyContent: "space-evenly", paddingBottom: n(16) },
   numRow: { flexDirection: "row", justifyContent: "space-between" },
-  numBtn: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: n(7) },
-  numText: { fontSize: n(30), fontFamily: "PublicSans-Regular" },
+  numBtn: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: n(5) },
+  numText: { fontSize: n(33), fontFamily: "PublicSans-Regular" },
   saveText: { fontSize: n(20), fontFamily: "PublicSans-Regular" },
   dismissX: { fontSize: n(24) },
 });
