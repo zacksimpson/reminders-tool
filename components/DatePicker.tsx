@@ -57,13 +57,13 @@ export function DatePicker({
         {/* Month/year header */}
         <View style={styles.header}>
           <HapticPressable onPress={onPrevMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialIcons name="chevron-left" size={n(36)} color={textColor} />
+            <MaterialIcons name="chevron-left" size={n(40)} color={textColor} />
           </HapticPressable>
           <StyledText style={styles.monthTitle}>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </StyledText>
           <HapticPressable onPress={onNextMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialIcons name="chevron-right" size={n(36)} color={textColor} />
+            <MaterialIcons name="chevron-right" size={n(40)} color={textColor} />
           </HapticPressable>
         </View>
 
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: n(13),
+    paddingVertical: n(9),
     position: "relative",
   },
   dayText: {
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: n(48),
+    bottom: n(28),
     left: 0,
     right: 0,
     alignItems: "center",
