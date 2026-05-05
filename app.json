@@ -21,7 +21,8 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/PublicSans-Regular.ttf"
+            "./assets/fonts/PublicSans-Regular.ttf",
+            "./assets/fonts/PublicSans-Light.ttf"
           ]
         }
       ],
