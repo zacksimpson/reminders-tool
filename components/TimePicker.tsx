@@ -62,11 +62,7 @@ function buildDisplay(digits: string): string {
     case 0: return "  :  ";
     case 1: return `  : ${digits[0]}`;
     case 2: return `  :${digits}`;
-    case 3: {
-      // If leading zero, show as "  :14" style (intermediate toward 4-digit)
-      if (digits[0] === "0") return `  :${digits.slice(1)}`;
-      return `${digits[0]}:${digits.slice(1)}`;
-    }
+    case 3: return `${digits[0]}:${digits.slice(1)}`;
     case 4: return `${digits.slice(0, 2)}:${digits.slice(2)}`;
     default: return "  :  ";
   }
