@@ -27,6 +27,15 @@ ExpoNotifications.setNotificationHandler({
   }),
 });
 
+// Set up Android notification channel with custom vibration
+ExpoNotifications.setNotificationChannelAsync("default", {
+  name: "Reminders",
+  importance: ExpoNotifications.AndroidImportance.HIGH,
+  vibrationPattern: [0, 80],
+  enableVibrate: true,
+  sound: null,
+});
+
 // ─── Action categories ────────────────────────────────────────────────────────
 
 ExpoNotifications.setNotificationCategoryAsync("task", [
@@ -155,7 +164,6 @@ export function NotificationsProvider({
         title: task.title,
         body: list?.title ?? "",
         data: { listId: task.listId, taskId: task.id },
-        vibrationPattern: [0, 80],  // single short pulse
         categoryIdentifier: "task",
       },
       trigger: {
@@ -206,7 +214,6 @@ export function NotificationsProvider({
         title: first.title,
         body,
         data: { openToday: true },
-        vibrationPattern: [0, 80],
       },
       trigger: {
         type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
