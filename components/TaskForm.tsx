@@ -95,9 +95,9 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
   const selectedList = lists.find(l => l.id === selectedListId) ?? lists[0];
   const canSave = title.trim().length > 0;
 
-  const resetForm = useCallback(() => {
+  const resetForm = useCallback((keepList = false) => {
     setTitle("");
-    setSelectedListId(resolvedListId);
+    if (!keepList) setSelectedListId(resolvedListId);
     setDate(defaultDate);
     setConfirmedTime(undefined);
     setTimeDigits("");
@@ -125,7 +125,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
     if (settings.afterAddBehavior === "toast") {
       setToastVisible(true);
     } else {
-      resetForm();
+      resetForm(false);
       onSaved();
     }
   }, [canSave, title, selectedListId, date, confirmedTime, subtasks, settings, addTask, resetForm, onSaved]);
@@ -299,7 +299,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
       <Toast
         visible={toastVisible}
         message="added"
-        onHide={() => { setToastVisible(false); resetForm(); onSaved(); }}
+        onHide={() => { setToastVisible(false); resetForm(true); onSaved(); }}
       />
     </SafeAreaView>
   );
