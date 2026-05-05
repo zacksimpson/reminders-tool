@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   ampmUnderline: { height: n(2.5), width: "100%", marginTop: n(1) },
   timeDisplay: {
     fontSize: n(72),
-    fontFamily: "PublicSans-Light",
+    fontFamily: "PublicSans-Thin",
     textAlign: "center",
     includeFontPadding: false,
   },
