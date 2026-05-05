@@ -3,6 +3,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   TextInput as RNTextInput,
   TouchableWithoutFeedback,
@@ -139,11 +140,16 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
         rightAction={{ icon: "check", onPress: handleSave, show: canSave }}
       />
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === "android" ? "height" : "padding"}
-        >
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "android" ? "height" : "padding"}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            overScrollMode="never"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           {/* Task name */}
           <View style={styles.field}>
             <RNTextInput
@@ -234,8 +240,9 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               }}
             />
           </View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
 
       <DatePicker
         visible={showDatePicker}
