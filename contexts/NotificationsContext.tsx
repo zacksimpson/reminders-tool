@@ -17,12 +17,12 @@ const TODAYS_TASKS_ENABLED_KEY = "notifications:todaysTasks:enabled";
 const TODAYS_TASKS_TIME_KEY = "notifications:todaysTasks:time";
 const TODAYS_TASKS_NOTIF_ID_KEY = "notifications:todaysTasks:id";
 
-// ─── Foreground handler — show alerts even when app is open ──────────────────
+// ─── Foreground handler ───────────────────────────────────────────────────────
 
 ExpoNotifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
@@ -114,7 +114,7 @@ export function NotificationsProvider({
     load();
   }, []);
 
-  // Handle notification action buttons
+  // Handle Complete action button
   useEffect(() => {
     const sub = ExpoNotifications.addNotificationResponseReceivedListener((response) => {
       const actionId = response.actionIdentifier;
@@ -175,7 +175,6 @@ export function NotificationsProvider({
     isTodaysTasksEnabled: boolean,
     time: string,
   ) => {
-    // Cancel existing bundle
     const existingId = await AsyncStorage.getItem(TODAYS_TASKS_NOTIF_ID_KEY);
     if (existingId) {
       await ExpoNotifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
