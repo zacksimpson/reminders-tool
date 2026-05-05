@@ -6,6 +6,13 @@ export const HapticPressable = (props: PressableProps) => {
     <Pressable
       {...props}
       android_disableSound={true}
+      android_ripple={null}
+      style={({ pressed }) => [
+        typeof props.style === "function"
+          ? props.style({ pressed })
+          : props.style,
+        { opacity: 1 },
+      ]}
       onPress={(event) => {
         triggerHaptic();
         props.onPress?.(event);
