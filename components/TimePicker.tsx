@@ -3,6 +3,7 @@ import { Modal, StyleSheet, View } from "react-native";
 import { HapticPressable } from "@/components/HapticPressable";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyledText } from "@/components/StyledText";
+import { Header } from "@/components/Header";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { n } from "@/utils/scaling";
 
@@ -108,6 +109,7 @@ export function TimePicker({
   return (
     <Modal visible={visible} animationType="none" transparent={false} statusBarTranslucent>
       <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+        <Header hideBackButton />
 
         {/* AM/PM + time display */}
         <View style={styles.topSection}>
