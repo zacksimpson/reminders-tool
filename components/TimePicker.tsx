@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ampmText: { fontSize: n(24) },
-  ampmUnderline: { height: n(2), width: n(28), marginTop: n(2) },
+  ampmUnderline: { height: n(3), width: n(32), marginTop: n(2) },
   timeDisplay: {
     fontSize: n(90),
     fontFamily: "PublicSans-Thin",
