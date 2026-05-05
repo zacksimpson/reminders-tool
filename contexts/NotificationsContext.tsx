@@ -27,6 +27,11 @@ ExpoNotifications.setNotificationHandler({
   }),
 });
 
+// ─── Clean up any old custom channels we created that may have broken settings
+["default", "reminders-v1", "reminders-v2"].forEach(id => {
+  ExpoNotifications.deleteNotificationChannelAsync(id).catch(() => {});
+});
+
 // ─── Action categories ────────────────────────────────────────────────────────
 
 ExpoNotifications.setNotificationCategoryAsync("task", [
