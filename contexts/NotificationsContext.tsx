@@ -27,13 +27,16 @@ ExpoNotifications.setNotificationHandler({
   }),
 });
 
-// Set up Android notification channel with custom vibration
-ExpoNotifications.setNotificationChannelAsync("default", {
-  name: "Reminders",
-  importance: ExpoNotifications.AndroidImportance.HIGH,
-  vibrationPattern: [0, 80],
-  enableVibrate: true,
-  sound: null,
+// Delete and recreate channel to ensure vibration settings take effect
+// even if channel was previously created with different settings
+ExpoNotifications.deleteNotificationChannelAsync("default").catch(() => {}).then(() => {
+  ExpoNotifications.setNotificationChannelAsync("default", {
+    name: "Reminders",
+    importance: ExpoNotifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 80],
+    enableVibrate: true,
+    sound: null,
+  });
 });
 
 // ─── Action categories ────────────────────────────────────────────────────────
