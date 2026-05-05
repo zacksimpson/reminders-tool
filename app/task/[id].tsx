@@ -248,7 +248,8 @@ export default function TaskScreen() {
                 ))}
 
                 <View style={styles.subtaskInputRow}>
-                  <RNTextInput ref={subtaskInputRef} value={newSubtask} onChangeText={setNewSubtask} placeholder="Add subtask…" placeholderTextColor={dimColor} style={[styles.subtaskField, { color: textColor }]} allowFontScaling={false} returnKeyType="done" onSubmitEditing={handleAddSubtask} />
+                  <RNTextInput ref={subtaskInputRef} value={newSubtask} onChangeText={setNewSubtask} placeholder="Add subtask…"
+              onFocus={triggerHaptic} placeholderTextColor={dimColor} style={[styles.subtaskField, { color: textColor }]} allowFontScaling={false} returnKeyType="done" onSubmitEditing={handleAddSubtask} />
                 </View>
 
                 <HapticPressable onPress={handleDelete} style={styles.deleteRow}>
