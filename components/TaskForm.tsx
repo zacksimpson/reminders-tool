@@ -237,6 +237,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               value={newSubtask}
               onChangeText={setNewSubtask}
               placeholder="Add subtask…"
+              onFocus={triggerHaptic}
               placeholderTextColor={dimColor}
               style={[styles.subtaskInput, { color: textColor }]}
               allowFontScaling={false}
