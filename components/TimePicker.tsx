@@ -38,10 +38,17 @@ function isValidNextDigit(current: string, next: string): boolean {
       return parseInt(next, 10) <= 5;
 
     case 3: {
-      // 3-digit time: H:MM
-      const h = parseInt(proposed[0], 10);
+      const firstDigit = parseInt(proposed[0], 10);
+      // Leading zero case: "014" → on way to "0145" = 01:45
+      // d[0]=0 (leading zero), d[1]=hour-ones (1-9), d[2]=minutes-tens (0-5)
+      if (firstDigit === 0) {
+        const hourOnes = parseInt(proposed[1], 10);
+        const minTens = parseInt(proposed[2], 10);
+        return hourOnes >= 1 && hourOnes <= 9 && minTens >= 0 && minTens <= 5;
+      }
+      // Normal H:MM case: first digit is hour (1-9), last two are minutes
       const m = parseInt(proposed.slice(1), 10);
-      return h >= 1 && h <= 9 && m >= 0 && m <= 59;
+      return firstDigit >= 1 && firstDigit <= 9 && m >= 0 && m <= 59;
     }
 
     case 4: {
@@ -180,9 +187,9 @@ const styles = StyleSheet.create({
   },
   ampmBtn: { alignItems: "center", minWidth: n(52) },
   ampmText: { fontSize: n(20) },
-  ampmUnderline: { height: n(2.5), width: "100%", marginTop: n(1) },
+  ampmUnderline: { height: n(2.5), width: n(32), marginTop: n(1) },
   timeDisplay: {
-    fontSize: n(72),
+    fontSize: n(90),
     fontFamily: "PublicSans-Thin",
     textAlign: "center",
     includeFontPadding: false,
