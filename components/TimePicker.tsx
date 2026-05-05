@@ -111,16 +111,18 @@ export function TimePicker({
 
         {/* AM/PM + time display */}
         <View style={styles.topSection}>
-          <HapticPressable onPress={() => onAmPm("AM")} style={styles.ampmBtn}>
+          {/* AM/PM pinned to left/right edges */}
+          <HapticPressable onPress={() => onAmPm("AM")} style={styles.ampmLeft}>
             <StyledText style={styles.ampmText}>AM</StyledText>
             {ampm === "AM" && <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />}
           </HapticPressable>
 
-          <StyledText style={styles.timeDisplay}>
-            {buildDisplay(digits)}
-          </StyledText>
+          {/* Time display centered absolutely so it never affects AM/PM position */}
+          <View style={styles.timeContainer} pointerEvents="none">
+            <StyledText style={styles.timeDisplay}>{buildDisplay(digits)}</StyledText>
+          </View>
 
-          <HapticPressable onPress={() => onAmPm("PM")} style={styles.ampmBtn}>
+          <HapticPressable onPress={() => onAmPm("PM")} style={styles.ampmRight}>
             <StyledText style={styles.ampmText}>PM</StyledText>
             {ampm === "PM" && <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />}
           </HapticPressable>
@@ -183,9 +185,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: n(48),
     paddingBottom: n(8),
-    paddingHorizontal: n(8),
+    position: "relative",
   },
-  ampmBtn: { alignItems: "center", minWidth: n(52) },
+  ampmLeft: { alignItems: "center", width: n(60), paddingLeft: n(8) },
+  ampmRight: { alignItems: "center", width: n(60), paddingRight: n(8) },
+  timeContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   ampmText: { fontSize: n(24) },
   ampmUnderline: { height: n(2), width: n(28), marginTop: n(2) },
   timeDisplay: {
