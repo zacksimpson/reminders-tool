@@ -176,20 +176,20 @@ export function TimePicker({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: n(16) },
+  container: { flex: 1, paddingHorizontal: n(40) },
   topSection: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: n(24),
-    paddingBottom: n(24),
+    paddingTop: n(48),
+    paddingBottom: n(8),
     paddingHorizontal: n(8),
   },
   ampmBtn: { alignItems: "center", minWidth: n(52) },
-  ampmText: { fontSize: n(20) },
-  ampmUnderline: { height: n(2.5), width: n(32), marginTop: n(1) },
+  ampmText: { fontSize: n(24) },
+  ampmUnderline: { height: n(2), width: n(28), marginTop: n(2) },
   timeDisplay: {
-    fontSize: n(90),
+    fontSize: n(100),
     fontFamily: "PublicSans-Thin",
     textAlign: "center",
     includeFontPadding: false,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   numpad: { flex: 1, justifyContent: "space-evenly", paddingBottom: n(16) },
   numRow: { flexDirection: "row", justifyContent: "space-between" },
   numBtn: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: n(7) },
-  numText: { fontSize: n(36), fontFamily: "PublicSans-Regular" },
+  numText: { fontSize: n(30), fontFamily: "PublicSans-Regular" },
   saveText: { fontSize: n(20), fontFamily: "PublicSans-Regular" },
   dismissX: { fontSize: n(24) },
 });
