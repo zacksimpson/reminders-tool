@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: n(48),
+    paddingTop: n(32),
     paddingBottom: n(8),
     position: "relative",
   },
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   ampmText: { fontSize: n(24) },
   ampmUnderline: { height: n(2), width: n(28), marginTop: n(2) },
   timeDisplay: {
-    fontSize: n(100),
+    fontSize: n(90),
     fontFamily: "PublicSans-Thin",
     textAlign: "center",
     includeFontPadding: false,
