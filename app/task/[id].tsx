@@ -266,7 +266,7 @@ export default function TaskScreen() {
         </KeyboardAvoidingView>
 
         <DatePicker visible={showDatePicker} value={date} onSelect={(d) => { setDate(d); setShowDatePicker(false); }} onDismiss={() => setShowDatePicker(false)} viewYear={viewYear} viewMonth={viewMonth} onPrevMonth={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }} onNextMonth={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }} />
-        <TimePicker visible={showTimePicker} digits={timeDigits} ampm={ampm} onDigit={(d) => setTimeDigits(prev => prev.length < 4 ? prev + d : prev)} onBackspace={() => setTimeDigits(prev => prev.slice(0, -1))} onAmPm={setAmPm} onConfirm={handleTimeConfirm} onDismiss={() => setShowTimePicker(false)} />
+        <TimePicker visible={showTimePicker} digits={timeDigits} ampm={ampm} onDigit={(d) => setTimeDigits(prev => prev.length < 4 ? prev + d : prev)} onBackspace={() => setTimeDigits(prev => prev.slice(0, -1))} onAmPm={setAmPm} onConfirm={handleTimeConfirm} onDismiss={() => { setShowTimePicker(false); if (!confirmedTime) { setTimeDigits(""); setAmPm("AM"); } }} />
         <ListPickerModal visible={showListPicker} lists={lists} selectedId={listId} onSelect={(list) => { setListId(list.id); setShowListPicker(false); }} onDismiss={() => setShowListPicker(false)} />
       </SafeAreaView>
     </SwipeBackContainer>

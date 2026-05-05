@@ -269,7 +269,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
         onBackspace={() => setTimeDigits(prev => prev.slice(0, -1))}
         onAmPm={setAmPm}
         onConfirm={handleTimeConfirm}
-        onDismiss={() => setShowTimePicker(false)}
+        onDismiss={() => { setShowTimePicker(false); if (!confirmedTime) { setTimeDigits(""); setAmPm("AM"); } }}
       />
 
       <ListPickerModal
