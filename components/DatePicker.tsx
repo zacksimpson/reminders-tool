@@ -1,6 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMemo } from "react";
-import { Modal, StyleSheet, Text as DefaultText, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, Text as DefaultText, View } from "react-native";
+import { HapticPressable } from "@/components/HapticPressable";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -55,15 +56,15 @@ export function DatePicker({
 
         {/* Month/year header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onPrevMonth} activeOpacity={1} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <HapticPressable onPress={onPrevMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <MaterialIcons name="chevron-left" size={n(36)} color={textColor} />
-          </TouchableOpacity>
+          </HapticPressable>
           <StyledText style={styles.monthTitle}>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </StyledText>
-          <TouchableOpacity onPress={onNextMonth} activeOpacity={1} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <HapticPressable onPress={onNextMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <MaterialIcons name="chevron-right" size={n(36)} color={textColor} />
-          </TouchableOpacity>
+          </HapticPressable>
         </View>
 
         {/* Day headers */}
@@ -101,7 +102,7 @@ const isSelected = dateStr === value;
                     {isSelected && (
                       <View style={[styles.todayUnderline, { backgroundColor: textColor }]} />
                     )}
-                  </TouchableOpacity>
+                  </HapticPressable>
                 );
               })}
             </View>
@@ -110,13 +111,12 @@ const isSelected = dateStr === value;
 
         {/* × anchored to bottom — absolutely positioned so it never moves */}
         <View style={styles.footer}>
-          <TouchableOpacity
+          <HapticPressable
             onPress={onDismiss}
-            activeOpacity={1}
             hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
           >
             <StyledText style={styles.dismissX}>✕</StyledText>
-          </TouchableOpacity>
+          </HapticPressable>
         </View>
 
       </SafeAreaView>
