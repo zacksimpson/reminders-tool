@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
 import {
+  Animated,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   TextInput as RNTextInput,
   TouchableWithoutFeedback,
@@ -18,6 +18,7 @@ import { StyledText } from "@/components/StyledText";
 import { TimePicker } from "@/components/TimePicker";
 import { Toast } from "@/components/Toast";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
+import { useScrollIndicator } from "@/hooks/useScrollIndicator";
 import { useReminders } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -71,6 +72,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
 
   const resolvedListId = defaultListId ?? settings.defaultListId;
+  const { handleScroll, scrollIndicatorHeight, scrollIndicatorPosition, setContentHeight, setScrollViewHeight } = useScrollIndicator();
 
   const [title, setTitle] = useState("");
   const [selectedListId, setSelectedListId] = useState(resolvedListId);
@@ -144,12 +146,17 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
         style={styles.flex}
         behavior={Platform.OS === "android" ? "height" : "padding"}
       >
+        <View style={styles.scrollWrapper}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
+          <Animated.ScrollView
+            onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             overScrollMode="never"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
+          <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
           {/* Task name */}
           <View style={styles.field}>
             <RNTextInput
@@ -240,8 +247,15 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
               }}
             />
           </View>
-          </ScrollView>
+          </View>
+          </Animated.ScrollView>
         </TouchableWithoutFeedback>
+        {scrollIndicatorHeight > 0 && (
+          <View style={[styles.scrollTrack, { backgroundColor: textColor }]}>
+            <Animated.View style={[styles.scrollThumb, { backgroundColor: textColor, height: scrollIndicatorHeight, transform: [{ translateY: scrollIndicatorPosition }] }]} />
+          </View>
+        )}
+        </View>
       </KeyboardAvoidingView>
 
       <DatePicker
@@ -298,6 +312,9 @@ const styles = StyleSheet.create({
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   clearBtn: { fontSize: n(14), opacity: 0.4, paddingRight: n(18) },
   titleInput: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingVertical: n(4) },
+  scrollWrapper: { flex: 1, position: "relative" },
+  scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
+  scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
   subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(8) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
