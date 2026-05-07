@@ -231,6 +231,8 @@ export default function TaskScreen() {
                         onBlur={() => handleRenameSubtask(sub.id)}
                         style={[styles.subtaskTitle, { color: textColor }]}
                         allowFontScaling={false}
+                        multiline
+                        blurOnSubmit
                         returnKeyType="done"
                       />
                     ) : (
