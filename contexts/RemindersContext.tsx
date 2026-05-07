@@ -41,6 +41,7 @@ export interface Settings {
   defaultListId: string;
   afterAddBehavior: "toast" | "go-to-list";
   addPosition: "top" | "bottom";
+  showOverdue: boolean;
   invertColors?: boolean; // handled separately, here for completeness
 }
 
@@ -63,6 +64,7 @@ const DEFAULT_SETTINGS: Settings = {
   defaultListId: "inbox",
   afterAddBehavior: "toast",
   addPosition: "bottom",
+  showOverdue: true,
 };
 
 // ─── Context ──────────────────────────────────────────────────────────────────
