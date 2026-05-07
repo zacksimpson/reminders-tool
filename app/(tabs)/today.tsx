@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AddTaskModal } from "@/components/AddTaskModal";
 import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
+import { OverdueAsterisk } from "@/components/OverdueAsterisk";
 import { StyledText } from "@/components/StyledText";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -15,6 +16,19 @@ import { n } from "@/utils/scaling";
 function getTodayStr(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function isOverdue(task: Task): boolean {
+  if (!task.date) return false;
+  const todayStr = getTodayStr();
+  if (task.time) {
+    // Overdue if date+time is in the past
+    const [y, mo, d] = task.date.split("-").map(Number);
+    const [h, m] = task.time.split(":").map(Number);
+    return new Date(y, mo - 1, d, h, m, 0) < new Date();
+  }
+  // Date only — overdue if date is before today
+  return task.date < todayStr;
 }
 
 function formatTime(time: string): string {
@@ -34,18 +48,24 @@ function formatDate(date: string): string {
 interface TaskRowProps {
   task: Task;
   listTitle: string;
+  overdue?: boolean;
   onToggle: () => void;
   onPress: () => void;
   dimmed?: boolean;
 }
 
-function TaskRow({ task, listTitle, onToggle, onPress, dimmed }: TaskRowProps) {
-  const subtaskCount = task.subtasks?.length ?? 0;
-  const subtaskLabel = subtaskCount > 0 ? `${subtaskCount} ${subtaskCount === 1 ? "Subtask" : "Subtasks"}` : null;
-  const meta = [listTitle, task.date ? formatDate(task.date) : null, task.time ? formatTime(task.time) : null, subtaskLabel].filter(Boolean).join(" · ");
+function TaskRow({ task, listTitle, overdue, onToggle, onPress, dimmed }: TaskRowProps) {
+  const meta = [listTitle, task.date ? formatDate(task.date) : null, task.time ? formatTime(task.time) : null].filter(Boolean).join(" · ");
+
   return (
     <View style={[styles.taskRow, dimmed && styles.taskRowDimmed]}>
-      <TaskCheckbox checked={task.completed} onToggle={onToggle} />
+      {overdue && !task.completed ? (
+        <HapticPressable onPress={onToggle} style={styles.asteriskHitArea}>
+          <OverdueAsterisk size={22} />
+        </HapticPressable>
+      ) : (
+        <TaskCheckbox checked={task.completed} onToggle={onToggle} />
+      )}
       <HapticPressable onPress={onPress} style={styles.taskContent}>
         <StyledText style={styles.taskTitle}>{task.title}</StyledText>
         {meta ? <StyledText style={styles.taskMeta}>{meta}</StyledText> : null}
@@ -61,24 +81,46 @@ export default function TodayScreen() {
   const textColor = invertColors ? "black" : "white";
   const [showCompleted, setShowCompleted] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const { handleScroll, scrollIndicatorHeight, scrollIndicatorPosition, setContentHeight, setScrollViewHeight } = useScrollIndicator();
 
   useFocusEffect(
     useCallback(() => {
       return () => setShowAddTask(false);
     }, [])
   );
-  const { handleScroll, scrollIndicatorHeight, scrollIndicatorPosition, setContentHeight, setScrollViewHeight } = useScrollIndicator();
 
   const todayStr = getTodayStr();
-  const todayTasks = tasks.filter(t => t.date === todayStr);
-  const active = todayTasks.filter(t => !t.completed).sort((a, b) => {
-    if (!a.time && !b.time) return a.order - b.order;
-    if (!a.time) return -1;
-    if (!b.time) return 1;
-    return a.time.localeCompare(b.time);
-  });
-  const completed = todayTasks.filter(t => t.completed).sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
+  const showOverdue = settings.showOverdue ?? true;
+
   const getListTitle = (listId: string) => lists.find(l => l.id === listId)?.title ?? "";
+
+  // Overdue: incomplete tasks from before today (date only) or past datetime
+  const overdueTasks = showOverdue
+    ? tasks.filter(t => !t.completed && isOverdue(t)).sort((a, b) => {
+        if (a.date !== b.date) return a.date! < b.date! ? -1 : 1;
+        if (!a.time && !b.time) return a.order - b.order;
+        if (!a.time) return -1;
+        if (!b.time) return 1;
+        return a.time.localeCompare(b.time);
+      })
+    : [];
+
+  // Today's active tasks
+  const activeTasks = tasks
+    .filter(t => t.date === todayStr && !t.completed)
+    .sort((a, b) => {
+      if (!a.time && !b.time) return a.order - b.order;
+      if (!a.time) return -1;
+      if (!b.time) return 1;
+      return a.time.localeCompare(b.time);
+    });
+
+  // Completed tasks (today + overdue)
+  const completedTasks = tasks
+    .filter(t => t.completed && (t.date === todayStr || (showOverdue && isOverdue(t))))
+    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
+
+  const isEmpty = overdueTasks.length === 0 && activeTasks.length === 0 && completedTasks.length === 0;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
@@ -88,7 +130,7 @@ export default function TodayScreen() {
         rightAction={{ icon: "add", onPress: () => setShowAddTask(true) }}
       />
 
-      {todayTasks.length === 0 ? (
+      {isEmpty ? (
         <View style={styles.empty}>
           <StyledText style={styles.emptyText}>no tasks today</StyledText>
         </View>
@@ -102,16 +144,45 @@ export default function TodayScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
-              {active.map(task => (
-                <TaskRow key={task.id} task={task} listTitle={getListTitle(task.listId)} onToggle={() => toggleTask(task.id)} onPress={() => router.push({ pathname: "/task/[id]", params: { id: task.id } })} />
+
+              {/* Overdue tasks */}
+              {overdueTasks.map(task => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  listTitle={getListTitle(task.listId)}
+                  overdue
+                  onToggle={() => toggleTask(task.id)}
+                  onPress={() => router.push({ pathname: "/task/[id]", params: { id: task.id } })}
+                />
               ))}
-              {completed.length > 0 && (
+
+              {/* Today's active tasks */}
+              {activeTasks.map(task => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  listTitle={getListTitle(task.listId)}
+                  onToggle={() => toggleTask(task.id)}
+                  onPress={() => router.push({ pathname: "/task/[id]", params: { id: task.id } })}
+                />
+              ))}
+
+              {/* Completed */}
+              {completedTasks.length > 0 && (
                 <>
                   <HapticPressable onPress={() => setShowCompleted(v => !v)} style={styles.completedHeader}>
-                    <StyledText style={styles.completedLabel}>Completed ({completed.length})</StyledText>
+                    <StyledText style={styles.completedLabel}>Completed ({completedTasks.length})</StyledText>
                   </HapticPressable>
-                  {showCompleted && completed.map(task => (
-                    <TaskRow key={task.id} task={task} listTitle={getListTitle(task.listId)} onToggle={() => toggleTask(task.id)} onPress={() => router.push({ pathname: "/task/[id]", params: { id: task.id } })} dimmed />
+                  {showCompleted && completedTasks.map(task => (
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      listTitle={getListTitle(task.listId)}
+                      onToggle={() => toggleTask(task.id)}
+                      onPress={() => router.push({ pathname: "/task/[id]", params: { id: task.id } })}
+                      dimmed
+                    />
                   ))}
                 </>
               )}
@@ -144,6 +215,12 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: n(20), opacity: 0.4 },
   taskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
   taskRowDimmed: { opacity: 0.4 },
+  asteriskHitArea: {
+    paddingHorizontal: n(14),
+    paddingTop: n(17),
+    paddingBottom: n(8),
+    alignSelf: "flex-start",
+  },
   taskContent: { flex: 1, paddingVertical: n(11) },
   taskTitle: { fontSize: n(23) },
   taskMeta: { fontSize: n(16), marginTop: n(2) },

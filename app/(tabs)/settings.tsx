@@ -40,6 +40,14 @@ export default function SettingsScreen() {
           <StyledText style={styles.selectorValue}>Notifications</StyledText>
         </HapticPressable>
 
+        {/* Today View */}
+        <HapticPressable
+          onPress={() => router.push("/settings/today-view")}
+          style={styles.row}
+        >
+          <StyledText style={styles.selectorValue}>Today View</StyledText>
+        </HapticPressable>
+
         {/* Default List */}
         <HapticPressable
           onPress={() => router.push("/settings/default-list")}
