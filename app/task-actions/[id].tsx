@@ -42,11 +42,7 @@ export default function TaskActionsScreen() {
         </HapticPressable>
 
         <HapticPressable
-          onPress={() => {
-            // Go back to list and trigger reorder mode
-            router.back();
-            router.setParams({ startReorder: "true" });
-          }}
+          onPress={() => router.replace({ pathname: "/list/[id]", params: { id: listId, startReorder: "true" } })}
           style={styles.option}
         >
           <StyledText style={styles.optionText}>Reorder Tasks</StyledText>
