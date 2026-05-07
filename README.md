@@ -26,6 +26,13 @@ Built with [vandamd's light-template](https://github.com/vandamd/light-template)
 
 ---
 
+## Installing on Light Phone III
+
+* Highly recommend using [Obtainium](https://github.com/ImranR98/Obtainium) to ensure you receive future updates and new features automatically. Just add [the repo URL](https://github.com/im360noscope/reminders-tool/), make sure you're able to install apps from unknown sources, and you're all set.
+* Alternatively, you can download the latest APK from the Releases tab.
+
+---
+
 ## Building
 
 This project uses [Expo](https://expo.dev) and [EAS Build](https://docs.expo.dev/build/introduction/).
@@ -48,16 +55,8 @@ EAS will build the APK in the cloud and provide a download link.
 
 ---
 
-## Installing on Light Phone III
-
-1. Download the APK from the latest [GitHub Release](https://github.com/im360noscope/reminders-tool/releases)
-2. On your Light Phone III, enable installing from unknown sources
-3. Transfer and install the APK, or use [Obtainium](https://github.com/ImranR98/Obtainium) to manage updates automatically
-
----
-
 ## Credits
 
 * [vandamd](https://github.com/vandamd) — [light-template](https://github.com/vandamd/light-template), the community Expo template this app is built on
+* [iamkory](https://www.reddit.com/user/iamkory/) — [LighterOS Figma design toolkit](https://www.figma.com/design/1k2PkAjOSet8f9jjVdhM2L/LighterOS?node-id=65-2018&t=3Qd2sXdySZCzTVtK-1) excellent reference for recreating the LightOS aesthetic
 * [The Light Phone](https://www.thelightphone.com) — for building a phone worth making apps for
-* [iamkory](https://www.reddit.com/user/iamkory/) — [LighterOS Figma design toolkit](https://www.figma.com/design/1k2PkAjOSet8f9jjVdhM2L/LighterOS?node-id=65-2018&t=3Qd2sXdySZCzTVtK-1) used as a reference for recreating the LightOS aesthetic
