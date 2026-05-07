@@ -17,6 +17,7 @@ import { ListPickerModal } from "@/components/ListPickerModal";
 import { StyledText } from "@/components/StyledText";
 import { TimePicker } from "@/components/TimePicker";
 import { Toast } from "@/components/Toast";
+import { router } from "expo-router";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { triggerHaptic } from "@/utils/haptics";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
