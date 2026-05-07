@@ -1,5 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AddTaskModal } from "@/components/AddTaskModal";
@@ -91,6 +91,7 @@ export default function ListScreen() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [pendingReorder, setPendingReorder] = useState(false);
   const { handleScroll, scrollIndicatorHeight, scrollIndicatorPosition, setContentHeight, setScrollViewHeight } = useScrollIndicator();
 
   const list = lists.find(l => l.id === id);
@@ -102,10 +103,20 @@ export default function ListScreen() {
   // Handle startReorder param from task-actions
   useEffect(() => {
     if (startReorder === "true") {
-      setIsReordering(true);
+      setPendingReorder(true);
       router.setParams({ startReorder: undefined });
     }
   }, [startReorder]);
+
+  // Enter reorder mode when screen regains focus after task-actions
+  useFocusEffect(
+    useCallback(() => {
+      if (pendingReorder) {
+        setIsReordering(true);
+        setPendingReorder(false);
+      }
+    }, [pendingReorder])
+  );
 
   // Handle delete task confirmed
   useEffect(() => {
