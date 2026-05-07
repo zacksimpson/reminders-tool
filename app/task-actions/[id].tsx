@@ -43,12 +43,9 @@ export default function TaskActionsScreen() {
 
         <HapticPressable
           onPress={() => {
-            // Navigate back to list with startReorder param
-            // Use navigate with the list path so it reuses the existing stack entry
-            router.navigate({
-              pathname: "/list/[id]",
-              params: { id: listId, startReorder: "true" },
-            });
+            // Go back to list and trigger reorder mode
+            router.back();
+            router.setParams({ startReorder: "true" });
           }}
           style={styles.option}
         >
