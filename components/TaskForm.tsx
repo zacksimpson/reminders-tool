@@ -222,7 +222,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
             </HapticPressable>
           )}
           {/* Subtasks */}
-          <View style={styles.field}>
+          <View style={[styles.field, styles.subtasksField]}>
             <StyledText style={[styles.fieldLabel, { color: textColor }]}>Subtasks</StyledText>
             {subtasks.map((sub) => (
               <View key={sub.id} style={styles.subtaskRow}>
@@ -329,6 +329,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
   field: { paddingHorizontal: n(22), paddingVertical: n(13) },
+  subtasksField: { paddingTop: n(28) },
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
