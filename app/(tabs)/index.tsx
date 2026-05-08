@@ -17,7 +17,7 @@ import { n } from "@/utils/scaling";
 
 export default function ListsScreen() {
   const { invertColors } = useInvertColors();
-  const { lists, tasks, deleteList, moveListUp, moveListDown, deleteTask } = useReminders();
+  const { lists, deleteList, moveListUp, moveListDown, clearCompletedTasks } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
@@ -45,11 +45,10 @@ export default function ListsScreen() {
     }
     if (params.confirmed === "true" && params.action?.startsWith("clear-completed:")) {
       const id = params.action.replace("clear-completed:", "");
-      const completedIds = tasks.filter(t => t.listId === id && t.completed).map(t => t.id);
-      completedIds.forEach(taskId => deleteTask(taskId));
+      clearCompletedTasks(id);
       router.setParams({ confirmed: undefined, action: undefined });
     }
-  }, [params.confirmed, params.action]);
+  }, [params.confirmed, params.action, deleteList, clearCompletedTasks]);
 
   // Handle reorder mode triggered from list-actions screen
   useEffect(() => {
