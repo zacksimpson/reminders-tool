@@ -24,6 +24,7 @@ export function AddTaskModal({ visible, defaultListId, defaultDate, onDismiss }:
         defaultDate={defaultDate}
         onSaved={onDismiss}
         onBack={onDismiss}
+        isModal
       />
     </Modal>
   );
