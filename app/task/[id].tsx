@@ -255,7 +255,7 @@ export default function TaskScreen() {
                 </View>
 
                 <HapticPressable onPress={handleDelete} style={styles.deleteRow}>
-                  <StyledText style={styles.deleteText}>DELETE TASK</StyledText>
+                  <StyledText style={styles.deleteText}>DELETE</StyledText>
                 </HapticPressable>
 
               </View>
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
   deleteRow: { paddingHorizontal: n(22), paddingVertical: n(28), alignItems: "center" },
-  deleteText: { fontSize: n(18) },
+  deleteText: { fontSize: n(24), letterSpacing: n(5) },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { fontSize: n(20), opacity: 0.4 },
 });
