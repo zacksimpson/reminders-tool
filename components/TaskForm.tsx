@@ -126,8 +126,10 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
     if (settings.afterAddBehavior === "toast") {
       setToastVisible(true);
     } else {
+      const listId = selectedListId;
       resetForm(false);
       onSaved();
+      router.push({ pathname: "/list/[id]", params: { id: listId } });
     }
   }, [canSave, title, selectedListId, date, confirmedTime, subtasks, settings, addTask, resetForm, onSaved]);
 
