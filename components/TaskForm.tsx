@@ -129,6 +129,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
       const listId = selectedListId;
       resetForm(false);
       onSaved();
+      router.navigate("/(tabs)/");
       router.push({ pathname: "/list/[id]", params: { id: listId } });
     }
   }, [canSave, title, selectedListId, date, confirmedTime, subtasks, settings, addTask, resetForm, onSaved]);
