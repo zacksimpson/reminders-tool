@@ -63,11 +63,12 @@ export interface TaskFormProps {
   defaultDate?: string; // "YYYY-MM-DD"
   onSaved: () => void; // called after task is saved (and toast dismissed if shown)
   onBack?: () => void; // override back button behavior (e.g. when used inside a Modal)
+  isModal?: boolean; // when true, hides header back/check and shows bottom × / SAVE footer
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskForm({ defaultListId, defaultDate, onSaved, onBack }: TaskFormProps) {
+export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal }: TaskFormProps) {
   const { invertColors } = useInvertColors();
   const { lists, settings, addTask } = useReminders();
   const bg = invertColors ? "white" : "black";
@@ -143,11 +144,13 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack }: TaskFo
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
-      <Header
-        headerTitle="Add Task"
-        onBack={onBack}
-        rightAction={{ icon: "check", onPress: handleSave, show: canSave }}
-      />
+      {!isModal && (
+        <Header
+          headerTitle="Add Task"
+          onBack={onBack}
+          rightAction={{ icon: "check", onPress: handleSave, show: canSave }}
+        />
+      )}
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -302,6 +305,17 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack }: TaskFo
         onDismiss={() => setShowListPicker(false)}
       />
 
+      {isModal && (
+        <View style={styles.modalFooter}>
+          <HapticPressable onPress={onBack} style={styles.modalFooterBtn}>
+            <StyledText style={styles.modalDismissX}>✕</StyledText>
+          </HapticPressable>
+          <HapticPressable onPress={handleSave} style={styles.modalFooterBtn}>
+            <StyledText style={styles.modalSave}>SAVE</StyledText>
+          </HapticPressable>
+        </View>
+      )}
+
       <Toast
         visible={toastVisible}
         message="added"
@@ -328,4 +342,8 @@ const styles = StyleSheet.create({
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(24) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
+  modalFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: n(32), paddingBottom: n(32), paddingTop: n(16) },
+  modalFooterBtn: { padding: n(8) },
+  modalDismissX: { fontSize: n(28) },
+  modalSave: { fontSize: n(24), letterSpacing: n(5), fontFamily: "PublicSans-Regular" },
 });
