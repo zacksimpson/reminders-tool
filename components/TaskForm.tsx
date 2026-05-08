@@ -309,12 +309,15 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
 
       {isModal && (
         <View style={styles.modalFooter}>
+          <View style={styles.modalFooterSide} />
           <HapticPressable onPress={onBack} style={styles.modalFooterBtn}>
             <StyledText style={styles.modalDismissX}>✕</StyledText>
           </HapticPressable>
-          <HapticPressable onPress={handleSave} style={styles.modalSaveBtn}>
-            <StyledText style={styles.modalSave}>SAVE</StyledText>
-          </HapticPressable>
+          <View style={styles.modalFooterSide}>
+            <HapticPressable onPress={handleSave} style={styles.modalSaveBtn}>
+              <StyledText style={styles.modalSave}>SAVE</StyledText>
+            </HapticPressable>
+          </View>
         </View>
       )}
 
@@ -345,9 +348,10 @@ const styles = StyleSheet.create({
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(24) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
-  modalFooter: { alignItems: "center", paddingBottom: n(20), paddingTop: n(6), position: "relative" },
+  modalFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: n(14) },
+  modalFooterSide: { flex: 1, alignItems: "flex-end", paddingRight: n(24) },
   modalFooterBtn: { padding: n(8) },
-  modalSaveBtn: { position: "absolute", right: n(24), top: n(6), padding: n(8) },
+  modalSaveBtn: { padding: n(8) },
   modalDismissX: { fontSize: n(28) },
   modalSave: { fontSize: n(24), letterSpacing: n(5), fontFamily: "PublicSans-Regular" },
 });
