@@ -230,7 +230,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
                   checked={sub.completed}
                   onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
                   size={20}
-                  paddingTop={14}
+                  paddingTop={10}
                 />
                 <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
                 <HapticPressable
