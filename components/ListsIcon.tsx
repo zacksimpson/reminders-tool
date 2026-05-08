@@ -8,8 +8,8 @@ interface ListsIconProps {
 
 export function ListsIcon({ color, size = 48 }: ListsIconProps) {
   // Fixed width of 54px, height maintains aspect ratio
-  const width = n(54);
-  const height = n(54 * 46 / 90);
+  const width = n(48);
+  const height = n(48 * 46 / 90);
   return (
     <Svg width={width} height={height} viewBox="0 0 90 46" fill="none">
       <Circle cx="4" cy="4" r="4" fill={color} />
