@@ -104,6 +104,9 @@ interface RemindersContextType {
   toggleSubtask: (taskId: string, subtaskId: string) => void;
   deleteSubtask: (taskId: string, subtaskId: string) => void;
 
+  // Bulk task operations
+  clearCompletedTasks: (listId: string) => void;
+
   // Task reordering
   swapTaskOrder: (idA: string, idB: string) => void;
 
@@ -266,6 +269,13 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     notificationScheduler?.cancelForTask(id);
   }, [tasks, persistTasks]);
 
+  const clearCompletedTasks = useCallback((listId: string) => {
+    const remaining = tasks.filter(t => !(t.listId === listId && t.completed));
+    const removed = tasks.filter(t => t.listId === listId && t.completed);
+    persistTasks(remaining);
+    removed.forEach(t => notificationScheduler?.cancelForTask(t.id));
+  }, [tasks, persistTasks]);
+
   const toggleTask = useCallback((id: string) => {
     const updatedTasks = tasks.map(t => {
       if (t.id !== id) return t;
@@ -343,7 +353,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     <RemindersContext.Provider value={{
       lists, tasks, settings, loaded,
       addList, renameList, deleteList, moveListUp, moveListDown,
-      addTask, updateTask, deleteTask, toggleTask, swapTaskOrder,
+      addTask, updateTask, deleteTask, clearCompletedTasks, toggleTask, swapTaskOrder,
       addSubtask, toggleSubtask, deleteSubtask,
       updateSettings,
     }}>
