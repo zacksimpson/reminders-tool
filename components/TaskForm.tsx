@@ -62,11 +62,12 @@ export interface TaskFormProps {
   defaultListId?: string;
   defaultDate?: string; // "YYYY-MM-DD"
   onSaved: () => void; // called after task is saved (and toast dismissed if shown)
+  onBack?: () => void; // override back button behavior (e.g. when used inside a Modal)
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps) {
+export function TaskForm({ defaultListId, defaultDate, onSaved, onBack }: TaskFormProps) {
   const { invertColors } = useInvertColors();
   const { lists, settings, addTask } = useReminders();
   const bg = invertColors ? "white" : "black";
@@ -144,6 +145,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved }: TaskFormProps)
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
       <Header
         headerTitle="Add Task"
+        onBack={onBack}
         rightAction={{ icon: "check", onPress: handleSave, show: canSave }}
       />
 
