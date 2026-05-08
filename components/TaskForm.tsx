@@ -345,9 +345,9 @@ const styles = StyleSheet.create({
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(24) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
-  modalFooter: { alignItems: "center", paddingBottom: n(32), paddingTop: n(16), position: "relative" },
+  modalFooter: { alignItems: "center", paddingBottom: n(20), paddingTop: n(6), position: "relative" },
   modalFooterBtn: { padding: n(8) },
-  modalSaveBtn: { position: "absolute", right: n(24), top: n(16), padding: n(8) },
+  modalSaveBtn: { position: "absolute", right: n(24), top: n(6), padding: n(8) },
   modalDismissX: { fontSize: n(28) },
   modalSave: { fontSize: n(24), letterSpacing: n(5), fontFamily: "PublicSans-Regular" },
 });
