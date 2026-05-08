@@ -328,7 +328,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  field: { paddingHorizontal: n(22), paddingVertical: n(18) },
+  field: { paddingHorizontal: n(22), paddingVertical: n(13) },
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
   scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
   subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(8) },
-  subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
+  subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(7) },
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(24) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
