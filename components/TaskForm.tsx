@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
-  deleteSubtaskText: { fontSize: n(28), opacity: 0.4 },
+  deleteSubtaskText: { fontSize: n(28) },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
   modalFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: n(14) },

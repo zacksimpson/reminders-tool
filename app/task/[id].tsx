@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   taskDone: {},
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
-  deleteSubtaskText: { fontSize: n(28), opacity: 0.4 },
+  deleteSubtaskText: { fontSize: n(28) },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
   deleteRow: { paddingHorizontal: n(22), paddingVertical: n(28), alignItems: "center" },
