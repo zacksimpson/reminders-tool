@@ -144,7 +144,9 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
-      {!isModal && (
+      {isModal ? (
+        <Header headerTitle="Add Task" hideBackButton />
+      ) : (
         <Header
           headerTitle="Add Task"
           onBack={onBack}
