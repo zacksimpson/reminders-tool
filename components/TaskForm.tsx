@@ -224,25 +224,27 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
             </HapticPressable>
           )}
           {/* Subtasks */}
-          <View style={[styles.field, styles.subtasksField]}>
+          <View style={styles.subtasksHeader}>
             <StyledText style={[styles.fieldLabel, { color: textColor }]}>Subtasks</StyledText>
-            {subtasks.map((sub) => (
-              <View key={sub.id} style={styles.subtaskRow}>
-                <TaskCheckbox
-                  checked={sub.completed}
-                  onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
-                  size={20}
-                  paddingTop={10}
-                />
-                <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
-                <HapticPressable
-                  onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
-                  style={styles.deleteSubtask}
-                >
-                  <StyledText style={styles.deleteSubtaskText}>×</StyledText>
-                </HapticPressable>
-              </View>
-            ))}
+          </View>
+          {subtasks.map((sub) => (
+            <View key={sub.id} style={styles.subtaskRow}>
+              <TaskCheckbox
+                checked={sub.completed}
+                onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
+                size={20}
+                paddingTop={13}
+              />
+              <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
+              <HapticPressable
+                onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
+                style={styles.deleteSubtask}
+              >
+                <StyledText style={styles.deleteSubtaskText}>×</StyledText>
+              </HapticPressable>
+            </View>
+          ))}
+          <View style={styles.subtaskInputRow}>
             <RNTextInput
               value={newSubtask}
               onChangeText={setNewSubtask}
@@ -334,7 +336,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
   field: { paddingHorizontal: n(22), paddingVertical: n(13) },
-  subtasksField: { paddingTop: n(28) },
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
@@ -343,11 +344,13 @@ const styles = StyleSheet.create({
   scrollWrapper: { flex: 1, position: "relative" },
   scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
   scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
-  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(8) },
-  subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(7) },
+  subtasksHeader: { paddingHorizontal: n(22), paddingTop: n(28), paddingBottom: n(12) },
+  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
+  subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
-  deleteSubtaskText: { fontSize: n(24) },
-  subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
+  deleteSubtaskText: { fontSize: n(28), opacity: 0.4 },
+  subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
+  subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
   modalFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: n(14) },
   modalFooterSide: { flex: 1, alignItems: "flex-end", paddingRight: n(24) },
   modalFooterBtn: { padding: n(8) },
