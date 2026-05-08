@@ -15,6 +15,7 @@ interface RightAction {
 interface HeaderProps {
   headerTitle?: string;
   hideBackButton?: boolean;
+  onBack?: () => void;
   rightAction?: RightAction;
   reorderingDone?: () => void; // when set, replaces rightAction with a DONE text button
 }
@@ -22,6 +23,7 @@ interface HeaderProps {
 export function Header({
   headerTitle,
   hideBackButton = false,
+  onBack,
   rightAction,
   reorderingDone,
 }: HeaderProps) {
@@ -29,6 +31,7 @@ export function Header({
   const iconColor = invertColors ? "black" : "white";
 
   const handleBack = () => {
+    if (onBack) { onBack(); return; }
     if (router.canGoBack()) router.back();
   };
 
