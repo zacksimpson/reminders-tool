@@ -310,7 +310,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
           <HapticPressable onPress={onBack} style={styles.modalFooterBtn}>
             <StyledText style={styles.modalDismissX}>✕</StyledText>
           </HapticPressable>
-          <HapticPressable onPress={handleSave} style={styles.modalFooterBtn}>
+          <HapticPressable onPress={handleSave} style={styles.modalSaveBtn}>
             <StyledText style={styles.modalSave}>SAVE</StyledText>
           </HapticPressable>
         </View>
@@ -342,8 +342,9 @@ const styles = StyleSheet.create({
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(24) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingVertical: n(10) },
-  modalFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: n(32), paddingBottom: n(32), paddingTop: n(16) },
+  modalFooter: { alignItems: "center", paddingBottom: n(32), paddingTop: n(16), position: "relative" },
   modalFooterBtn: { padding: n(8) },
+  modalSaveBtn: { position: "absolute", right: n(24), top: n(16), padding: n(8) },
   modalDismissX: { fontSize: n(28) },
   modalSave: { fontSize: n(24), letterSpacing: n(5), fontFamily: "PublicSans-Regular" },
 });
