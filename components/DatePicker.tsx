@@ -32,6 +32,11 @@ export function DatePicker({
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
 
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }, []);
+
   const { rows } = useMemo(() => {
     const firstDay = new Date(viewYear, viewMonth, 1).getDay();
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -98,7 +103,7 @@ const isSelected = dateStr === value;
                     <StyledText style={[styles.dayText, isSelected && styles.daySelected]}>
                       {day}
                     </StyledText>
-                    {isSelected && (
+                    {(isSelected || (!value && dateStr === todayStr)) && (
                       <View style={[styles.todayUnderline, { backgroundColor: textColor }]} />
                     )}
                   </HapticPressable>
