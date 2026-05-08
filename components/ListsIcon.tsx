@@ -7,9 +7,9 @@ interface ListsIconProps {
 }
 
 export function ListsIcon({ color, size = 48 }: ListsIconProps) {
-  // Original viewBox is 90x46 — scale to fit within size while maintaining aspect ratio
-  const width = n(size);
-  const height = n(size * 46 / 90);
+  // Scale by height so it matches other icons vertically
+  const height = n(size);
+  const width = n(size * 90 / 46);
   return (
     <Svg width={width} height={height} viewBox="0 0 90 46" fill="none">
       <Circle cx="4" cy="4" r="4" fill={color} />
