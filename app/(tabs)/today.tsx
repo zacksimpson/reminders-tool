@@ -89,6 +89,15 @@ export default function TodayScreen() {
     }, [])
   );
 
+  // Re-render every minute while focused so overdue status updates in real time
+  const [, setTick] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      const id = setInterval(() => setTick(t => t + 1), 60_000);
+      return () => clearInterval(id);
+    }, [])
+  );
+
   const todayStr = getTodayStr();
   const showOverdue = settings.showOverdue ?? true;
 
@@ -105,9 +114,9 @@ export default function TodayScreen() {
       })
     : [];
 
-  // Today's active tasks
+  // Today's active tasks (exclude overdue so they don't appear in both lists)
   const activeTasks = tasks
-    .filter(t => t.date === todayStr && !t.completed)
+    .filter(t => t.date === todayStr && !t.completed && !isOverdue(t))
     .sort((a, b) => {
       if (!a.time && !b.time) return a.order - b.order;
       if (!a.time) return -1;
