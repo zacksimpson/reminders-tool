@@ -253,7 +253,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
           </View>
           {subtasks.map((sub) => (
             <View key={sub.id} style={styles.subtaskRow}>
-              <View style={styles.subtaskSideIcon}>
+              <View style={styles.subtaskCheckboxIcon}>
                 <TaskCheckbox
                   checked={sub.completed}
                   onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
@@ -263,7 +263,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
                 />
               </View>
               <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
-              <View style={styles.subtaskSideIcon}>
+              <View style={styles.subtaskDeleteIcon}>
                 <HapticPressable
                   onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
                   style={styles.deleteSubtask}
@@ -382,7 +382,8 @@ const styles = StyleSheet.create({
   scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
   subtasksHeader: { paddingHorizontal: n(22), paddingTop: n(28), paddingBottom: n(12) },
   subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
-  subtaskSideIcon: { alignSelf: "flex-start", paddingTop: n(14) },
+  subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(14) },
+  subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingBottom: n(8) },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
