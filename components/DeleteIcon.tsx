@@ -6,7 +6,7 @@ interface DeleteIconProps {
   size?: number;
 }
 
-export function DeleteIcon({ size = n(22) }: DeleteIconProps) {
+export function DeleteIcon({ size = n(15) }: DeleteIconProps) {
   const { invertColors } = useInvertColors();
   const color = invertColors ? "black" : "white";
 
