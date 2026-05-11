@@ -1,7 +1,11 @@
 import * as ExpoNotifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
 import { router, Stack } from "expo-router";
 import { useCallback, useEffect } from "react";
 import { StatusBar } from "react-native";
+
+// Take control of the splash screen so Expo doesn't show its default grid
+SplashScreen.preventAutoHideAsync();
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   InvertColorsProvider,
@@ -48,7 +52,12 @@ function RootLayout() {
 }
 
 function AppWithReminders() {
-  const { toggleTask } = useReminders();
+  const { toggleTask, loaded } = useReminders();
+
+  // Hide splash screen once app data has loaded
+  useEffect(() => {
+    if (loaded) SplashScreen.hideAsync();
+  }, [loaded]);
 
   const handleCompleteTask = useCallback((taskId: string) => {
     toggleTask(taskId);
