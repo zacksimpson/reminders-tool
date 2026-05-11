@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { DatePicker } from "@/components/DatePicker";
+import { RecurrencePicker } from "@/components/RecurrencePicker";
 import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
 import { ListPickerModal } from "@/components/ListPickerModal";
@@ -21,7 +22,7 @@ import { router } from "expo-router";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { triggerHaptic } from "@/utils/haptics";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
-import { useReminders } from "@/contexts/RemindersContext";
+import { useReminders, type Recurrence, formatRecurrence } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -94,6 +95,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
   const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; completed: boolean }>>([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
+  const [recurrence, setRecurrence] = useState<Recurrence | undefined>(undefined);
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
 
   const selectedList = lists.find(l => l.id === selectedListId) ?? lists[0];
   const canSave = title.trim().length > 0;
@@ -107,6 +110,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
     setAmPm("AM");
     setSubtasks([]);
     setNewSubtask("");
+    setRecurrence(undefined);
   }, [resolvedListId, defaultDate]);
 
   const handleSave = useCallback(() => {
@@ -117,6 +121,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
       listId: selectedListId,
       date,
       time: confirmedTime,
+      recurrence,
       subtasks: subtasks.map(s => ({
         id: s.id,
         title: s.title,
@@ -198,7 +203,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
             {date ? (
               <View style={styles.fieldValueRow}>
                 <StyledText style={styles.fieldValue}>{formatDisplayDate(date)}</StyledText>
-                <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); }}>
+                <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); setRecurrence(undefined); }}>
                   <StyledText style={styles.clearBtn}>CLEAR</StyledText>
                 </HapticPressable>
               </View>
@@ -223,6 +228,23 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
               )}
             </HapticPressable>
           )}
+          {/* Recurring — only if date is set */}
+          {date && (
+            <HapticPressable onPress={() => setShowRecurrencePicker(true)} style={styles.field}>
+              <StyledText style={[styles.fieldLabel, { color: textColor }]}>Recurring</StyledText>
+              {recurrence ? (
+                <View style={styles.fieldValueRow}>
+                  <StyledText style={styles.fieldValue}>{formatRecurrence(recurrence)}</StyledText>
+                  <HapticPressable onPress={() => setRecurrence(undefined)}>
+                    <StyledText style={styles.clearBtn}>CLEAR</StyledText>
+                  </HapticPressable>
+                </View>
+              ) : (
+                <StyledText style={styles.fieldValue}>None</StyledText>
+              )}
+            </HapticPressable>
+          )}
+
           {/* Subtasks */}
           <View style={styles.subtasksHeader}>
             <StyledText style={[styles.fieldLabel, { color: textColor }]}>Subtasks</StyledText>
@@ -299,6 +321,13 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
         onAmPm={setAmPm}
         onConfirm={handleTimeConfirm}
         onDismiss={() => { setShowTimePicker(false); if (!confirmedTime) { setTimeDigits(""); setAmPm("AM"); } }}
+      />
+
+      <RecurrencePicker
+        visible={showRecurrencePicker}
+        value={recurrence}
+        onSave={(r) => { setRecurrence(r); setShowRecurrencePicker(false); }}
+        onDismiss={() => setShowRecurrencePicker(false)}
       />
 
       <ListPickerModal

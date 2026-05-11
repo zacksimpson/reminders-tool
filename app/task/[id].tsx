@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DatePicker } from "@/components/DatePicker";
+import { RecurrencePicker } from "@/components/RecurrencePicker";
 import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
 import { ListPickerModal } from "@/components/ListPickerModal";
@@ -21,7 +22,7 @@ import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { TimePicker } from "@/components/TimePicker";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { triggerHaptic } from "@/utils/haptics";
-import { useReminders } from "@/contexts/RemindersContext";
+import { useReminders, type Recurrence, formatRecurrence } from "@/contexts/RemindersContext";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
 
@@ -90,6 +91,8 @@ export default function TaskScreen() {
   const [timeDigits, setTimeDigits] = useState(initTimeParts.digits);
   const [ampm, setAmPm] = useState<"AM" | "PM">(initTimeParts.ampm);
   const [newSubtask, setNewSubtask] = useState("");
+  const [recurrence, setRecurrence] = useState<Recurrence | undefined>(task?.recurrence);
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
   const subtaskInputRef = useRef<RNTextInput>(null);
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
@@ -105,16 +108,19 @@ export default function TaskScreen() {
 
   const handleSave = useCallback(() => {
     if (!task || !title.trim()) return;
-    updateTask(task.id, { title: title.trim(), listId, date, time: confirmedTime });
+    updateTask(task.id, { title: title.trim(), listId, date, time: confirmedTime, recurrence });
     router.back();
   }, [task, title, listId, date, confirmedTime, updateTask]);
 
   const handleDelete = useCallback(() => {
     if (!task) return;
+    const message = task.recurrence
+      ? `This is a recurring task. Delete all occurrences?`
+      : `Are you sure you want to delete "${task.title}"?`;
     router.push({
       pathname: "/confirm",
       params: {
-        message: `Are you sure you want to delete "${task.title}"?`,
+        message,
         confirmText: "Delete",
         action: `delete-task:${task.id}`,
         returnPath: `/task/${id}` as any,
@@ -190,7 +196,7 @@ export default function TaskScreen() {
                   {date ? (
                     <View style={styles.fieldValueRow}>
                       <StyledText style={styles.fieldValue}>{formatDisplayDate(date)}</StyledText>
-                      <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); }}>
+                      <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); setRecurrence(undefined); }}>
                         <StyledText style={styles.clearBtn}>CLEAR</StyledText>
                       </HapticPressable>
                     </View>
@@ -211,6 +217,23 @@ export default function TaskScreen() {
                       </View>
                     ) : (
                       <StyledText style={styles.fieldValue}>None</StyledText>
+                    )}
+                  </HapticPressable>
+                )}
+
+                {/* Recurring — only if date is set */}
+                {date && (
+                  <HapticPressable onPress={() => setShowRecurrencePicker(true)} style={styles.field}>
+                    <StyledText style={[styles.fieldLabel, { color: dimColor }]}>Recurring</StyledText>
+                    {recurrence ? (
+                      <View style={styles.fieldValueRow}>
+                        <StyledText style={[styles.fieldValue, { color: textColor }]}>{formatRecurrence(recurrence)}</StyledText>
+                        <HapticPressable onPress={() => setRecurrence(undefined)}>
+                          <StyledText style={styles.clearBtn}>CLEAR</StyledText>
+                        </HapticPressable>
+                      </View>
+                    ) : (
+                      <StyledText style={[styles.fieldValue, { color: textColor }]}>None</StyledText>
                     )}
                   </HapticPressable>
                 )}
@@ -269,6 +292,12 @@ export default function TaskScreen() {
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
 
+        <RecurrencePicker
+          visible={showRecurrencePicker}
+          value={recurrence}
+          onSave={(r) => { setRecurrence(r); setShowRecurrencePicker(false); }}
+          onDismiss={() => setShowRecurrencePicker(false)}
+        />
         <DatePicker visible={showDatePicker} value={date} onSelect={(d) => { setDate(d); setShowDatePicker(false); }} onDismiss={() => setShowDatePicker(false)} viewYear={viewYear} viewMonth={viewMonth} onPrevMonth={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); }} onNextMonth={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); }} />
         <TimePicker visible={showTimePicker} digits={timeDigits} ampm={ampm} onDigit={(d) => setTimeDigits(prev => prev.length < 4 ? prev + d : prev)} onBackspace={() => setTimeDigits(prev => prev.slice(0, -1))} onAmPm={setAmPm} onConfirm={handleTimeConfirm} onDismiss={() => { setShowTimePicker(false); if (!confirmedTime) { setTimeDigits(""); setAmPm("AM"); } }} />
         <ListPickerModal visible={showListPicker} lists={lists} selectedId={listId} onSelect={(list) => { setListId(list.id); setShowListPicker(false); }} onDismiss={() => setShowListPicker(false)} />
