@@ -1,7 +1,7 @@
 {
   "name": "reminders-tool",
   "main": "expo-router/entry",
-  "version": "1.2.0-beta.6",
+  "version": "1.2.0-beta.7",
   "scripts": {
     "dev": "expo run:android",
     "sync-version": "bun scripts/sync-version.js",
