@@ -248,7 +248,7 @@ export default function TaskScreen() {
 
                 {task.subtasks.map(sub => (
                   <View key={sub.id} style={styles.subtaskRow}>
-                    <View style={styles.subtaskSideIcon}>
+                    <View style={styles.subtaskCheckboxIcon}>
                       <TaskCheckbox checked={sub.completed} onToggle={() => toggleSubtask(task.id, sub.id)} size={20} paddingTop={0} paddingBottom={0} />
                     </View>
                     {editingSubtaskId === sub.id ? (
@@ -272,7 +272,7 @@ export default function TaskScreen() {
                         <StyledText style={[styles.subtaskTitle, sub.completed && styles.taskDone]}>{sub.title}</StyledText>
                       </HapticPressable>
                     )}
-                    <View style={styles.subtaskSideIcon}>
+                    <View style={styles.subtaskDeleteIcon}>
                       <HapticPressable onPress={() => deleteSubtask(task.id, sub.id)} style={styles.deleteSubtask}>
                         <DeleteIcon />
                       </HapticPressable>
@@ -329,7 +329,8 @@ const styles = StyleSheet.create({
   sectionHeader: { paddingHorizontal: n(22), paddingVertical: n(12) },
   sectionLabel: { fontSize: n(14) },
   subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
-  subtaskSideIcon: { alignSelf: "flex-start", paddingTop: n(14) },
+  subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(14) },
+  subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   taskDone: {},
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingBottom: n(8) },
