@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { ClearIcon } from "@/components/ClearIcon";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { DatePicker } from "@/components/DatePicker";
 import { RecurrencePicker } from "@/components/RecurrencePicker";
@@ -203,8 +204,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
             {date ? (
               <View style={styles.fieldValueRow}>
                 <StyledText style={styles.fieldValue}>{formatDisplayDate(date)}</StyledText>
-                <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); setRecurrence(undefined); }}>
-                  <StyledText style={styles.clearBtn}>CLEAR</StyledText>
+                <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); setRecurrence(undefined); }} style={styles.clearBtn}>
+                  <ClearIcon />
                 </HapticPressable>
               </View>
             ) : (
@@ -219,8 +220,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
               {confirmedTime ? (
                 <View style={styles.fieldValueRow}>
                   <StyledText style={styles.fieldValue}>{formatDisplayTime(timeDigits, ampm)}</StyledText>
-                  <HapticPressable onPress={() => { setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); }}>
-                    <StyledText style={styles.clearBtn}>CLEAR</StyledText>
+                  <HapticPressable onPress={() => { setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); }} style={styles.clearBtn}>
+                    <ClearIcon />
                   </HapticPressable>
                 </View>
               ) : (
@@ -235,8 +236,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
               {recurrence ? (
                 <View style={styles.fieldValueRow}>
                   <StyledText style={styles.fieldValue}>{formatRecurrence(recurrence)}</StyledText>
-                  <HapticPressable onPress={() => setRecurrence(undefined)}>
-                    <StyledText style={styles.clearBtn}>CLEAR</StyledText>
+                  <HapticPressable onPress={() => setRecurrence(undefined)} style={styles.clearBtn}>
+                    <ClearIcon />
                   </HapticPressable>
                 </View>
               ) : (
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  clearBtn: { fontSize: n(14), opacity: 0.4, paddingRight: n(18) },
+  clearBtn: { paddingRight: n(18) },
   titleInput: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingVertical: n(4) },
   scrollWrapper: { flex: 1, position: "relative" },
   scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
