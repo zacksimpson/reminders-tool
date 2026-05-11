@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ClearIcon } from "@/components/ClearIcon";
+import { DeleteIcon } from "@/components/DeleteIcon";
 import { DatePicker } from "@/components/DatePicker";
 import { RecurrencePicker } from "@/components/RecurrencePicker";
 import { Header } from "@/components/Header";
@@ -273,7 +274,7 @@ export default function TaskScreen() {
                     )}
                     <View style={styles.subtaskSideIcon}>
                       <HapticPressable onPress={() => deleteSubtask(task.id, sub.id)} style={styles.deleteSubtask}>
-                        <StyledText style={styles.deleteSubtaskText}>×</StyledText>
+                        <DeleteIcon />
                       </HapticPressable>
                     </View>
                   </View>
@@ -332,7 +333,6 @@ const styles = StyleSheet.create({
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   taskDone: {},
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingBottom: n(8) },
-  deleteSubtaskText: { fontSize: n(28) },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
   deleteRow: { paddingHorizontal: n(22), paddingVertical: n(28), alignItems: "center" },
