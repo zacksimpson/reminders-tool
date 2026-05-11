@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { AppState, Animated, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AddTaskModal } from "@/components/AddTaskModal";
 import { Header } from "@/components/Header";
@@ -101,6 +101,15 @@ export default function TodayScreen() {
       return () => clearInterval(id);
     }, [])
   );
+
+  // Re-render when app comes to foreground (handles overnight date change)
+  const [, setRefreshTick] = useState(0);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", state => {
+      if (state === "active") setRefreshTick(t => t + 1);
+    });
+    return () => sub.remove();
+  }, []);
 
   const todayStr = getTodayStr();
   const showOverdue = settings.showOverdue ?? true;
