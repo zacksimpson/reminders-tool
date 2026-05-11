@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     paddingVertical: n(8),
   },
   dayHeader: {
-    fontSize: n(16),
+    fontSize: n(20),
     textAlign: "center",
     fontFamily: "PublicSans-Regular",
     color: "white",
