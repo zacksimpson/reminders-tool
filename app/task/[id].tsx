@@ -113,7 +113,7 @@ export default function TaskScreen() {
     if (!task || !title.trim()) return;
     updateTask(task.id, { title: title.trim(), listId, date, time: confirmedTime, recurrence });
     router.back();
-  }, [task, title, listId, date, confirmedTime, updateTask]);
+  }, [task, title, listId, date, confirmedTime, recurrence, updateTask]);
 
   const handleDelete = useCallback(() => {
     if (!task) return;

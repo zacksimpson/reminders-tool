@@ -140,7 +140,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
       router.navigate("/(tabs)/");
       router.push({ pathname: "/list/[id]", params: { id: listId } });
     }
-  }, [canSave, title, selectedListId, date, confirmedTime, subtasks, settings, addTask, resetForm, onSaved]);
+  }, [canSave, title, selectedListId, date, confirmedTime, recurrence, subtasks, settings, addTask, resetForm, onSaved]);
 
   const handleTimeConfirm = useCallback(() => {
     if (timeDigits.length !== 3 && timeDigits.length !== 4) return;
