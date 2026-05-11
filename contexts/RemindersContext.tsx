@@ -10,6 +10,16 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface Recurrence {
+  interval: number; // 1–30
+  unit: "day" | "week" | "month" | "year";
+}
+
+export function formatRecurrence(r: Recurrence): string {
+  const unit = r.interval === 1 ? r.unit : `${r.unit}s`;
+  return `Every ${r.interval} ${unit}`;
+}
+
 export interface Subtask {
   id: string;
   title: string;
@@ -28,6 +38,7 @@ export interface Task {
   createdAt: number;
   order: number;
   subtasks: Subtask[];
+  recurrence?: Recurrence;
 }
 
 export interface ReminderList {
@@ -123,6 +134,30 @@ export const useReminders = () => {
 };
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
+
+function getNextOccurrenceDate(dateStr: string, recurrence: Recurrence): string {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  let date = new Date(y, mo - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  do {
+    switch (recurrence.unit) {
+      case "day":
+        date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + recurrence.interval);
+        break;
+      case "week":
+        date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + recurrence.interval * 7);
+        break;
+      case "month":
+        date = new Date(date.getFullYear(), date.getMonth() + recurrence.interval, date.getDate());
+        break;
+      case "year":
+        date = new Date(date.getFullYear() + recurrence.interval, date.getMonth(), date.getDate());
+        break;
+    }
+  } while (date < today);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -285,11 +320,35 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       }
       return { ...t, completed: true, completedAt: Date.now() };
     });
-    persistTasks(updatedTasks);
-    // Cancel notification if completing, reschedule if uncompleting
+
     const updated = updatedTasks.find(t => t.id === id);
+
+    // If completing a recurring task, advance the series
+    let finalTasks = updatedTasks;
+    let nextTask: Task | null = null;
+    if (updated?.completed && updated.recurrence && updated.date) {
+      const nextDate = getNextOccurrenceDate(updated.date, updated.recurrence);
+      nextTask = {
+        id: generateId(),
+        title: updated.title,
+        listId: updated.listId,
+        date: nextDate,
+        time: updated.time,
+        recurrence: updated.recurrence,
+        completed: false,
+        createdAt: Date.now(),
+        order: updated.order,
+        subtasks: updated.subtasks.map(s => ({ ...s, completed: false })),
+      };
+      finalTasks = [...updatedTasks, nextTask];
+    }
+
+    persistTasks(finalTasks);
+
+    // Cancel notification if completing, reschedule if uncompleting
     if (updated?.completed) {
       notificationScheduler?.cancelForTask(id);
+      if (nextTask) notificationScheduler?.scheduleForTask(nextTask, lists);
     } else if (updated) {
       notificationScheduler?.scheduleForTask(updated, lists);
     }

@@ -9,7 +9,7 @@ import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import { useReminders, type Task } from "@/contexts/RemindersContext";
+import { useReminders, type Task, formatRecurrence } from "@/contexts/RemindersContext";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -50,6 +50,7 @@ function TaskRow({ task, listTitle, isReordering, isFirst, isLast, onToggle, onP
   const subtaskCount = task.subtasks?.length ?? 0;
   const subtaskLabel = subtaskCount > 0 ? `${subtaskCount} ${subtaskCount === 1 ? "Subtask" : "Subtasks"}` : null;
   const meta = [listTitle, task.date ? formatDate(task.date) : null, task.time ? formatTime(task.time) : null, subtaskLabel].filter(Boolean).join(" · ");
+  const recurrenceLabel = task.recurrence ? formatRecurrence(task.recurrence) : null;
 
   return (
     <View style={[styles.taskRow, dimmed && styles.taskRowDimmed]}>
@@ -62,6 +63,7 @@ function TaskRow({ task, listTitle, isReordering, isFirst, isLast, onToggle, onP
       >
         <StyledText style={styles.taskTitle}>{task.title}</StyledText>
         {meta ? <StyledText style={styles.taskMeta}>{meta}</StyledText> : null}
+        {recurrenceLabel ? <StyledText style={styles.taskMeta}>{recurrenceLabel}</StyledText> : null}
       </HapticPressable>
       {isReordering && (
         <View style={styles.arrowGroup}>
