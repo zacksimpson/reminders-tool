@@ -32,18 +32,20 @@ export function ListPickerModal({ visible, lists, selectedId, onSelect, onDismis
           </HapticPressable>
         </View>
         <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
-          {sorted.map((list) => (
-            <HapticPressable
-              key={list.id}
-              onPress={() => onSelect(list)}
-              style={styles.item}
-            >
-              <StyledText style={styles.itemText}>{list.title}</StyledText>
-              {list.id === selectedId && (
-                <MaterialIcons name="check" size={n(28)} color={textColor} />
-              )}
-            </HapticPressable>
-          ))}
+          {sorted.map((list) => {
+            const isSelected = list.id === selectedId;
+            return (
+              <HapticPressable
+                key={list.id}
+                onPress={() => onSelect(list)}
+                style={styles.item}
+              >
+                <StyledText style={[styles.itemText, isSelected && styles.itemSelected]}>
+                  {list.title}
+                </StyledText>
+              </HapticPressable>
+            );
+          })}
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -63,11 +65,9 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: n(20) },
   headerClose: { width: n(32), alignItems: "flex-end" },
   item: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: n(22),
-    paddingVertical: n(20),
+    paddingVertical: n(12),
   },
   itemText: { fontSize: n(30) },
+  itemSelected: { textDecorationLine: "underline" },
 });
