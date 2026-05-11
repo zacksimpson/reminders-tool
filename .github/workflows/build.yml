@@ -39,8 +39,16 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Set build profile
+        run: |
+          if [[ "${{ github.ref_name }}" == *"beta"* ]]; then
+            echo "EAS_PROFILE=preview" >> $GITHUB_ENV
+          else
+            echo "EAS_PROFILE=production" >> $GITHUB_ENV
+          fi
+
       - name: Build on EAS cloud
-        run: eas build --platform android --profile preview --wait --non-interactive
+        run: eas build --platform android --profile ${{ env.EAS_PROFILE }} --wait --non-interactive
 
       - name: Download APK from EAS
         run: |
@@ -69,6 +77,7 @@ jobs:
         with:
           files: ${{ github.workspace }}/${{ env.APP_NAME }}_${{ env.VERSION }}.apk
           tag_name: v${{ env.VERSION }}
+          prerelease: ${{ contains(github.ref_name, 'beta') }}
           body: |
             ## What's Changed
             ${{ env.CHANGELOG }}
