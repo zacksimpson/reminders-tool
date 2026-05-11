@@ -224,7 +224,7 @@ export default function TaskScreen() {
                 {/* Recurring — only if date is set */}
                 {date && (
                   <HapticPressable onPress={() => setShowRecurrencePicker(true)} style={styles.field}>
-                    <StyledText style={[styles.fieldLabel, { color: dimColor }]}>Recurring</StyledText>
+                    <StyledText style={styles.fieldLabel}>Recurring</StyledText>
                     {recurrence ? (
                       <View style={styles.fieldValueRow}>
                         <StyledText style={[styles.fieldValue, { color: textColor }]}>{formatRecurrence(recurrence)}</StyledText>
