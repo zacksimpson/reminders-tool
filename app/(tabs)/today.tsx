@@ -55,7 +55,9 @@ interface TaskRowProps {
 }
 
 function TaskRow({ task, listTitle, overdue, onToggle, onPress, dimmed }: TaskRowProps) {
-  const meta = [listTitle, task.date ? formatDate(task.date) : null, task.time ? formatTime(task.time) : null].filter(Boolean).join(" · ");
+  const subtaskCount = task.subtasks?.length ?? 0;
+  const subtaskLabel = subtaskCount > 0 ? `${subtaskCount} ${subtaskCount === 1 ? "Subtask" : "Subtasks"}` : null;
+  const meta = [listTitle, task.date ? formatDate(task.date) : null, task.time ? formatTime(task.time) : null, subtaskLabel].filter(Boolean).join(" · ");
 
   return (
     <View style={[styles.taskRow, dimmed && styles.taskRowDimmed]}>
