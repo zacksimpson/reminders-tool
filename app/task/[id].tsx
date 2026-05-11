@@ -247,7 +247,9 @@ export default function TaskScreen() {
 
                 {task.subtasks.map(sub => (
                   <View key={sub.id} style={styles.subtaskRow}>
-                    <TaskCheckbox checked={sub.completed} onToggle={() => toggleSubtask(task.id, sub.id)} size={20} paddingTop={0} paddingBottom={0} />
+                    <View style={styles.subtaskSideIcon}>
+                      <TaskCheckbox checked={sub.completed} onToggle={() => toggleSubtask(task.id, sub.id)} size={20} paddingTop={0} paddingBottom={0} />
+                    </View>
                     {editingSubtaskId === sub.id ? (
                       <RNTextInput
                         autoFocus
@@ -269,9 +271,11 @@ export default function TaskScreen() {
                         <StyledText style={[styles.subtaskTitle, sub.completed && styles.taskDone]}>{sub.title}</StyledText>
                       </HapticPressable>
                     )}
-                    <HapticPressable onPress={() => deleteSubtask(task.id, sub.id)} style={styles.deleteSubtask}>
-                      <StyledText style={styles.deleteSubtaskText}>×</StyledText>
-                    </HapticPressable>
+                    <View style={styles.subtaskSideIcon}>
+                      <HapticPressable onPress={() => deleteSubtask(task.id, sub.id)} style={styles.deleteSubtask}>
+                        <StyledText style={styles.deleteSubtaskText}>×</StyledText>
+                      </HapticPressable>
+                    </View>
                   </View>
                 ))}
 
@@ -323,10 +327,11 @@ const styles = StyleSheet.create({
   titleInput: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingVertical: n(4) },
   sectionHeader: { paddingHorizontal: n(22), paddingVertical: n(12) },
   sectionLabel: { fontSize: n(14) },
-  subtaskRow: { flexDirection: "row", alignItems: "center", paddingRight: n(22) },
+  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
+  subtaskSideIcon: { alignSelf: "flex-start", paddingTop: n(14) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   taskDone: {},
-  deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
+  deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingBottom: n(8) },
   deleteSubtaskText: { fontSize: n(28) },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
