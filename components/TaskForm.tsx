@@ -252,20 +252,24 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
           </View>
           {subtasks.map((sub) => (
             <View key={sub.id} style={styles.subtaskRow}>
-              <TaskCheckbox
-                checked={sub.completed}
-                onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
-                size={20}
-                paddingTop={0}
-                paddingBottom={0}
-              />
+              <View style={styles.subtaskSideIcon}>
+                <TaskCheckbox
+                  checked={sub.completed}
+                  onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
+                  size={20}
+                  paddingTop={0}
+                  paddingBottom={0}
+                />
+              </View>
               <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
-              <HapticPressable
-                onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
-                style={styles.deleteSubtask}
-              >
-                <StyledText style={styles.deleteSubtaskText}>×</StyledText>
-              </HapticPressable>
+              <View style={styles.subtaskSideIcon}>
+                <HapticPressable
+                  onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
+                  style={styles.deleteSubtask}
+                >
+                  <StyledText style={styles.deleteSubtaskText}>×</StyledText>
+                </HapticPressable>
+              </View>
             </View>
           ))}
           <View style={styles.subtaskInputRow}>
@@ -376,9 +380,10 @@ const styles = StyleSheet.create({
   scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
   scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
   subtasksHeader: { paddingHorizontal: n(22), paddingTop: n(28), paddingBottom: n(12) },
-  subtaskRow: { flexDirection: "row", alignItems: "center", paddingRight: n(22) },
+  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
+  subtaskSideIcon: { alignSelf: "flex-start", paddingTop: n(14) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
-  deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
+  deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingBottom: n(8) },
   deleteSubtaskText: { fontSize: n(28) },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
