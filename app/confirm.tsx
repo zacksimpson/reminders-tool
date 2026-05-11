@@ -80,10 +80,10 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     alignItems: "center",
-    paddingBottom: n(40),
+    paddingBottom: n(28),
   },
   confirmText: {
-    fontSize: n(28),
-    letterSpacing: n(6),
+    fontSize: n(24),
+    letterSpacing: n(5),
   },
 });
