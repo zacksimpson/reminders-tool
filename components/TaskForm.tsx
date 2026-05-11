@@ -256,7 +256,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
                 checked={sub.completed}
                 onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
                 size={20}
-                paddingTop={16}
+                paddingTop={0}
+                paddingBottom={0}
               />
               <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
               <HapticPressable
@@ -375,7 +376,7 @@ const styles = StyleSheet.create({
   scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
   scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
   subtasksHeader: { paddingHorizontal: n(22), paddingTop: n(28), paddingBottom: n(12) },
-  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
+  subtaskRow: { flexDirection: "row", alignItems: "center", paddingRight: n(22) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingVertical: n(8) },
   deleteSubtaskText: { fontSize: n(28) },
