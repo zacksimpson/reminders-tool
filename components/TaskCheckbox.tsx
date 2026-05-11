@@ -8,15 +8,16 @@ interface TaskCheckboxProps {
   onToggle: () => void;
   size?: number;
   paddingTop?: number;
+  paddingBottom?: number;
 }
 
-export function TaskCheckbox({ checked, onToggle, size = 22, paddingTop = 17 }: TaskCheckboxProps) {
+export function TaskCheckbox({ checked, onToggle, size = 22, paddingTop = 17, paddingBottom = 8 }: TaskCheckboxProps) {
   const { invertColors } = useInvertColors();
   const color = invertColors ? "black" : "white";
   const dim = n(size);
 
   return (
-    <HapticPressable onPress={onToggle} style={[styles.hitArea, { paddingTop: n(paddingTop) }]}>
+    <HapticPressable onPress={onToggle} style={[styles.hitArea, { paddingTop: n(paddingTop), paddingBottom: n(paddingBottom) }]}>
       <View
         style={[
           styles.circle,
@@ -36,8 +37,6 @@ export function TaskCheckbox({ checked, onToggle, size = 22, paddingTop = 17 }: 
 const styles = StyleSheet.create({
   hitArea: {
     paddingHorizontal: n(14),
-    paddingBottom: n(8),
-    alignSelf: "flex-start",
   },
   circle: {
     borderWidth: n(1.5),
