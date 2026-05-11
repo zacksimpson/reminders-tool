@@ -59,8 +59,10 @@ function digitsToTime(digits: string, ampm: "AM" | "PM"): string {
 }
 
 function formatDisplayTime(digits: string, ampm: "AM" | "PM"): string {
-  const h = parseInt(digits.slice(0, 2), 10);
-  const m = digits.slice(2, 4);
+  const h = digits.length === 3
+    ? parseInt(digits[0], 10)
+    : parseInt(digits.slice(0, 2), 10);
+  const m = digits.length === 3 ? digits.slice(1) : digits.slice(2, 4);
   return `${h}:${m} ${ampm}`;
 }
 
