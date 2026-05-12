@@ -6,8 +6,7 @@ Organize tasks into lists, add due dates and times, check things off as you go, 
 
 Built with [vandamd's light-template](https://github.com/vandamd/light-template) — a community-made Expo template for building LightOS-style apps for the Light Phone III.
 
-![Reminders screenshots](assets/images/screenshots.png)
-
+![Reminders screenshots](assets/images/example.png)
 ---
 
 ## Features
