@@ -190,6 +190,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
               blurOnSubmit
               returnKeyType="done"
               onSubmitEditing={Keyboard.dismiss}
+              cursorColor={textColor}
+              selectionColor={textColor}
             />
           </View>
 
@@ -283,6 +285,8 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
               style={[styles.subtaskInput, { color: textColor }]}
               allowFontScaling={false}
               returnKeyType="done"
+              cursorColor={textColor}
+              selectionColor={textColor}
               onSubmitEditing={() => {
                 const t = newSubtask.trim();
                 if (!t) return;
