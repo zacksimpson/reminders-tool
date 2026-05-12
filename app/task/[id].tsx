@@ -187,7 +187,7 @@ export default function TaskScreen() {
               <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
 
                 <View style={styles.field}>
-                  <RNTextInput value={title} onChangeText={setTitle} placeholder="Task name" placeholderTextColor={dimColor} style={[styles.titleInput, { color: textColor }]} allowFontScaling={false} multiline blurOnSubmit returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
+                  <RNTextInput value={title} onChangeText={setTitle} placeholder="Task name" placeholderTextColor={dimColor} style={[styles.titleInput, { color: textColor }]} allowFontScaling={false} multiline blurOnSubmit returnKeyType="done" onSubmitEditing={Keyboard.dismiss} cursorColor={textColor} selectionColor={textColor} />
                 </View>
 
                 <HapticPressable onPress={() => setShowListPicker(true)} style={styles.field}>
@@ -263,6 +263,8 @@ export default function TaskScreen() {
                         multiline
                         blurOnSubmit
                         returnKeyType="done"
+                        cursorColor={textColor}
+                        selectionColor={textColor}
                       />
                     ) : (
                       <HapticPressable
@@ -282,7 +284,7 @@ export default function TaskScreen() {
 
                 <View style={styles.subtaskInputRow}>
                   <RNTextInput ref={subtaskInputRef} value={newSubtask} onChangeText={setNewSubtask} placeholder="Add subtask…"
-              onFocus={triggerHaptic} placeholderTextColor={dimColor} style={[styles.subtaskField, { color: textColor }]} allowFontScaling={false} returnKeyType="done" onSubmitEditing={handleAddSubtask} />
+              onFocus={triggerHaptic} placeholderTextColor={dimColor} style={[styles.subtaskField, { color: textColor }]} allowFontScaling={false} returnKeyType="done" onSubmitEditing={handleAddSubtask} cursorColor={textColor} selectionColor={textColor} />
                 </View>
 
                 <HapticPressable onPress={handleDelete} style={styles.deleteRow}>
