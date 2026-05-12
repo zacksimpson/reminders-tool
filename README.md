@@ -28,7 +28,7 @@ Built with [vandamd's light-template](https://github.com/vandamd/light-template)
 
 ## Installing on Light Phone III
 
-* Highly recommend using [Obtainium](https://github.com/ImranR98/Obtainium) to ensure you receive future updates and new features automatically. Just add [the repo URL](https://github.com/im360noscope/reminders-tool/), make sure you're able to install apps from unknown sources, and you're all set.
+* Highly recommend using [Obtainium](https://github.com/ImranR98/Obtainium) to ensure you receive future updates and new features automatically. Just add [the repo URL](https://github.com/zacksimpson/reminders-tool/), make sure you're able to install apps from unknown sources, and you're all set.
 * Alternatively, you can download the latest APK from the Releases tab.
 
 ---
