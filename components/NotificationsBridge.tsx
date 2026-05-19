@@ -7,13 +7,13 @@ import { setNotificationScheduler, useReminders } from "@/contexts/RemindersCont
  * auto-schedule/cancel notifications without circular dependencies.
  */
 export function NotificationsBridge() {
-  const { scheduleForTask, cancelForTask, rescheduleAll } = useNotifications();
+  const { scheduleForTask, cancelForTask, rescheduleAll, refreshBundles } = useNotifications();
   const { tasks, lists } = useReminders();
 
   useEffect(() => {
-    setNotificationScheduler({ scheduleForTask, cancelForTask, rescheduleAll });
+    setNotificationScheduler({ scheduleForTask, cancelForTask, rescheduleAll, refreshBundles });
     return () => setNotificationScheduler(null);
-  }, [scheduleForTask, cancelForTask, rescheduleAll]);
+  }, [scheduleForTask, cancelForTask, rescheduleAll, refreshBundles]);
 
   // Reschedule all when app loads
   useEffect(() => {

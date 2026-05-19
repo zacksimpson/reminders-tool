@@ -84,6 +84,7 @@ export type NotificationScheduler = {
   scheduleForTask: (task: Task, lists: ReminderList[]) => Promise<void>;
   cancelForTask: (taskId: string) => Promise<void>;
   rescheduleAll: (tasks: Task[], lists: ReminderList[]) => Promise<void>;
+  refreshBundles: (tasks: Task[]) => Promise<void>;
 } | null;
 
 let notificationScheduler: NotificationScheduler = null;
@@ -282,26 +283,29 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       subtasks: task.subtasks ?? [],
       completed: false,
     };
-    persistTasks([...tasks, newTask]);
-    // Schedule notification if needed
+    const updatedTasks = [...tasks, newTask];
+    persistTasks(updatedTasks);
     notificationScheduler?.scheduleForTask(newTask, lists);
+    notificationScheduler?.refreshBundles(updatedTasks);
     return newTask;
   }, [tasks, lists, settings.addPosition, persistTasks]);
 
   const updateTask = useCallback((id: string, updates: Partial<Omit<Task, "id" | "createdAt">>) => {
     const updatedTasks = tasks.map(t => t.id === id ? { ...t, ...updates } : t);
     persistTasks(updatedTasks);
-    // Reschedule notification for updated task
     const updated = updatedTasks.find(t => t.id === id);
     if (updated) {
       notificationScheduler?.cancelForTask(id);
       notificationScheduler?.scheduleForTask(updated, lists);
     }
+    notificationScheduler?.refreshBundles(updatedTasks);
   }, [tasks, lists, persistTasks]);
 
   const deleteTask = useCallback((id: string) => {
-    persistTasks(tasks.filter(t => t.id !== id));
+    const remaining = tasks.filter(t => t.id !== id);
+    persistTasks(remaining);
     notificationScheduler?.cancelForTask(id);
+    notificationScheduler?.refreshBundles(remaining);
   }, [tasks, persistTasks]);
 
   const clearCompletedTasks = useCallback((listId: string) => {
@@ -345,13 +349,13 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
 
     persistTasks(finalTasks);
 
-    // Cancel notification if completing, reschedule if uncompleting
     if (updated?.completed) {
       notificationScheduler?.cancelForTask(id);
       if (nextTask) notificationScheduler?.scheduleForTask(nextTask, lists);
     } else if (updated) {
       notificationScheduler?.scheduleForTask(updated, lists);
     }
+    notificationScheduler?.refreshBundles(finalTasks);
   }, [tasks, lists, persistTasks]);
 
   // ── Subtask operations ───────────────────────────────────────────────────
