@@ -84,7 +84,7 @@ export type NotificationScheduler = {
   scheduleForTask: (task: Task, lists: ReminderList[]) => Promise<void>;
   cancelForTask: (taskId: string) => Promise<void>;
   rescheduleAll: (tasks: Task[], lists: ReminderList[]) => Promise<void>;
-  refreshBundles: (tasks: Task[]) => Promise<void>;
+  refreshBundles: (tasks: Task[], affectedDate?: string) => Promise<void>;
 } | null;
 
 let notificationScheduler: NotificationScheduler = null;
@@ -286,7 +286,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     const updatedTasks = [...tasks, newTask];
     persistTasks(updatedTasks);
     notificationScheduler?.scheduleForTask(newTask, lists);
-    notificationScheduler?.refreshBundles(updatedTasks);
+    notificationScheduler?.refreshBundles(updatedTasks, newTask.date);
     return newTask;
   }, [tasks, lists, settings.addPosition, persistTasks]);
 
@@ -298,14 +298,16 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       notificationScheduler?.cancelForTask(id);
       notificationScheduler?.scheduleForTask(updated, lists);
     }
-    notificationScheduler?.refreshBundles(updatedTasks);
+    // Pass undefined — the date may have changed, so refresh both bundles conservatively
+    notificationScheduler?.refreshBundles(updatedTasks, undefined);
   }, [tasks, lists, persistTasks]);
 
   const deleteTask = useCallback((id: string) => {
+    const deletedDate = tasks.find(t => t.id === id)?.date;
     const remaining = tasks.filter(t => t.id !== id);
     persistTasks(remaining);
     notificationScheduler?.cancelForTask(id);
-    notificationScheduler?.refreshBundles(remaining);
+    notificationScheduler?.refreshBundles(remaining, deletedDate);
   }, [tasks, persistTasks]);
 
   const clearCompletedTasks = useCallback((listId: string) => {
@@ -313,6 +315,9 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     const removed = tasks.filter(t => t.listId === listId && t.completed);
     persistTasks(remaining);
     removed.forEach(t => notificationScheduler?.cancelForTask(t.id));
+    // Completed tasks are filtered out of bundles so content won't change,
+    // but call for consistency with all other mutations
+    notificationScheduler?.refreshBundles(remaining, undefined);
   }, [tasks, persistTasks]);
 
   const toggleTask = useCallback((id: string) => {
@@ -355,7 +360,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     } else if (updated) {
       notificationScheduler?.scheduleForTask(updated, lists);
     }
-    notificationScheduler?.refreshBundles(finalTasks);
+    notificationScheduler?.refreshBundles(finalTasks, updated?.date);
   }, [tasks, lists, persistTasks]);
 
   // ── Subtask operations ───────────────────────────────────────────────────
