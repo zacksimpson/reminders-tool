@@ -30,24 +30,28 @@ export default function ConfirmScreen() {
         confirmed: "true",
         action: params.action ?? "",
       },
+      // biome-ignore lint/suspicious/noExplicitAny: expo-router navigate with dynamic pathname requires any
     } as any);
   };
 
   const handleBack = () => {
-    if (router.canGoBack()) router.back();
+    if (router.canGoBack()) {
+      router.back();
+    }
   };
 
   return (
     <SwipeBackContainer enabled onSwipeBack={handleBack}>
-      <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+      <SafeAreaView
+        edges={["top"]}
+        style={[styles.container, { backgroundColor: bg }]}
+      >
         {/* Back arrow only — no title */}
         <Header />
 
         {/* Message centered in the screen */}
         <View style={styles.messageContainer}>
-          <StyledText style={styles.messageText}>
-            {params.message}
-          </StyledText>
+          <StyledText style={styles.messageText}>{params.message}</StyledText>
         </View>
 
         {/* Confirm button pinned to bottom */}
@@ -56,7 +60,6 @@ export default function ConfirmScreen() {
             {(params.confirmText || "Confirm").toUpperCase()}
           </StyledText>
         </HapticPressable>
-
       </SafeAreaView>
     </SwipeBackContainer>
   );

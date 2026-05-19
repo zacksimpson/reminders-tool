@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/Header";
-import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -16,13 +15,16 @@ export default function TodayViewScreen() {
 
   return (
     <SwipeBackContainer onSwipeBack={() => router.back()}>
-      <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+      <SafeAreaView
+        edges={["top"]}
+        style={[styles.container, { backgroundColor: bg }]}
+      >
         <Header headerTitle="Today View" />
         <View style={styles.row}>
           <ToggleSwitch
             label="Show Overdue"
-            value={settings.showOverdue ?? true}
             onValueChange={(v) => updateSettings({ showOverdue: v })}
+            value={settings.showOverdue ?? true}
           />
         </View>
       </SafeAreaView>

@@ -3,6 +3,16 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Animated } from "react-native";
 import { n } from "@/utils/scaling";
 
+export const scrollIndicatorBaseStyles = {
+  track: {
+    width: n(1),
+    height: "100%" as const,
+    position: "absolute" as const,
+    right: n(18),
+  },
+  thumb: { width: n(5), position: "absolute" as const, right: n(-2) },
+};
+
 interface UseScrollIndicatorReturn {
   contentHeight: number;
   handleScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;

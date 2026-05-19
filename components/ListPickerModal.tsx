@@ -8,27 +8,38 @@ import type { ReminderList } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
 
 interface ListPickerModalProps {
-  visible: boolean;
   lists: ReminderList[];
-  selectedId?: string;
-  onSelect: (list: ReminderList) => void;
   onDismiss: () => void;
+  onSelect: (list: ReminderList) => void;
+  selectedId?: string;
+  visible: boolean;
 }
 
-export function ListPickerModal({ visible, lists, selectedId, onSelect, onDismiss }: ListPickerModalProps) {
+export function ListPickerModal({
+  visible,
+  lists,
+  selectedId,
+  onSelect,
+  onDismiss,
+}: ListPickerModalProps) {
   const { invertColors } = useInvertColors();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const sorted = [...lists].sort((a, b) => a.order - b.order);
 
   return (
-    <Modal visible={visible} animationType="none" transparent={false} statusBarTranslucent>
+    <Modal
+      animationType="none"
+      statusBarTranslucent
+      transparent={false}
+      visible={visible}
+    >
       <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
         <View style={styles.header}>
           <View style={styles.headerSpacer} />
           <StyledText style={styles.headerTitle}>List</StyledText>
           <HapticPressable onPress={onDismiss} style={styles.headerClose}>
-            <MaterialIcons name="close" size={n(28)} color={textColor} />
+            <MaterialIcons color={textColor} name="close" size={n(28)} />
           </HapticPressable>
         </View>
         <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
@@ -40,7 +51,9 @@ export function ListPickerModal({ visible, lists, selectedId, onSelect, onDismis
                 onPress={() => onSelect(list)}
                 style={styles.item}
               >
-                <StyledText style={[styles.itemText, isSelected && styles.itemSelected]}>
+                <StyledText
+                  style={[styles.itemText, isSelected && styles.itemSelected]}
+                >
                   {list.title}
                 </StyledText>
               </HapticPressable>

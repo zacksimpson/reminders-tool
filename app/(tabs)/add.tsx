@@ -1,8 +1,6 @@
-import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { TaskForm } from "@/components/TaskForm";
 
 export default function AddScreen() {
-  const { invertColors } = useInvertColors();
   return (
     <TaskForm
       onSaved={() => {

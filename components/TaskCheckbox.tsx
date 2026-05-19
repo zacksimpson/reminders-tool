@@ -6,18 +6,30 @@ import { n } from "@/utils/scaling";
 interface TaskCheckboxProps {
   checked: boolean;
   onToggle: () => void;
-  size?: number;
-  paddingTop?: number;
   paddingBottom?: number;
+  paddingTop?: number;
+  size?: number;
 }
 
-export function TaskCheckbox({ checked, onToggle, size = 22, paddingTop = 17, paddingBottom = 8 }: TaskCheckboxProps) {
+export function TaskCheckbox({
+  checked,
+  onToggle,
+  size = 22,
+  paddingTop = 17,
+  paddingBottom = 8,
+}: TaskCheckboxProps) {
   const { invertColors } = useInvertColors();
   const color = invertColors ? "black" : "white";
   const dim = n(size);
 
   return (
-    <HapticPressable onPress={onToggle} style={[styles.hitArea, { paddingTop: n(paddingTop), paddingBottom: n(paddingBottom) }]}>
+    <HapticPressable
+      onPress={onToggle}
+      style={[
+        styles.hitArea,
+        { paddingTop: n(paddingTop), paddingBottom: n(paddingBottom) },
+      ]}
+    >
       <View
         style={[
           styles.circle,

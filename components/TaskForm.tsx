@@ -1,77 +1,65 @@
+import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   Animated,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
   TextInput as RNTextInput,
+  StyleSheet,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ClearIcon } from "@/components/ClearIcon";
-import { DeleteIcon } from "@/components/DeleteIcon";
-import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { DatePicker } from "@/components/DatePicker";
-import { RecurrencePicker } from "@/components/RecurrencePicker";
-import { Header } from "@/components/Header";
+import { DeleteIcon } from "@/components/DeleteIcon";
 import { HapticPressable } from "@/components/HapticPressable";
+import { Header } from "@/components/Header";
 import { ListPickerModal } from "@/components/ListPickerModal";
+import { RecurrencePicker } from "@/components/RecurrencePicker";
 import { StyledText } from "@/components/StyledText";
+import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { TimePicker } from "@/components/TimePicker";
 import { Toast } from "@/components/Toast";
-import { router } from "expo-router";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
+import {
+  formatRecurrence,
+  generateId,
+  type Recurrence,
+  useReminders,
+} from "@/contexts/RemindersContext";
+import {
+  scrollIndicatorBaseStyles,
+  useScrollIndicator,
+} from "@/hooks/useScrollIndicator";
+import {
+  digitsToTime,
+  formatDisplayDate,
+  formatDisplayTime,
+} from "@/utils/dateTime";
 import { triggerHaptic } from "@/utils/haptics";
-import { useScrollIndicator } from "@/hooks/useScrollIndicator";
-import { useReminders, type Recurrence, formatRecurrence } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDisplayDate(dateStr: string): string {
-  const [y, mo, d] = dateStr.split("-").map(Number);
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${months[mo - 1]} ${d}, ${y}`;
-}
-
-function formatDisplayTime(digits: string, ampm: "AM" | "PM"): string {
-  const h = digits.length === 3
-    ? parseInt(digits[0], 10)
-    : parseInt(digits.slice(0, 2), 10);
-  const m = digits.length === 3 ? digits.slice(1) : digits.slice(2, 4);
-  return `${h}:${m} ${ampm}`;
-}
-
-export function digitsToTime(digits: string, ampm: "AM" | "PM"): string {
-  let h: number;
-  let m: string;
-  if (digits.length === 3) {
-    h = parseInt(digits[0], 10);
-    m = digits.slice(1);
-  } else {
-    h = parseInt(digits.slice(0, 2), 10);
-    m = digits.slice(2, 4);
-  }
-  if (ampm === "PM" && h !== 12) h += 12;
-  if (ampm === "AM" && h === 12) h = 0;
-  return `${String(h).padStart(2, "0")}:${m}`;
-}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface TaskFormProps {
-  defaultListId?: string;
   defaultDate?: string; // "YYYY-MM-DD"
-  onSaved: () => void; // called after task is saved (and toast dismissed if shown)
-  onBack?: () => void; // override back button behavior (e.g. when used inside a Modal)
+  defaultListId?: string;
   isModal?: boolean; // when true, hides header back/check and shows bottom × / SAVE footer
+  onBack?: () => void; // override back button behavior (e.g. when used inside a Modal)
+  onSaved: () => void; // called after task is saved (and toast dismissed if shown)
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal }: TaskFormProps) {
+export function TaskForm({
+  defaultListId,
+  defaultDate,
+  onSaved,
+  onBack,
+  isModal,
+}: TaskFormProps) {
   const { invertColors } = useInvertColors();
   const { lists, settings, addTask } = useReminders();
   const bg = invertColors ? "white" : "black";
@@ -79,7 +67,13 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
 
   const resolvedListId = defaultListId ?? settings.defaultListId;
-  const { handleScroll, scrollIndicatorHeight, scrollIndicatorPosition, setContentHeight, setScrollViewHeight } = useScrollIndicator();
+  const {
+    handleScroll,
+    scrollIndicatorHeight,
+    scrollIndicatorPosition,
+    setContentHeight,
+    setScrollViewHeight,
+  } = useScrollIndicator();
 
   const [title, setTitle] = useState("");
   const [selectedListId, setSelectedListId] = useState(resolvedListId);
@@ -94,29 +88,40 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showListPicker, setShowListPicker] = useState(false);
-  const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; completed: boolean }>>([]);
+  const [subtasks, setSubtasks] = useState<
+    Array<{ id: string; title: string; completed: boolean }>
+  >([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
-  const [recurrence, setRecurrence] = useState<Recurrence | undefined>(undefined);
+  const [recurrence, setRecurrence] = useState<Recurrence | undefined>(
+    undefined
+  );
   const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
 
-  const selectedList = lists.find(l => l.id === selectedListId) ?? lists[0];
+  const selectedList = lists.find((l) => l.id === selectedListId) ?? lists[0];
   const canSave = title.trim().length > 0;
 
-  const resetForm = useCallback((keepList = false) => {
-    setTitle("");
-    if (!keepList) setSelectedListId(resolvedListId);
-    setDate(defaultDate);
-    setConfirmedTime(undefined);
-    setTimeDigits("");
-    setAmPm("AM");
-    setSubtasks([]);
-    setNewSubtask("");
-    setRecurrence(undefined);
-  }, [resolvedListId, defaultDate]);
+  const resetForm = useCallback(
+    (keepList = false) => {
+      setTitle("");
+      if (!keepList) {
+        setSelectedListId(resolvedListId);
+      }
+      setDate(defaultDate);
+      setConfirmedTime(undefined);
+      setTimeDigits("");
+      setAmPm("AM");
+      setSubtasks([]);
+      setNewSubtask("");
+      setRecurrence(undefined);
+    },
+    [resolvedListId, defaultDate]
+  );
 
   const handleSave = useCallback(() => {
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     Keyboard.dismiss();
     addTask({
       title: title.trim(),
@@ -124,7 +129,7 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
       date,
       time: confirmedTime,
       recurrence,
-      subtasks: subtasks.map(s => ({
+      subtasks: subtasks.map((s) => ({
         id: s.id,
         title: s.title,
         completed: s.completed,
@@ -141,16 +146,33 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
       router.navigate("/(tabs)/");
       router.push({ pathname: "/list/[id]", params: { id: listId } });
     }
-  }, [canSave, title, selectedListId, date, confirmedTime, recurrence, subtasks, settings, addTask, resetForm, onSaved]);
+  }, [
+    canSave,
+    title,
+    selectedListId,
+    date,
+    confirmedTime,
+    recurrence,
+    subtasks,
+    settings,
+    addTask,
+    resetForm,
+    onSaved,
+  ]);
 
   const handleTimeConfirm = useCallback(() => {
-    if (timeDigits.length !== 3 && timeDigits.length !== 4) return;
+    if (timeDigits.length !== 3 && timeDigits.length !== 4) {
+      return;
+    }
     setConfirmedTime(digitsToTime(timeDigits, ampm));
     setShowTimePicker(false);
   }, [timeDigits, ampm]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+    <SafeAreaView
+      edges={["top"]}
+      style={[styles.container, { backgroundColor: bg }]}
+    >
       {isModal ? (
         <Header headerTitle="Add Task" hideBackButton />
       ) : (
@@ -162,191 +184,299 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
       )}
 
       <KeyboardAvoidingView
-        style={styles.flex}
         behavior={Platform.OS === "android" ? "height" : "padding"}
+        style={styles.flex}
       >
         <View style={styles.scrollWrapper}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <Animated.ScrollView
-            onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            overScrollMode="never"
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-          <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
-          {/* Task name */}
-          <View style={styles.field}>
-            <RNTextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Task name"
-              placeholderTextColor={dimColor}
-              style={[styles.titleInput, { color: textColor }]}
-              allowFontScaling={false}
-              autoFocus
-              multiline
-              blurOnSubmit
-              returnKeyType="done"
-              onSubmitEditing={Keyboard.dismiss}
-              cursorColor={textColor}
-              selectionColor={textColor}
-            />
-          </View>
-
-          {/* List */}
-          <HapticPressable onPress={() => setShowListPicker(true)} style={styles.field}>
-            <StyledText style={[styles.fieldLabel, { color: textColor }]}>List</StyledText>
-            <StyledText style={styles.fieldValue}>{selectedList?.title ?? "Inbox"}</StyledText>
-          </HapticPressable>
-
-          {/* Date */}
-          <HapticPressable onPress={() => setShowDatePicker(true)} style={styles.field}>
-            <StyledText style={[styles.fieldLabel, { color: textColor }]}>Date</StyledText>
-            {date ? (
-              <View style={styles.fieldValueRow}>
-                <StyledText style={styles.fieldValue}>{formatDisplayDate(date)}</StyledText>
-                <HapticPressable onPress={() => { setDate(undefined); setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); setRecurrence(undefined); }} style={styles.clearBtn}>
-                  <ClearIcon />
-                </HapticPressable>
-              </View>
-            ) : (
-              <StyledText style={styles.fieldValue}>None</StyledText>
-            )}
-          </HapticPressable>
-
-          {/* Time — only if date is set */}
-          {date && (
-            <HapticPressable onPress={() => setShowTimePicker(true)} style={styles.field}>
-              <StyledText style={[styles.fieldLabel, { color: textColor }]}>Time</StyledText>
-              {confirmedTime ? (
-                <View style={styles.fieldValueRow}>
-                  <StyledText style={styles.fieldValue}>{formatDisplayTime(timeDigits, ampm)}</StyledText>
-                  <HapticPressable onPress={() => { setConfirmedTime(undefined); setTimeDigits(""); setAmPm("AM"); }} style={styles.clearBtn}>
-                    <ClearIcon />
-                  </HapticPressable>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Animated.ScrollView
+              keyboardShouldPersistTaps="handled"
+              onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
+              onScroll={handleScroll}
+              overScrollMode="never"
+              scrollEventThrottle={16}
+              showsVerticalScrollIndicator={false}
+            >
+              <View
+                onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+              >
+                {/* Task name */}
+                <View style={styles.field}>
+                  <RNTextInput
+                    allowFontScaling={false}
+                    autoFocus
+                    blurOnSubmit
+                    cursorColor={textColor}
+                    multiline
+                    onChangeText={setTitle}
+                    onSubmitEditing={Keyboard.dismiss}
+                    placeholder="Task name"
+                    placeholderTextColor={dimColor}
+                    returnKeyType="done"
+                    selectionColor={textColor}
+                    style={[styles.titleInput, { color: textColor }]}
+                    value={title}
+                  />
                 </View>
-              ) : (
-                <StyledText style={styles.fieldValue}>None</StyledText>
-              )}
-            </HapticPressable>
-          )}
-          {/* Recurring — only if date is set */}
-          {date && (
-            <HapticPressable onPress={() => setShowRecurrencePicker(true)} style={styles.field}>
-              <StyledText style={[styles.fieldLabel, { color: textColor }]}>Recurring</StyledText>
-              {recurrence ? (
-                <View style={styles.fieldValueRow}>
-                  <StyledText style={styles.fieldValue}>{formatRecurrence(recurrence)}</StyledText>
-                  <HapticPressable onPress={() => setRecurrence(undefined)} style={styles.clearBtn}>
-                    <ClearIcon />
-                  </HapticPressable>
-                </View>
-              ) : (
-                <StyledText style={styles.fieldValue}>None</StyledText>
-              )}
-            </HapticPressable>
-          )}
 
-          {/* Subtasks */}
-          <View style={styles.subtasksHeader}>
-            <StyledText style={[styles.fieldLabel, { color: textColor }]}>Subtasks</StyledText>
-          </View>
-          {subtasks.map((sub) => (
-            <View key={sub.id} style={styles.subtaskRow}>
-              <View style={styles.subtaskCheckboxIcon}>
-                <TaskCheckbox
-                  checked={sub.completed}
-                  onToggle={() => setSubtasks(prev => prev.map(s => s.id === sub.id ? { ...s, completed: !s.completed } : s))}
-                  size={20}
-                  paddingTop={0}
-                  paddingBottom={0}
-                />
-              </View>
-              <StyledText style={styles.subtaskTitle}>{sub.title}</StyledText>
-              <View style={styles.subtaskDeleteIcon}>
+                {/* List */}
                 <HapticPressable
-                  onPress={() => setSubtasks(prev => prev.filter(s => s.id !== sub.id))}
-                  style={styles.deleteSubtask}
+                  onPress={() => setShowListPicker(true)}
+                  style={styles.field}
                 >
-                  <DeleteIcon />
+                  <StyledText style={[styles.fieldLabel, { color: textColor }]}>
+                    List
+                  </StyledText>
+                  <StyledText style={styles.fieldValue}>
+                    {selectedList?.title ?? "Inbox"}
+                  </StyledText>
                 </HapticPressable>
+
+                {/* Date */}
+                <HapticPressable
+                  onPress={() => setShowDatePicker(true)}
+                  style={styles.field}
+                >
+                  <StyledText style={[styles.fieldLabel, { color: textColor }]}>
+                    Date
+                  </StyledText>
+                  {date ? (
+                    <View style={styles.fieldValueRow}>
+                      <StyledText style={styles.fieldValue}>
+                        {formatDisplayDate(date)}
+                      </StyledText>
+                      <HapticPressable
+                        onPress={() => {
+                          setDate(undefined);
+                          setConfirmedTime(undefined);
+                          setTimeDigits("");
+                          setAmPm("AM");
+                          setRecurrence(undefined);
+                        }}
+                        style={styles.clearBtn}
+                      >
+                        <ClearIcon />
+                      </HapticPressable>
+                    </View>
+                  ) : (
+                    <StyledText style={styles.fieldValue}>None</StyledText>
+                  )}
+                </HapticPressable>
+
+                {/* Time — only if date is set */}
+                {date && (
+                  <HapticPressable
+                    onPress={() => setShowTimePicker(true)}
+                    style={styles.field}
+                  >
+                    <StyledText
+                      style={[styles.fieldLabel, { color: textColor }]}
+                    >
+                      Time
+                    </StyledText>
+                    {confirmedTime ? (
+                      <View style={styles.fieldValueRow}>
+                        <StyledText style={styles.fieldValue}>
+                          {formatDisplayTime(timeDigits, ampm)}
+                        </StyledText>
+                        <HapticPressable
+                          onPress={() => {
+                            setConfirmedTime(undefined);
+                            setTimeDigits("");
+                            setAmPm("AM");
+                          }}
+                          style={styles.clearBtn}
+                        >
+                          <ClearIcon />
+                        </HapticPressable>
+                      </View>
+                    ) : (
+                      <StyledText style={styles.fieldValue}>None</StyledText>
+                    )}
+                  </HapticPressable>
+                )}
+                {/* Recurring — only if date is set */}
+                {date && (
+                  <HapticPressable
+                    onPress={() => setShowRecurrencePicker(true)}
+                    style={styles.field}
+                  >
+                    <StyledText
+                      style={[styles.fieldLabel, { color: textColor }]}
+                    >
+                      Recurring
+                    </StyledText>
+                    {recurrence ? (
+                      <View style={styles.fieldValueRow}>
+                        <StyledText style={styles.fieldValue}>
+                          {formatRecurrence(recurrence)}
+                        </StyledText>
+                        <HapticPressable
+                          onPress={() => setRecurrence(undefined)}
+                          style={styles.clearBtn}
+                        >
+                          <ClearIcon />
+                        </HapticPressable>
+                      </View>
+                    ) : (
+                      <StyledText style={styles.fieldValue}>None</StyledText>
+                    )}
+                  </HapticPressable>
+                )}
+
+                {/* Subtasks */}
+                <View style={styles.subtasksHeader}>
+                  <StyledText style={[styles.fieldLabel, { color: textColor }]}>
+                    Subtasks
+                  </StyledText>
+                </View>
+                {subtasks.map((sub) => (
+                  <View key={sub.id} style={styles.subtaskRow}>
+                    <View style={styles.subtaskCheckboxIcon}>
+                      <TaskCheckbox
+                        checked={sub.completed}
+                        onToggle={() =>
+                          setSubtasks((prev) =>
+                            prev.map((s) =>
+                              s.id === sub.id
+                                ? { ...s, completed: !s.completed }
+                                : s
+                            )
+                          )
+                        }
+                        paddingBottom={0}
+                        paddingTop={0}
+                        size={20}
+                      />
+                    </View>
+                    <StyledText style={styles.subtaskTitle}>
+                      {sub.title}
+                    </StyledText>
+                    <View style={styles.subtaskDeleteIcon}>
+                      <HapticPressable
+                        onPress={() =>
+                          setSubtasks((prev) =>
+                            prev.filter((s) => s.id !== sub.id)
+                          )
+                        }
+                        style={styles.deleteSubtask}
+                      >
+                        <DeleteIcon />
+                      </HapticPressable>
+                    </View>
+                  </View>
+                ))}
+                <View style={styles.subtaskInputRow}>
+                  <RNTextInput
+                    allowFontScaling={false}
+                    cursorColor={textColor}
+                    onChangeText={setNewSubtask}
+                    onFocus={triggerHaptic}
+                    onSubmitEditing={() => {
+                      const t = newSubtask.trim();
+                      if (!t) {
+                        return;
+                      }
+                      setSubtasks((prev) => [
+                        ...prev,
+                        { id: generateId(), title: t, completed: false },
+                      ]);
+                      setNewSubtask("");
+                    }}
+                    placeholder="Add subtask…"
+                    placeholderTextColor={dimColor}
+                    returnKeyType="done"
+                    selectionColor={textColor}
+                    style={[styles.subtaskInput, { color: textColor }]}
+                    value={newSubtask}
+                  />
+                </View>
               </View>
+            </Animated.ScrollView>
+          </TouchableWithoutFeedback>
+          {scrollIndicatorHeight > 0 && (
+            <View style={[styles.scrollTrack, { backgroundColor: textColor }]}>
+              <Animated.View
+                style={[
+                  styles.scrollThumb,
+                  {
+                    backgroundColor: textColor,
+                    height: scrollIndicatorHeight,
+                    transform: [{ translateY: scrollIndicatorPosition }],
+                  },
+                ]}
+              />
             </View>
-          ))}
-          <View style={styles.subtaskInputRow}>
-            <RNTextInput
-              value={newSubtask}
-              onChangeText={setNewSubtask}
-              placeholder="Add subtask…"
-              onFocus={triggerHaptic}
-              placeholderTextColor={dimColor}
-              style={[styles.subtaskInput, { color: textColor }]}
-              allowFontScaling={false}
-              returnKeyType="done"
-              cursorColor={textColor}
-              selectionColor={textColor}
-              onSubmitEditing={() => {
-                const t = newSubtask.trim();
-                if (!t) return;
-                setSubtasks(prev => [...prev, { id: `${Date.now()}`, title: t, completed: false }]);
-                setNewSubtask("");
-              }}
-            />
-          </View>
-          </View>
-          </Animated.ScrollView>
-        </TouchableWithoutFeedback>
-        {scrollIndicatorHeight > 0 && (
-          <View style={[styles.scrollTrack, { backgroundColor: textColor }]}>
-            <Animated.View style={[styles.scrollThumb, { backgroundColor: textColor, height: scrollIndicatorHeight, transform: [{ translateY: scrollIndicatorPosition }] }]} />
-          </View>
-        )}
+          )}
         </View>
       </KeyboardAvoidingView>
 
       <DatePicker
-        visible={showDatePicker}
-        value={date}
-        onSelect={(d) => { setDate(d); setShowDatePicker(false); }}
         onDismiss={() => setShowDatePicker(false)}
-        viewYear={viewYear}
-        viewMonth={viewMonth}
-        onPrevMonth={() => {
-          if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-          else setViewMonth(m => m - 1);
-        }}
         onNextMonth={() => {
-          if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-          else setViewMonth(m => m + 1);
+          if (viewMonth === 11) {
+            setViewMonth(0);
+            setViewYear((y) => y + 1);
+          } else {
+            setViewMonth((m) => m + 1);
+          }
         }}
+        onPrevMonth={() => {
+          if (viewMonth === 0) {
+            setViewMonth(11);
+            setViewYear((y) => y - 1);
+          } else {
+            setViewMonth((m) => m - 1);
+          }
+        }}
+        onSelect={(d) => {
+          setDate(d);
+          setShowDatePicker(false);
+        }}
+        value={date}
+        viewMonth={viewMonth}
+        viewYear={viewYear}
+        visible={showDatePicker}
       />
 
       <TimePicker
-        visible={showTimePicker}
-        digits={timeDigits}
         ampm={ampm}
-        onDigit={(d) => setTimeDigits(prev => prev.length < 4 ? prev + d : prev)}
-        onBackspace={() => setTimeDigits(prev => prev.slice(0, -1))}
+        digits={timeDigits}
         onAmPm={setAmPm}
+        onBackspace={() => setTimeDigits((prev) => prev.slice(0, -1))}
         onConfirm={handleTimeConfirm}
-        onDismiss={() => { setShowTimePicker(false); if (!confirmedTime) { setTimeDigits(""); setAmPm("AM"); } }}
+        onDigit={(d) =>
+          setTimeDigits((prev) => (prev.length < 4 ? prev + d : prev))
+        }
+        onDismiss={() => {
+          setShowTimePicker(false);
+          if (!confirmedTime) {
+            setTimeDigits("");
+            setAmPm("AM");
+          }
+        }}
+        visible={showTimePicker}
       />
 
       <RecurrencePicker
-        visible={showRecurrencePicker}
-        value={recurrence}
-        onSave={(r) => { setRecurrence(r); setShowRecurrencePicker(false); }}
         onDismiss={() => setShowRecurrencePicker(false)}
+        onSave={(r) => {
+          setRecurrence(r);
+          setShowRecurrencePicker(false);
+        }}
+        value={recurrence}
+        visible={showRecurrencePicker}
       />
 
       <ListPickerModal
-        visible={showListPicker}
         lists={lists}
-        selectedId={selectedListId}
-        onSelect={(list) => { setSelectedListId(list.id); setShowListPicker(false); }}
         onDismiss={() => setShowListPicker(false)}
+        onSelect={(list) => {
+          setSelectedListId(list.id);
+          setShowListPicker(false);
+        }}
+        selectedId={selectedListId}
+        visible={showListPicker}
       />
 
       {isModal && (
@@ -364,9 +494,13 @@ export function TaskForm({ defaultListId, defaultDate, onSaved, onBack, isModal 
       )}
 
       <Toast
-        visible={toastVisible}
         message="added"
-        onHide={() => { setToastVisible(false); resetForm(true); onSaved(); }}
+        onHide={() => {
+          setToastVisible(false);
+          resetForm(true);
+          onSaved();
+        }}
+        visible={toastVisible}
       />
     </SafeAreaView>
   );
@@ -378,24 +512,53 @@ const styles = StyleSheet.create({
   field: { paddingHorizontal: n(22), paddingVertical: n(13) },
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
-  fieldValueRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  fieldValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   clearBtn: { paddingRight: n(18) },
-  titleInput: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingVertical: n(4) },
+  titleInput: {
+    fontSize: n(30),
+    fontFamily: "PublicSans-Regular",
+    paddingVertical: n(4),
+  },
   scrollWrapper: { flex: 1, position: "relative" },
-  scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
-  scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
-  subtasksHeader: { paddingHorizontal: n(22), paddingTop: n(28), paddingBottom: n(12) },
-  subtaskRow: { flexDirection: "row", alignItems: "flex-start", paddingRight: n(22) },
+  scrollTrack: scrollIndicatorBaseStyles.track,
+  scrollThumb: scrollIndicatorBaseStyles.thumb,
+  subtasksHeader: {
+    paddingHorizontal: n(22),
+    paddingTop: n(28),
+    paddingBottom: n(12),
+  },
+  subtaskRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingRight: n(22),
+  },
   subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(14) },
   subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
-  deleteSubtask: { paddingLeft: n(8), paddingRight: n(18), paddingBottom: n(8) },
+  deleteSubtask: {
+    paddingLeft: n(8),
+    paddingRight: n(18),
+    paddingBottom: n(8),
+  },
   subtaskInputRow: { paddingHorizontal: n(22), paddingVertical: n(10) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular" },
-  modalFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: n(14) },
+  modalFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: n(14),
+  },
   modalFooterSide: { flex: 1, alignItems: "flex-end", paddingRight: n(24) },
   modalFooterBtn: { padding: n(8) },
   modalSaveBtn: { padding: n(8) },
   modalDismissX: { fontSize: n(28) },
-  modalSave: { fontSize: n(24), letterSpacing: n(5), fontFamily: "PublicSans-Regular" },
+  modalSave: {
+    fontSize: n(24),
+    letterSpacing: n(5),
+    fontFamily: "PublicSans-Regular",
+  },
 });

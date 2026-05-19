@@ -1,8 +1,8 @@
 import { router } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
+import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -10,13 +10,13 @@ import { useReminders } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
 
 const AFTER_QUICK_ADD_LABELS: Record<string, string> = {
-  "toast": "Add Next",
+  toast: "Add Next",
   "go-to-list": "Go to List",
 };
 
 const ADD_POSITION_LABELS: Record<string, string> = {
-  "top": "Top of List",
-  "bottom": "Bottom of List",
+  top: "Top of List",
+  bottom: "Bottom of List",
 };
 
 export default function SettingsScreen() {
@@ -24,14 +24,16 @@ export default function SettingsScreen() {
   const { lists, settings } = useReminders();
   const bg = invertColors ? "white" : "black";
 
-  const defaultList = lists.find(l => l.id === settings.defaultListId);
+  const defaultList = lists.find((l) => l.id === settings.defaultListId);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+    <SafeAreaView
+      edges={["top"]}
+      style={[styles.container, { backgroundColor: bg }]}
+    >
       <Header headerTitle="Settings" hideBackButton />
 
       <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
-
         {/* Notifications */}
         <HapticPressable
           onPress={() => router.push("/settings/notifications")}
@@ -54,7 +56,9 @@ export default function SettingsScreen() {
           style={styles.row}
         >
           <StyledText style={styles.selectorLabel}>Default List</StyledText>
-          <StyledText style={styles.selectorValue}>{defaultList?.title ?? "Inbox"}</StyledText>
+          <StyledText style={styles.selectorValue}>
+            {defaultList?.title ?? "Inbox"}
+          </StyledText>
         </HapticPressable>
 
         {/* After Quick Add */}
@@ -75,7 +79,8 @@ export default function SettingsScreen() {
         >
           <StyledText style={styles.selectorLabel}>Add New Tasks</StyledText>
           <StyledText style={styles.selectorValue}>
-            {ADD_POSITION_LABELS[settings.addPosition ?? "bottom"] ?? "Bottom of List"}
+            {ADD_POSITION_LABELS[settings.addPosition ?? "bottom"] ??
+              "Bottom of List"}
           </StyledText>
         </HapticPressable>
 
@@ -83,11 +88,10 @@ export default function SettingsScreen() {
         <View style={styles.row}>
           <ToggleSwitch
             label="Invert Colors"
-            value={invertColors}
             onValueChange={setInvertColors}
+            value={invertColors}
           />
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
