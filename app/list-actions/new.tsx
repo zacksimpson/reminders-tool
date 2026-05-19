@@ -1,6 +1,11 @@
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/Header";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
@@ -19,7 +24,9 @@ export default function NewListScreen() {
   const canSave = title.trim().length > 0;
 
   const handleSave = useCallback(() => {
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     addList(title.trim());
     router.back();
   }, [canSave, title, addList]);
@@ -27,23 +34,27 @@ export default function NewListScreen() {
   return (
     <SwipeBackContainer onSwipeBack={() => router.back()}>
       <View style={[styles.fill, { backgroundColor: bg }]}>
-        <KeyboardAvoidingView style={styles.fill} behavior="padding">
-          <SafeAreaView style={styles.fill} edges={["top"]}>
+        <KeyboardAvoidingView behavior="padding" style={styles.fill}>
+          <SafeAreaView edges={["top"]} style={styles.fill}>
             <Header
               headerTitle="New List"
-              rightAction={{ icon: "check", onPress: handleSave, show: canSave }}
+              rightAction={{
+                icon: "check",
+                onPress: handleSave,
+                show: canSave,
+              }}
             />
             <View style={styles.inputArea}>
               <TextInput
+                allowFontScaling={false}
                 autoFocus
-                value={title}
                 onChangeText={setTitle}
+                onSubmitEditing={handleSave}
                 placeholder="List name"
                 placeholderTextColor={dimColor}
-                onSubmitEditing={handleSave}
-                style={[styles.input, { color: textColor }]}
-                allowFontScaling={false}
                 returnKeyType="done"
+                style={[styles.input, { color: textColor }]}
+                value={title}
               />
             </View>
           </SafeAreaView>
@@ -56,5 +67,9 @@ export default function NewListScreen() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   inputArea: { paddingHorizontal: n(22), paddingTop: n(24) },
-  input: { fontSize: n(30), fontFamily: "PublicSans-Regular", paddingBottom: n(8) },
+  input: {
+    fontSize: n(30),
+    fontFamily: "PublicSans-Regular",
+    paddingBottom: n(8),
+  },
 });

@@ -1,9 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Modal, StyleSheet, View } from "react-native";
-import { HapticPressable } from "@/components/HapticPressable";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { StyledText } from "@/components/StyledText";
+import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
+import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { n } from "@/utils/scaling";
 
@@ -34,28 +34,30 @@ function isValidNextDigit(current: string, next: string): boolean {
 
     case 2:
       // If first digit is 0, second digit is the hour (1-9)
-      if (proposed[0] === "0") return parseInt(next, 10) >= 1 && parseInt(next, 10) <= 9;
+      if (proposed[0] === "0") {
+        return Number.parseInt(next, 10) >= 1 && Number.parseInt(next, 10) <= 9;
+      }
       // Otherwise second digit is always minutes-tens (0-5)
-      return parseInt(next, 10) <= 5;
+      return Number.parseInt(next, 10) <= 5;
 
     case 3: {
-      const firstDigit = parseInt(proposed[0], 10);
+      const firstDigit = Number.parseInt(proposed[0], 10);
       // Leading zero case: "014" → on way to "0145" = 01:45
       // d[0]=0 (leading zero), d[1]=hour-ones (1-9), d[2]=minutes-tens (0-5)
       if (firstDigit === 0) {
-        const hourOnes = parseInt(proposed[1], 10);
-        const minTens = parseInt(proposed[2], 10);
+        const hourOnes = Number.parseInt(proposed[1], 10);
+        const minTens = Number.parseInt(proposed[2], 10);
         return hourOnes >= 1 && hourOnes <= 9 && minTens >= 0 && minTens <= 5;
       }
       // Normal H:MM case: first digit is hour (1-9), last two are minutes
-      const m = parseInt(proposed.slice(1), 10);
+      const m = Number.parseInt(proposed.slice(1), 10);
       return firstDigit >= 1 && firstDigit <= 9 && m >= 0 && m <= 59;
     }
 
     case 4: {
       // 4-digit time: HH:MM
-      const h = parseInt(proposed.slice(0, 2), 10);
-      const m = parseInt(proposed.slice(2), 10);
+      const h = Number.parseInt(proposed.slice(0, 2), 10);
+      const m = Number.parseInt(proposed.slice(2), 10);
       return h >= 1 && h <= 12 && m >= 0 && m <= 59;
     }
 
@@ -67,31 +69,43 @@ function isValidNextDigit(current: string, next: string): boolean {
 // ─── Display builder ──────────────────────────────────────────────────────────
 function buildDisplay(digits: string): string {
   switch (digits.length) {
-    case 0: return "  :  ";
-    case 1: return `  : ${digits[0]}`;
-    case 2: return `  :${digits}`;
-    case 3: return `${digits[0]}:${digits.slice(1)}`;
-    case 4: return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-    default: return "  :  ";
+    case 0:
+      return "  :  ";
+    case 1:
+      return `  : ${digits[0]}`;
+    case 2:
+      return `  :${digits}`;
+    case 3:
+      return `${digits[0]}:${digits.slice(1)}`;
+    case 4:
+      return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+    default:
+      return "  :  ";
   }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface TimePickerProps {
-  visible: boolean;
-  digits: string;
   ampm: "AM" | "PM";
-  onDigit: (d: string) => void;
-  onBackspace: () => void;
+  digits: string;
   onAmPm: (v: "AM" | "PM") => void;
+  onBackspace: () => void;
   onConfirm: () => void;
+  onDigit: (d: string) => void;
   onDismiss: () => void;
+  visible: boolean;
 }
 
 export function TimePicker({
-  visible, digits, ampm,
-  onDigit, onBackspace, onAmPm, onConfirm, onDismiss,
+  visible,
+  digits,
+  ampm,
+  onDigit,
+  onBackspace,
+  onAmPm,
+  onConfirm,
+  onDismiss,
 }: TimePickerProps) {
   const { invertColors } = useInvertColors();
   const bg = invertColors ? "white" : "black";
@@ -99,15 +113,45 @@ export function TimePicker({
   const hasDigits = digits.length > 0;
   const canConfirm = digits.length === 3 || digits.length === 4;
 
+  let saveOrDismissBtn: React.ReactNode;
+  if (canConfirm) {
+    saveOrDismissBtn = (
+      <HapticPressable onPress={onConfirm} style={styles.numBtn}>
+        <StyledText style={styles.saveText}>SAVE</StyledText>
+      </HapticPressable>
+    );
+  } else if (hasDigits) {
+    saveOrDismissBtn = <View style={styles.numBtn} />;
+  } else {
+    saveOrDismissBtn = (
+      <HapticPressable onPress={onDismiss} style={styles.numBtn}>
+        <StyledText style={styles.dismissX}>✕</StyledText>
+      </HapticPressable>
+    );
+  }
+
   const handleDigit = (d: string) => {
-    if (digits.length >= 4) return;
-    if (isValidNextDigit(digits, d)) onDigit(d);
+    if (digits.length >= 4) {
+      return;
+    }
+    if (isValidNextDigit(digits, d)) {
+      onDigit(d);
+    }
   };
 
-  const numRows = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]];
+  const numRows = [
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+  ];
 
   return (
-    <Modal visible={visible} animationType="none" transparent={false} statusBarTranslucent>
+    <Modal
+      animationType="none"
+      statusBarTranslucent
+      transparent={false}
+      visible={visible}
+    >
       <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
         <Header hideBackButton />
 
@@ -116,64 +160,76 @@ export function TimePicker({
           {/* AM/PM pinned to left/right edges */}
           <HapticPressable onPress={() => onAmPm("AM")} style={styles.ampmLeft}>
             <StyledText style={styles.ampmText}>AM</StyledText>
-            {ampm === "AM" && <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />}
+            {ampm === "AM" && (
+              <View
+                style={[styles.ampmUnderline, { backgroundColor: textColor }]}
+              />
+            )}
           </HapticPressable>
 
           {/* Time display centered absolutely so it never affects AM/PM position */}
-          <View style={styles.timeContainer} pointerEvents="none">
-            <StyledText style={styles.timeDisplay}>{buildDisplay(digits)}</StyledText>
+          <View pointerEvents="none" style={styles.timeContainer}>
+            <StyledText style={styles.timeDisplay}>
+              {buildDisplay(digits)}
+            </StyledText>
           </View>
 
-          <HapticPressable onPress={() => onAmPm("PM")} style={styles.ampmRight}>
+          <HapticPressable
+            onPress={() => onAmPm("PM")}
+            style={styles.ampmRight}
+          >
             <StyledText style={styles.ampmText}>PM</StyledText>
-            {ampm === "PM" && <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />}
+            {ampm === "PM" && (
+              <View
+                style={[styles.ampmUnderline, { backgroundColor: textColor }]}
+              />
+            )}
           </HapticPressable>
         </View>
 
         {/* Numpad */}
         <View style={styles.numpad}>
-          {numRows.map((row, ri) => (
-            <View key={`row-${ri}`} style={styles.numRow}>
-              {row.map((d) => (
-                <HapticPressable
-                  key={d}
-                  onPress={() => handleDigit(d)}
-                  style={styles.numBtn}
-                >
-                  <StyledText style={styles.numText}>{d}</StyledText>
-                </HapticPressable>
-              ))}
-            </View>
-          ))}
+          {numRows.map((row, ri) => {
+            return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static numpad rows, index is correct key
+              <View key={`row-${ri}`} style={styles.numRow}>
+                {row.map((d) => (
+                  <HapticPressable
+                    key={d}
+                    onPress={() => handleDigit(d)}
+                    style={styles.numBtn}
+                  >
+                    <StyledText style={styles.numText}>{d}</StyledText>
+                  </HapticPressable>
+                ))}
+              </View>
+            );
+          })}
 
           {/* Bottom row */}
           <View style={styles.numRow}>
-            {canConfirm ? (
-              <HapticPressable onPress={onConfirm} style={styles.numBtn}>
-                <StyledText style={styles.saveText}>SAVE</StyledText>
-              </HapticPressable>
-            ) : !hasDigits ? (
-              <HapticPressable onPress={onDismiss} style={styles.numBtn}>
-                <StyledText style={styles.dismissX}>✕</StyledText>
-              </HapticPressable>
-            ) : (
-              <View style={styles.numBtn} />
-            )}
+            {saveOrDismissBtn}
 
-            <HapticPressable onPress={() => handleDigit("0")} style={styles.numBtn}>
+            <HapticPressable
+              onPress={() => handleDigit("0")}
+              style={styles.numBtn}
+            >
               <StyledText style={styles.numText}>0</StyledText>
             </HapticPressable>
 
             {hasDigits ? (
               <HapticPressable onPress={onBackspace} style={styles.numBtn}>
-                <MaterialIcons name="chevron-left" size={n(44)} color={textColor} />
+                <MaterialIcons
+                  color={textColor}
+                  name="chevron-left"
+                  size={n(44)}
+                />
               </HapticPressable>
             ) : (
               <View style={styles.numBtn} />
             )}
           </View>
         </View>
-
       </SafeAreaView>
     </Modal>
   );
@@ -208,7 +264,12 @@ const styles = StyleSheet.create({
   },
   numpad: { flex: 1, justifyContent: "space-evenly", paddingBottom: n(16) },
   numRow: { flexDirection: "row", justifyContent: "space-between" },
-  numBtn: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: n(3) },
+  numBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: n(3),
+  },
   numText: { fontSize: n(35), fontFamily: "PublicSans-Regular" },
   saveText: { fontSize: n(20), fontFamily: "PublicSans-Regular" },
   dismissX: { fontSize: n(24) },

@@ -16,8 +16,8 @@ interface HeaderProps {
   headerTitle?: string;
   hideBackButton?: boolean;
   onBack?: () => void;
-  rightAction?: RightAction;
   reorderingDone?: () => void; // when set, replaces rightAction with a DONE text button
+  rightAction?: RightAction;
 }
 
 export function Header({
@@ -30,20 +30,57 @@ export function Header({
   const { invertColors } = useInvertColors();
   const iconColor = invertColors ? "black" : "white";
 
+  let rightContent: React.ReactNode;
+  if (reorderingDone) {
+    rightContent = (
+      <HapticPressable onPress={reorderingDone} style={styles.doneButton}>
+        <StyledText style={styles.doneText}>DONE</StyledText>
+      </HapticPressable>
+    );
+  } else if (rightAction?.show !== false && rightAction?.icon) {
+    rightContent = (
+      <HapticPressable onPress={rightAction.onPress}>
+        <View style={styles.button}>
+          <MaterialIcons
+            color={iconColor}
+            name={rightAction.icon}
+            size={n(28)}
+          />
+        </View>
+      </HapticPressable>
+    );
+  } else {
+    rightContent = <View style={styles.button} />;
+  }
+
   const handleBack = () => {
-    if (onBack) { onBack(); return; }
-    if (router.canGoBack()) router.back();
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    }
   };
 
   return (
-    <View style={[styles.header, { backgroundColor: invertColors ? "white" : "black" }]}>
+    <View
+      style={[
+        styles.header,
+        { backgroundColor: invertColors ? "white" : "black" },
+      ]}
+    >
       {/* Left — back button or spacer */}
       {hideBackButton ? (
         <View style={styles.button} />
       ) : (
         <HapticPressable onPress={handleBack}>
           <View style={styles.button}>
-            <MaterialIcons color={iconColor} name="arrow-back-ios" size={n(28)} />
+            <MaterialIcons
+              color={iconColor}
+              name="arrow-back-ios"
+              size={n(28)}
+            />
           </View>
         </HapticPressable>
       )}
@@ -54,19 +91,7 @@ export function Header({
       </StyledText>
 
       {/* Right — DONE text (reorder mode) or icon button or spacer */}
-      {reorderingDone ? (
-        <HapticPressable onPress={reorderingDone} style={styles.doneButton}>
-          <StyledText style={styles.doneText}>DONE</StyledText>
-        </HapticPressable>
-      ) : rightAction?.show !== false && rightAction?.icon ? (
-        <HapticPressable onPress={rightAction.onPress}>
-          <View style={styles.button}>
-            <MaterialIcons color={iconColor} name={rightAction.icon} size={n(28)} />
-          </View>
-        </HapticPressable>
-      ) : (
-        <View style={styles.button} />
-      )}
+      {rightContent}
     </View>
   );
 }

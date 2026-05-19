@@ -5,19 +5,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import { type Recurrence } from "@/contexts/RemindersContext";
+import type { Recurrence } from "@/contexts/RemindersContext";
 import { n } from "@/utils/scaling";
 
 const UNITS: Recurrence["unit"][] = ["day", "week", "month", "year"];
 
 interface RecurrencePickerProps {
-  visible: boolean;
-  value: Recurrence | undefined;
-  onSave: (recurrence: Recurrence) => void;
   onDismiss: () => void;
+  onSave: (recurrence: Recurrence) => void;
+  value: Recurrence | undefined;
+  visible: boolean;
 }
 
-export function RecurrencePicker({ visible, value, onSave, onDismiss }: RecurrencePickerProps) {
+export function RecurrencePicker({
+  visible,
+  value,
+  onSave,
+  onDismiss,
+}: RecurrencePickerProps) {
   const { invertColors } = useInvertColors();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
@@ -32,8 +37,8 @@ export function RecurrencePicker({ visible, value, onSave, onDismiss }: Recurren
     }
   }, [visible, value]);
 
-  const decrement = () => setIntervalValue(i => i <= 1 ? 30 : i - 1);
-  const increment = () => setIntervalValue(i => i >= 30 ? 1 : i + 1);
+  const decrement = () => setIntervalValue((i) => (i <= 1 ? 30 : i - 1));
+  const increment = () => setIntervalValue((i) => (i >= 30 ? 1 : i + 1));
   const cycleUnit = () => {
     const idx = UNITS.indexOf(unit);
     setUnit(UNITS[(idx + 1) % UNITS.length]);
@@ -42,23 +47,47 @@ export function RecurrencePicker({ visible, value, onSave, onDismiss }: Recurren
   const unitLabel = interval === 1 ? unit : `${unit}s`;
 
   return (
-    <Modal visible={visible} animationType="none" transparent={false} statusBarTranslucent>
-      <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
-
-        <StyledText style={[styles.title, { color: textColor }]}>Recurs every:</StyledText>
+    <Modal
+      animationType="none"
+      statusBarTranslucent
+      transparent={false}
+      visible={visible}
+    >
+      <SafeAreaView
+        edges={["top"]}
+        style={[styles.container, { backgroundColor: bg }]}
+      >
+        <StyledText style={[styles.title, { color: textColor }]}>
+          Recurs every:
+        </StyledText>
 
         <View style={styles.pickerRow}>
           <HapticPressable onPress={decrement} style={styles.chevronBtn}>
-            <MaterialIcons name="keyboard-arrow-down" size={n(52)} color={textColor} />
+            <MaterialIcons
+              color={textColor}
+              name="keyboard-arrow-down"
+              size={n(52)}
+            />
           </HapticPressable>
-          <StyledText style={[styles.number, { color: textColor }]}>{interval}</StyledText>
+          <StyledText style={[styles.number, { color: textColor }]}>
+            {interval}
+          </StyledText>
           <HapticPressable onPress={increment} style={styles.chevronBtn}>
-            <MaterialIcons name="keyboard-arrow-up" size={n(52)} color={textColor} />
+            <MaterialIcons
+              color={textColor}
+              name="keyboard-arrow-up"
+              size={n(52)}
+            />
           </HapticPressable>
         </View>
 
         <HapticPressable onPress={cycleUnit} style={styles.unitBtn}>
-          <StyledText style={[styles.unit, { color: textColor, borderBottomColor: textColor }]}>
+          <StyledText
+            style={[
+              styles.unit,
+              { color: textColor, borderBottomColor: textColor },
+            ]}
+          >
             {unitLabel}
           </StyledText>
         </HapticPressable>
@@ -66,15 +95,21 @@ export function RecurrencePicker({ visible, value, onSave, onDismiss }: Recurren
         <View style={styles.footer}>
           <View style={styles.footerSide} />
           <HapticPressable onPress={onDismiss} style={styles.footerBtn}>
-            <StyledText style={[styles.dismissX, { color: textColor }]}>✕</StyledText>
+            <StyledText style={[styles.dismissX, { color: textColor }]}>
+              ✕
+            </StyledText>
           </HapticPressable>
           <View style={styles.footerSide}>
-            <HapticPressable onPress={() => onSave({ interval, unit })} style={styles.saveBtn}>
-              <StyledText style={[styles.save, { color: textColor }]}>SAVE</StyledText>
+            <HapticPressable
+              onPress={() => onSave({ interval, unit })}
+              style={styles.saveBtn}
+            >
+              <StyledText style={[styles.save, { color: textColor }]}>
+                SAVE
+              </StyledText>
             </HapticPressable>
           </View>
         </View>
-
       </SafeAreaView>
     </Modal>
   );
@@ -130,5 +165,9 @@ const styles = StyleSheet.create({
   footerBtn: { padding: n(8) },
   saveBtn: { padding: n(8) },
   dismissX: { fontSize: n(28) },
-  save: { fontSize: n(24), letterSpacing: n(5), fontFamily: "PublicSans-Regular" },
+  save: {
+    fontSize: n(24),
+    letterSpacing: n(5),
+    fontFamily: "PublicSans-Regular",
+  },
 });

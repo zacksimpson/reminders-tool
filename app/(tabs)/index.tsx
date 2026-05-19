@@ -1,23 +1,23 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  Animated,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useReminders } from "@/contexts/RemindersContext";
-import { useScrollIndicator } from "@/hooks/useScrollIndicator";
+import {
+  scrollIndicatorBaseStyles,
+  useScrollIndicator,
+} from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
 
 export default function ListsScreen() {
   const { invertColors } = useInvertColors();
-  const { lists, deleteList, moveListUp, moveListDown, clearCompletedTasks } = useReminders();
+  const { lists, deleteList, moveListUp, moveListDown, clearCompletedTasks } =
+    useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
@@ -29,8 +29,11 @@ export default function ListsScreen() {
   }>();
 
   const {
-    handleScroll, scrollIndicatorHeight, scrollIndicatorPosition,
-    setContentHeight, setScrollViewHeight,
+    handleScroll,
+    scrollIndicatorHeight,
+    scrollIndicatorPosition,
+    setContentHeight,
+    setScrollViewHeight,
   } = useScrollIndicator();
 
   const [isReordering, setIsReordering] = useState(false);
@@ -38,12 +41,18 @@ export default function ListsScreen() {
 
   // Handle confirm screen returning with a delete action
   useEffect(() => {
-    if (params.confirmed === "true" && params.action?.startsWith("delete-list:")) {
+    if (
+      params.confirmed === "true" &&
+      params.action?.startsWith("delete-list:")
+    ) {
       const id = params.action.replace("delete-list:", "");
       deleteList(id);
       router.setParams({ confirmed: undefined, action: undefined });
     }
-    if (params.confirmed === "true" && params.action?.startsWith("clear-completed:")) {
+    if (
+      params.confirmed === "true" &&
+      params.action?.startsWith("clear-completed:")
+    ) {
       const id = params.action.replace("clear-completed:", "");
       clearCompletedTasks(id);
       router.setParams({ confirmed: undefined, action: undefined });
@@ -59,48 +68,77 @@ export default function ListsScreen() {
   }, [params.startReorder]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+    <SafeAreaView
+      edges={["top"]}
+      style={[styles.container, { backgroundColor: bg }]}
+    >
       <Header
         headerTitle="Lists"
         hideBackButton
-        rightAction={isReordering ? undefined : {
-          icon: "add",
-          onPress: () => router.push("/list-actions/new"),
-        }}
         reorderingDone={isReordering ? () => setIsReordering(false) : undefined}
+        rightAction={
+          isReordering
+            ? undefined
+            : {
+                icon: "add",
+                onPress: () => router.push("/list-actions/new"),
+              }
+        }
       />
 
       <View style={styles.scrollWrapper}>
         <Animated.ScrollView
           onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
           onScroll={handleScroll}
-          scrollEventThrottle={16}
           overScrollMode="never"
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >
           <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
             {sorted.map((list, idx) => (
               <HapticPressable
-                key={list.id}
-                onPress={() => {
-                  if (!isReordering)
-                    router.push({ pathname: "/list/[id]", params: { id: list.id } });
-                }}
-                onLongPress={() => {
-                  if (!isReordering)
-                    router.push({ pathname: "/list-actions/[id]/", params: { id: list.id } });
-                }}
                 delayLongPress={400}
+                key={list.id}
+                onLongPress={() => {
+                  if (!isReordering) {
+                    router.push({
+                      pathname: "/list-actions/[id]/",
+                      params: { id: list.id },
+                    });
+                  }
+                }}
+                onPress={() => {
+                  if (!isReordering) {
+                    router.push({
+                      pathname: "/list/[id]",
+                      params: { id: list.id },
+                    });
+                  }
+                }}
                 style={styles.listItem}
               >
                 <StyledText style={styles.listTitle}>{list.title}</StyledText>
                 {isReordering && (
                   <View style={styles.arrowGroup}>
-                    <HapticPressable onPress={() => moveListUp(list.id)} disabled={idx === 0}>
-                      <MaterialIcons name="keyboard-arrow-up" size={n(32)} color={idx === 0 ? dimColor : textColor} />
+                    <HapticPressable
+                      disabled={idx === 0}
+                      onPress={() => moveListUp(list.id)}
+                    >
+                      <MaterialIcons
+                        color={idx === 0 ? dimColor : textColor}
+                        name="keyboard-arrow-up"
+                        size={n(32)}
+                      />
                     </HapticPressable>
-                    <HapticPressable onPress={() => moveListDown(list.id)} disabled={idx === sorted.length - 1}>
-                      <MaterialIcons name="keyboard-arrow-down" size={n(32)} color={idx === sorted.length - 1 ? dimColor : textColor} />
+                    <HapticPressable
+                      disabled={idx === sorted.length - 1}
+                      onPress={() => moveListDown(list.id)}
+                    >
+                      <MaterialIcons
+                        color={idx === sorted.length - 1 ? dimColor : textColor}
+                        name="keyboard-arrow-down"
+                        size={n(32)}
+                      />
                     </HapticPressable>
                   </View>
                 )}
@@ -111,7 +149,16 @@ export default function ListsScreen() {
 
         {scrollIndicatorHeight > 0 && (
           <View style={[styles.scrollTrack, { backgroundColor: textColor }]}>
-            <Animated.View style={[styles.scrollThumb, { backgroundColor: textColor, height: scrollIndicatorHeight, transform: [{ translateY: scrollIndicatorPosition }] }]} />
+            <Animated.View
+              style={[
+                styles.scrollThumb,
+                {
+                  backgroundColor: textColor,
+                  height: scrollIndicatorHeight,
+                  transform: [{ translateY: scrollIndicatorPosition }],
+                },
+              ]}
+            />
           </View>
         )}
       </View>
@@ -122,9 +169,14 @@ export default function ListsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollWrapper: { flex: 1, flexDirection: "row", position: "relative" },
-  scrollTrack: { width: n(1), height: "100%", position: "absolute", right: n(18) },
-  scrollThumb: { width: n(5), position: "absolute", right: n(-2) },
-  listItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: n(22), paddingVertical: n(11) },
+  scrollTrack: scrollIndicatorBaseStyles.track,
+  scrollThumb: scrollIndicatorBaseStyles.thumb,
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: n(22),
+    paddingVertical: n(11),
+  },
   listTitle: { fontSize: n(30), flex: 1 },
   arrowGroup: { flexDirection: "row", gap: n(8), paddingRight: n(12) },
 });

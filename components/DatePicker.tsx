@@ -1,32 +1,48 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMemo } from "react";
-import { Modal, StyleSheet, Text as DefaultText, View } from "react-native";
-import { HapticPressable } from "@/components/HapticPressable";
+import { Text as DefaultText, Modal, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { n } from "@/utils/scaling";
 
 const DAY_HEADERS = ["S", "M", "T", "W", "T", "F", "S"];
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 interface DatePickerProps {
-  visible: boolean;
-  value?: string;
-  onSelect: (date: string) => void;
   onDismiss: () => void;
-  viewYear: number;
-  viewMonth: number;
-  onPrevMonth: () => void;
   onNextMonth: () => void;
+  onPrevMonth: () => void;
+  onSelect: (date: string) => void;
+  value?: string;
+  viewMonth: number;
+  viewYear: number;
+  visible: boolean;
 }
 
 export function DatePicker({
-  visible, value, onSelect, onDismiss,
-  viewYear, viewMonth, onPrevMonth, onNextMonth,
+  visible,
+  value,
+  onSelect,
+  onDismiss,
+  viewYear,
+  viewMonth,
+  onPrevMonth,
+  onNextMonth,
 }: DatePickerProps) {
   const { invertColors } = useInvertColors();
   const bg = invertColors ? "white" : "black";
@@ -41,11 +57,20 @@ export function DatePicker({
     const firstDay = new Date(viewYear, viewMonth, 1).getDay();
     const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const cells: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(null);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(d);
+    }
     const rows: (number | null)[][] = [];
     for (let i = 0; i < cells.length; i += 7) {
-      rows.push(cells.slice(i, i + 7).concat(Array(7).fill(null)).slice(0, 7));
+      rows.push(
+        cells
+          .slice(i, i + 7)
+          .concat(new Array(7).fill(null))
+          .slice(0, 7)
+      );
     }
     return { rows };
   }, [viewYear, viewMonth]);
@@ -56,73 +81,105 @@ export function DatePicker({
   };
 
   return (
-    <Modal visible={visible} animationType="none" transparent={false} statusBarTranslucent>
+    <Modal
+      animationType="none"
+      statusBarTranslucent
+      transparent={false}
+      visible={visible}
+    >
       <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
-
         {/* Month/year header */}
         <View style={styles.header}>
-          <HapticPressable onPress={onPrevMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialIcons name="chevron-left" size={n(40)} color={textColor} />
+          <HapticPressable
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            onPress={onPrevMonth}
+          >
+            <MaterialIcons color={textColor} name="chevron-left" size={n(40)} />
           </HapticPressable>
           <StyledText style={styles.monthTitle}>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </StyledText>
-          <HapticPressable onPress={onNextMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialIcons name="chevron-right" size={n(40)} color={textColor} />
+          <HapticPressable
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            onPress={onNextMonth}
+          >
+            <MaterialIcons
+              color={textColor}
+              name="chevron-right"
+              size={n(40)}
+            />
           </HapticPressable>
         </View>
 
         {/* Day headers */}
         <View style={styles.dayHeaderRow}>
-          {DAY_HEADERS.map((d, i) => (
-            <View key={`h-${i}`} style={styles.dayHeaderCell}>
-              <DefaultText
-                allowFontScaling={false}
-                style={[styles.dayHeader, { color: textColor }]}
-              >
-                {d}
-              </DefaultText>
-            </View>
-          ))}
+          {DAY_HEADERS.map((d, i) => {
+            return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static day-of-week headers, index is correct key
+              <View key={`h-${i}`} style={styles.dayHeaderCell}>
+                <DefaultText
+                  allowFontScaling={false}
+                  style={[styles.dayHeader, { color: textColor }]}
+                >
+                  {d}
+                </DefaultText>
+              </View>
+            );
+          })}
         </View>
 
         {/* Calendar grid — does NOT flex, so × stays anchored */}
         <View style={styles.grid}>
-          {rows.map((row, ri) => (
-            <View key={`row-${ri}`} style={styles.row}>
-              {row.map((day, ci) => {
-                if (!day) return <View key={`e-${ci}`} style={styles.cell} />;
-                const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-const isSelected = dateStr === value;
-                return (
-                  <HapticPressable
-                    key={`d-${day}`}
-                    onPress={() => handleDayPress(day)}
-                    style={styles.cell}
-                  >
-                    <StyledText style={[styles.dayText, isSelected && styles.daySelected]}>
-                      {day}
-                    </StyledText>
-                    {(isSelected || (!value && dateStr === todayStr)) && (
-                      <View style={[styles.todayUnderline, { backgroundColor: textColor }]} />
-                    )}
-                  </HapticPressable>
-                );
-              })}
-            </View>
-          ))}
+          {rows.map((row, ri) => {
+            return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: calendar grid rows have no stable identity
+              <View key={`row-${ri}`} style={styles.row}>
+                {row.map((day, ci) => {
+                  if (!day) {
+                    // biome-ignore lint/suspicious/noArrayIndexKey: empty calendar cells have no identity
+                    return <View key={`e-${ci}`} style={styles.cell} />;
+                  }
+                  const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                  const isSelected = dateStr === value;
+                  return (
+                    <HapticPressable
+                      key={`d-${day}`}
+                      onPress={() => handleDayPress(day)}
+                      style={styles.cell}
+                    >
+                      <StyledText
+                        style={[
+                          styles.dayText,
+                          isSelected && styles.daySelected,
+                        ]}
+                      >
+                        {day}
+                      </StyledText>
+                      {(isSelected || (!value && dateStr === todayStr)) && (
+                        <View
+                          style={[
+                            styles.todayUnderline,
+                            { backgroundColor: textColor },
+                          ]}
+                        />
+                      )}
+                    </HapticPressable>
+                  );
+                })}
+              </View>
+            );
+          })}
         </View>
 
         {/* × anchored to bottom — absolutely positioned so it never moves */}
         <View style={styles.footer}>
           <HapticPressable
-            onPress={onDismiss}
             hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
+            onPress={onDismiss}
           >
             <StyledText style={styles.dismissX}>✕</StyledText>
           </HapticPressable>
         </View>
-
       </SafeAreaView>
     </Modal>
   );

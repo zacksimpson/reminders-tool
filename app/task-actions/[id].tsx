@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
+import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -15,7 +15,7 @@ export default function TaskActionsScreen() {
   const { tasks, toggleTask } = useReminders();
   const bg = invertColors ? "white" : "black";
 
-  const task = tasks.find(t => t.id === id);
+  const task = tasks.find((t) => t.id === id);
   const listId = task?.listId ?? "";
 
   const handleMarkComplete = () => {
@@ -25,7 +25,10 @@ export default function TaskActionsScreen() {
 
   return (
     <SwipeBackContainer onSwipeBack={() => router.back()}>
-      <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+      <SafeAreaView
+        edges={["top"]}
+        style={[styles.container, { backgroundColor: bg }]}
+      >
         <Header headerTitle="Edit Task" />
 
         <HapticPressable onPress={handleMarkComplete} style={styles.option}>
@@ -35,34 +38,42 @@ export default function TaskActionsScreen() {
         </HapticPressable>
 
         <HapticPressable
-          onPress={() => router.push({ pathname: "/task/[id]", params: { id } })}
+          onPress={() =>
+            router.push({ pathname: "/task/[id]", params: { id } })
+          }
           style={styles.option}
         >
           <StyledText style={styles.optionText}>Edit Details</StyledText>
         </HapticPressable>
 
         <HapticPressable
-          onPress={() => router.replace({ pathname: "/list/[id]", params: { id: listId, startReorder: "true" } })}
+          onPress={() =>
+            router.replace({
+              pathname: "/list/[id]",
+              params: { id: listId, startReorder: "true" },
+            })
+          }
           style={styles.option}
         >
           <StyledText style={styles.optionText}>Reorder Tasks</StyledText>
         </HapticPressable>
 
         <HapticPressable
-          onPress={() => router.push({
-            pathname: "/confirm",
-            params: {
-              message: `Are you sure you want to delete "${task?.title}"?`,
-              confirmText: "Delete",
-              action: `delete-task:${id}`,
-              returnPath: `/list/${listId}`,
-            },
-          })}
+          onPress={() =>
+            router.push({
+              pathname: "/confirm",
+              params: {
+                message: `Are you sure you want to delete "${task?.title}"?`,
+                confirmText: "Delete",
+                action: `delete-task:${id}`,
+                returnPath: `/list/${listId}`,
+              },
+            })
+          }
           style={styles.option}
         >
           <StyledText style={styles.optionText}>Delete Task</StyledText>
         </HapticPressable>
-
       </SafeAreaView>
     </SwipeBackContainer>
   );

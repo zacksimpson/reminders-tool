@@ -6,8 +6,8 @@ import { n } from "@/utils/scaling";
 import { HapticPressable } from "./HapticPressable";
 
 export interface TabConfigItem {
-  iconName?: keyof typeof MaterialIcons.glyphMap;
   customIcon?: (color: string) => React.ReactNode;
+  iconName?: keyof typeof MaterialIcons.glyphMap;
   name: string;
   screenName: string;
 }
@@ -40,7 +40,10 @@ export function Navbar({
       ]}
     >
       {tabsConfig?.map((tab) => {
-        const color = getTabColor(tab.screenName === currentScreenName, invertColors);
+        const color = getTabColor(
+          tab.screenName === currentScreenName,
+          invertColors
+        );
         return (
           <HapticPressable
             key={tab.screenName}
@@ -51,7 +54,7 @@ export function Navbar({
             ) : (
               <MaterialIcons
                 color={color}
-                name={tab.iconName!}
+                name={tab.iconName ?? "help-outline"}
                 size={n(48)}
               />
             )}

@@ -1,8 +1,8 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Header } from "@/components/Header";
 import { HapticPressable } from "@/components/HapticPressable";
+import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
@@ -26,18 +26,27 @@ export default function AddPositionScreen() {
 
   return (
     <SwipeBackContainer onSwipeBack={() => router.back()}>
-      <SafeAreaView style={[styles.container, { backgroundColor: bg }]} edges={["top"]}>
+      <SafeAreaView
+        edges={["top"]}
+        style={[styles.container, { backgroundColor: bg }]}
+      >
         <Header headerTitle="Add New Tasks" />
         <View style={styles.options}>
           {OPTIONS.map((option) => {
-            const isSelected = (settings.addPosition ?? "bottom") === option.value;
+            const isSelected =
+              (settings.addPosition ?? "bottom") === option.value;
             return (
               <HapticPressable
                 key={option.value}
                 onPress={() => handleSelect(option.value)}
                 style={styles.optionRow}
               >
-                <StyledText style={[styles.optionText, isSelected && styles.optionSelected]}>
+                <StyledText
+                  style={[
+                    styles.optionText,
+                    isSelected && styles.optionSelected,
+                  ]}
+                >
                   {option.label}
                 </StyledText>
               </HapticPressable>

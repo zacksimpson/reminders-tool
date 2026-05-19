@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// biome-ignore lint/performance/noNamespaceImport: expo-notifications is designed for namespace usage
 import * as ExpoNotifications from "expo-notifications";
 import {
   createContext,
@@ -8,8 +10,8 @@ import {
   useRef,
   useState,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { Task, ReminderList } from "@/contexts/RemindersContext";
+import type { ReminderList, Task } from "@/contexts/RemindersContext";
+import { getTodayStr, getTomorrowStr } from "@/utils/dateTime";
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 
@@ -43,23 +45,16 @@ ExpoNotifications.setNotificationCategoryAsync("task", [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getTodayStr(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
-function getTomorrowStr(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function parseTime(time24: string): { hour: number; minute: number } {
   const [h, m] = time24.split(":").map(Number);
   return { hour: h, minute: m };
 }
 
-function parseDate(dateStr: string): { year: number; month: number; day: number } {
+function parseDate(dateStr: string): {
+  year: number;
+  month: number;
+  day: number;
+} {
   const [y, mo, d] = dateStr.split("-").map(Number);
   return { year: y, month: mo, day: d };
 }
@@ -74,25 +69,42 @@ function isFuture(dateStr: string, time24: string): boolean {
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 interface NotificationsContextType {
+  cancelForTask: (taskId: string) => Promise<void>;
   enabled: boolean;
+  permissionDenied: boolean;
+  refreshBundles: (tasks: Task[], affectedDate?: string) => Promise<void>;
+  rescheduleAll: (tasks: Task[], lists: ReminderList[]) => Promise<void>;
+  scheduleForTask: (task: Task, lists: ReminderList[]) => Promise<void>;
+  setEnabled: (
+    v: boolean,
+    tasks: Task[],
+    lists: ReminderList[]
+  ) => Promise<void>;
+  setTodaysTasksEnabled: (
+    v: boolean,
+    tasks: Task[],
+    lists: ReminderList[]
+  ) => Promise<void>;
+  setTodaysTasksTime: (
+    time: string,
+    tasks: Task[],
+    lists: ReminderList[]
+  ) => Promise<void>;
   todaysTasksEnabled: boolean;
   todaysTasksTime: string;
-  permissionDenied: boolean;
-  setEnabled: (v: boolean, tasks: Task[], lists: ReminderList[]) => Promise<void>;
-  setTodaysTasksEnabled: (v: boolean, tasks: Task[], lists: ReminderList[]) => Promise<void>;
-  setTodaysTasksTime: (time: string, tasks: Task[], lists: ReminderList[]) => Promise<void>;
-  scheduleForTask: (task: Task, lists: ReminderList[]) => Promise<void>;
-  cancelForTask: (taskId: string) => Promise<void>;
-  rescheduleAll: (tasks: Task[], lists: ReminderList[]) => Promise<void>;
-  refreshBundles: (tasks: Task[], affectedDate?: string) => Promise<void>;
-  handleCompleteAction: (taskId: string) => void;
 }
 
-const NotificationsContext = createContext<NotificationsContextType | null>(null);
+const NotificationsContext = createContext<NotificationsContextType | null>(
+  null
+);
 
 export const useNotifications = () => {
   const ctx = useContext(NotificationsContext);
-  if (!ctx) throw new Error("useNotifications must be used within NotificationsProvider");
+  if (!ctx) {
+    throw new Error(
+      "useNotifications must be used within NotificationsProvider"
+    );
+  }
   return ctx;
 };
 
@@ -119,30 +131,47 @@ export function NotificationsProvider({
         AsyncStorage.getItem(TODAYS_TASKS_ENABLED_KEY),
         AsyncStorage.getItem(TODAYS_TASKS_TIME_KEY),
       ]);
-      if (en) setEnabledState(en === "true");
-      if (tte) setTodaysTasksEnabledState(tte === "true");
-      if (ttt) setTodaysTasksTimeState(ttt);
+      if (en) {
+        setEnabledState(en === "true");
+      }
+      if (tte) {
+        setTodaysTasksEnabledState(tte === "true");
+      }
+      if (ttt) {
+        setTodaysTasksTimeState(ttt);
+      }
     };
     load();
   }, []);
 
   // Handle Complete action button
   useEffect(() => {
-    const sub = ExpoNotifications.addNotificationResponseReceivedListener((response) => {
-      const actionId = response.actionIdentifier;
-      const data = response.notification.request.content.data as Record<string, unknown>;
-      if (actionId === "complete" && data?.taskId) {
-        onCompleteTask(data.taskId as string);
+    const sub = ExpoNotifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const actionId = response.actionIdentifier;
+        const data = response.notification.request.content.data as Record<
+          string,
+          unknown
+        >;
+        if (actionId === "complete" && data?.taskId) {
+          onCompleteTask(data.taskId as string);
+        }
       }
-    });
+    );
     return () => sub.remove();
   }, [onCompleteTask]);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     const { status: existing } = await ExpoNotifications.getPermissionsAsync();
-    if (existing === "granted") { setPermissionDenied(false); return true; }
+    if (existing === "granted") {
+      setPermissionDenied(false);
+      return true;
+    }
     const { status } = await ExpoNotifications.requestPermissionsAsync();
-    if (status === "granted") { setPermissionDenied(false); return true; }
+    if (status === "granted") {
+      setPermissionDenied(false);
+      return true;
+    }
     setPermissionDenied(true);
     return false;
   }, []);
@@ -151,171 +180,326 @@ export function NotificationsProvider({
     await ExpoNotifications.cancelAllScheduledNotificationsAsync();
   }, []);
 
-  const scheduleForTask = useCallback(async (task: Task, lists: ReminderList[]) => {
-    if (!enabled || !task.date || !task.time || task.completed) return;
-    if (!isFuture(task.date, task.time)) return;
+  const scheduleForTask = useCallback(
+    async (task: Task, lists: ReminderList[]) => {
+      if (!(enabled && task.date && task.time) || task.completed) {
+        return;
+      }
+      if (!isFuture(task.date, task.time)) {
+        return;
+      }
 
-    await ExpoNotifications.cancelScheduledNotificationAsync(task.id).catch(() => {});
+      await ExpoNotifications.cancelScheduledNotificationAsync(task.id).catch(
+        () => {
+          /* notification may not exist */
+        }
+      );
 
-    const list = lists.find(l => l.id === task.listId);
-    const { year, month, day } = parseDate(task.date);
-    const { hour, minute } = parseTime(task.time);
+      const list = lists.find((l) => l.id === task.listId);
+      const { year, month, day } = parseDate(task.date);
+      const { hour, minute } = parseTime(task.time);
 
-    await ExpoNotifications.scheduleNotificationAsync({
-      identifier: task.id,
-      content: {
-        title: task.title,
-        body: list?.title ?? "",
-        data: { listId: task.listId, taskId: task.id },
-        categoryIdentifier: "task",
-      },
-      trigger: {
-        type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
-        date: new Date(year, month - 1, day, hour, minute, 0),
-      },
-    });
-  }, [enabled]);
+      await ExpoNotifications.scheduleNotificationAsync({
+        identifier: task.id,
+        content: {
+          title: task.title,
+          body: list?.title ?? "",
+          data: { listId: task.listId, taskId: task.id },
+          categoryIdentifier: "task",
+        },
+        trigger: {
+          type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
+          date: new Date(year, month - 1, day, hour, minute, 0),
+        },
+      });
+    },
+    [enabled]
+  );
 
   const cancelForTask = useCallback(async (taskId: string) => {
-    await ExpoNotifications.cancelScheduledNotificationAsync(taskId).catch(() => {});
+    await ExpoNotifications.cancelScheduledNotificationAsync(taskId).catch(
+      () => {
+        /* notification may not exist */
+      }
+    );
   }, []);
 
-  const scheduleBundleForDate = useCallback(async (
-    targetDateStr: string,
-    tasks: Task[],
-    isEnabled: boolean,
-    isTodaysTasksEnabled: boolean,
-    time: string,
-  ) => {
-    const id = bundleNotifId(targetDateStr);
-    await ExpoNotifications.cancelScheduledNotificationAsync(id).catch(() => {});
-
-    if (!isEnabled || !isTodaysTasksEnabled) return;
-    if (!isFuture(targetDateStr, time)) return;
-
-    const todayStr = getTodayStr();
-
-    // For any target date, include all incomplete tasks whose date is on or before that
-    // date — this mirrors the Today tab, which shows overdue tasks alongside today's.
-    const bundleTasks = tasks
-      .filter(t => !t.completed && t.date && t.date <= targetDateStr)
-      .sort((a, b) => {
-        if (a.date !== b.date) return a.date! < b.date! ? -1 : 1;
-        if (!a.time && !b.time) return a.order - b.order;
-        if (!a.time) return -1;
-        if (!b.time) return 1;
-        return a.time.localeCompare(b.time);
+  const scheduleBundleForDate = useCallback(
+    async (
+      targetDateStr: string,
+      tasks: Task[],
+      isEnabled: boolean,
+      isTodaysTasksEnabled: boolean,
+      time: string
+    ) => {
+      const id = bundleNotifId(targetDateStr);
+      await ExpoNotifications.cancelScheduledNotificationAsync(id).catch(() => {
+        /* notification may not exist */
       });
 
-    if (bundleTasks.length === 0) return;
-
-    const first = bundleTasks[0];
-    const rest = bundleTasks.length - 1;
-    const body = rest > 0 ? `and ${rest} other task${rest === 1 ? "" : "s"}` : "";
-
-    const { hour, minute } = parseTime(time);
-    const [y, mo, d] = targetDateStr.split("-").map(Number);
-
-    await ExpoNotifications.scheduleNotificationAsync({
-      identifier: id,
-      content: {
-        title: first.title,
-        body,
-        data: { openToday: true },
-      },
-      trigger: {
-        type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
-        date: new Date(y, mo - 1, d, hour, minute, 0),
-      },
-    });
-  }, []);
-
-  const refreshBundles = useCallback(async (tasks: Task[], affectedDate?: string) => {
-    // Skip if rescheduleAll is in flight — it will handle bundles itself
-    if (isReschedulingRef.current) return;
-
-    const todayStr = getTodayStr();
-    const tomorrowStr = getTomorrowStr();
-
-    if (affectedDate !== undefined) {
-      if (affectedDate <= todayStr) {
-        // Task is today or overdue — affects both bundles because today's incomplete
-        // tasks become overdue entries in tomorrow's Today view as well
-        await scheduleBundleForDate(todayStr, tasks, enabled, todaysTasksEnabled, todaysTasksTime);
-        await scheduleBundleForDate(tomorrowStr, tasks, enabled, todaysTasksEnabled, todaysTasksTime);
-      } else if (affectedDate === tomorrowStr) {
-        // Task is tomorrow — only tomorrow's bundle is affected
-        await scheduleBundleForDate(tomorrowStr, tasks, enabled, todaysTasksEnabled, todaysTasksTime);
+      if (!(isEnabled && isTodaysTasksEnabled)) {
+        return;
       }
-      // affectedDate is beyond tomorrow — neither bundle is affected, skip entirely
-      return;
-    }
+      if (!isFuture(targetDateStr, time)) {
+        return;
+      }
 
-    // No date hint (e.g. task date may have changed) — refresh both conservatively
-    await scheduleBundleForDate(todayStr, tasks, enabled, todaysTasksEnabled, todaysTasksTime);
-    await scheduleBundleForDate(tomorrowStr, tasks, enabled, todaysTasksEnabled, todaysTasksTime);
-  }, [enabled, todaysTasksEnabled, todaysTasksTime, scheduleBundleForDate]);
+      // For any target date, include all incomplete tasks whose date is on or before that
+      // date — this mirrors the Today tab, which shows overdue tasks alongside today's.
+      const bundleTasks = tasks
+        .filter((t) => !t.completed && t.date && t.date <= targetDateStr)
+        .sort((a, b) => {
+          if (a.date !== b.date) {
+            return (a.date ?? "") < (b.date ?? "") ? -1 : 1;
+          }
+          if (!(a.time || b.time)) {
+            return a.order - b.order;
+          }
+          if (!a.time) {
+            return -1;
+          }
+          if (!b.time) {
+            return 1;
+          }
+          return a.time.localeCompare(b.time);
+        });
 
-  const rescheduleAll = useCallback(async (tasks: Task[], lists: ReminderList[]) => {
-    isReschedulingRef.current = true;
-    try {
-      if (!enabled) { await cancelAll(); return; }
-      await cancelAll();
-      for (const task of tasks) {
-        if (task.date && task.time && !task.completed) {
-          await scheduleForTask(task, lists);
+      if (bundleTasks.length === 0) {
+        return;
+      }
+
+      const first = bundleTasks[0];
+      const rest = bundleTasks.length - 1;
+      const body =
+        rest > 0 ? `and ${rest} other task${rest === 1 ? "" : "s"}` : "";
+
+      const { hour, minute } = parseTime(time);
+      const [y, mo, d] = targetDateStr.split("-").map(Number);
+
+      await ExpoNotifications.scheduleNotificationAsync({
+        identifier: id,
+        content: {
+          title: first.title,
+          body,
+          data: { openToday: true },
+        },
+        trigger: {
+          type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
+          date: new Date(y, mo - 1, d, hour, minute, 0),
+        },
+      });
+    },
+    []
+  );
+
+  const refreshBundles = useCallback(
+    async (tasks: Task[], affectedDate?: string) => {
+      // Skip if rescheduleAll is in flight — it will handle bundles itself
+      if (isReschedulingRef.current) {
+        return;
+      }
+
+      const todayStr = getTodayStr();
+      const tomorrowStr = getTomorrowStr();
+
+      if (affectedDate !== undefined) {
+        if (affectedDate <= todayStr) {
+          // Task is today or overdue — affects both bundles because today's incomplete
+          // tasks become overdue entries in tomorrow's Today view as well
+          await scheduleBundleForDate(
+            todayStr,
+            tasks,
+            enabled,
+            todaysTasksEnabled,
+            todaysTasksTime
+          );
+          await scheduleBundleForDate(
+            tomorrowStr,
+            tasks,
+            enabled,
+            todaysTasksEnabled,
+            todaysTasksTime
+          );
+        } else if (affectedDate === tomorrowStr) {
+          // Task is tomorrow — only tomorrow's bundle is affected
+          await scheduleBundleForDate(
+            tomorrowStr,
+            tasks,
+            enabled,
+            todaysTasksEnabled,
+            todaysTasksTime
+          );
+        }
+        // affectedDate is beyond tomorrow — neither bundle is affected, skip entirely
+        return;
+      }
+
+      // No date hint (e.g. task date may have changed) — refresh both conservatively
+      await scheduleBundleForDate(
+        todayStr,
+        tasks,
+        enabled,
+        todaysTasksEnabled,
+        todaysTasksTime
+      );
+      await scheduleBundleForDate(
+        tomorrowStr,
+        tasks,
+        enabled,
+        todaysTasksEnabled,
+        todaysTasksTime
+      );
+    },
+    [enabled, todaysTasksEnabled, todaysTasksTime, scheduleBundleForDate]
+  );
+
+  const rescheduleAll = useCallback(
+    async (tasks: Task[], lists: ReminderList[]) => {
+      isReschedulingRef.current = true;
+      try {
+        if (!enabled) {
+          await cancelAll();
+          return;
+        }
+        await cancelAll();
+        for (const task of tasks) {
+          if (task.date && task.time && !task.completed) {
+            await scheduleForTask(task, lists);
+          }
+        }
+        await scheduleBundleForDate(
+          getTodayStr(),
+          tasks,
+          enabled,
+          todaysTasksEnabled,
+          todaysTasksTime
+        );
+        await scheduleBundleForDate(
+          getTomorrowStr(),
+          tasks,
+          enabled,
+          todaysTasksEnabled,
+          todaysTasksTime
+        );
+      } finally {
+        isReschedulingRef.current = false;
+      }
+    },
+    [
+      enabled,
+      todaysTasksEnabled,
+      todaysTasksTime,
+      cancelAll,
+      scheduleForTask,
+      scheduleBundleForDate,
+    ]
+  );
+
+  const setEnabled = useCallback(
+    async (v: boolean, tasks: Task[], lists: ReminderList[]) => {
+      if (v) {
+        const granted = await requestPermission();
+        if (!granted) {
+          return;
         }
       }
-      await scheduleBundleForDate(getTodayStr(), tasks, enabled, todaysTasksEnabled, todaysTasksTime);
-      await scheduleBundleForDate(getTomorrowStr(), tasks, enabled, todaysTasksEnabled, todaysTasksTime);
-    } finally {
-      isReschedulingRef.current = false;
-    }
-  }, [enabled, todaysTasksEnabled, todaysTasksTime, cancelAll, scheduleForTask, scheduleBundleForDate]);
-
-  const setEnabled = useCallback(async (v: boolean, tasks: Task[], lists: ReminderList[]) => {
-    if (v) {
-      const granted = await requestPermission();
-      if (!granted) return;
-    }
-    setEnabledState(v);
-    await AsyncStorage.setItem(NOTIF_ENABLED_KEY, String(v));
-    if (!v) {
-      await cancelAll();
-    } else {
-      await cancelAll();
-      for (const task of tasks) {
-        if (task.date && task.time && !task.completed) await scheduleForTask(task, lists);
+      setEnabledState(v);
+      await AsyncStorage.setItem(NOTIF_ENABLED_KEY, String(v));
+      if (v) {
+        await cancelAll();
+        for (const task of tasks) {
+          if (task.date && task.time && !task.completed) {
+            await scheduleForTask(task, lists);
+          }
+        }
+        await scheduleBundleForDate(
+          getTodayStr(),
+          tasks,
+          v,
+          todaysTasksEnabled,
+          todaysTasksTime
+        );
+        await scheduleBundleForDate(
+          getTomorrowStr(),
+          tasks,
+          v,
+          todaysTasksEnabled,
+          todaysTasksTime
+        );
+      } else {
+        await cancelAll();
       }
-      await scheduleBundleForDate(getTodayStr(), tasks, v, todaysTasksEnabled, todaysTasksTime);
-      await scheduleBundleForDate(getTomorrowStr(), tasks, v, todaysTasksEnabled, todaysTasksTime);
-    }
-  }, [requestPermission, cancelAll, scheduleForTask, scheduleBundleForDate, todaysTasksEnabled, todaysTasksTime]);
+    },
+    [
+      requestPermission,
+      cancelAll,
+      scheduleForTask,
+      scheduleBundleForDate,
+      todaysTasksEnabled,
+      todaysTasksTime,
+    ]
+  );
 
-  const setTodaysTasksEnabled = useCallback(async (v: boolean, tasks: Task[], lists: ReminderList[]) => {
-    setTodaysTasksEnabledState(v);
-    await AsyncStorage.setItem(TODAYS_TASKS_ENABLED_KEY, String(v));
-    await scheduleBundleForDate(getTodayStr(), tasks, enabled, v, todaysTasksTime);
-    await scheduleBundleForDate(getTomorrowStr(), tasks, enabled, v, todaysTasksTime);
-  }, [enabled, todaysTasksTime, scheduleBundleForDate]);
+  const setTodaysTasksEnabled = useCallback(
+    async (v: boolean, tasks: Task[], _lists: ReminderList[]) => {
+      setTodaysTasksEnabledState(v);
+      await AsyncStorage.setItem(TODAYS_TASKS_ENABLED_KEY, String(v));
+      await scheduleBundleForDate(
+        getTodayStr(),
+        tasks,
+        enabled,
+        v,
+        todaysTasksTime
+      );
+      await scheduleBundleForDate(
+        getTomorrowStr(),
+        tasks,
+        enabled,
+        v,
+        todaysTasksTime
+      );
+    },
+    [enabled, todaysTasksTime, scheduleBundleForDate]
+  );
 
-  const setTodaysTasksTime = useCallback(async (time: string, tasks: Task[], lists: ReminderList[]) => {
-    setTodaysTasksTimeState(time);
-    await AsyncStorage.setItem(TODAYS_TASKS_TIME_KEY, time);
-    await scheduleBundleForDate(getTodayStr(), tasks, enabled, todaysTasksEnabled, time);
-    await scheduleBundleForDate(getTomorrowStr(), tasks, enabled, todaysTasksEnabled, time);
-  }, [enabled, todaysTasksEnabled, scheduleBundleForDate]);
-
-  const handleCompleteAction = useCallback((taskId: string) => {
-    onCompleteTask(taskId);
-  }, [onCompleteTask]);
+  const setTodaysTasksTime = useCallback(
+    async (time: string, tasks: Task[], _lists: ReminderList[]) => {
+      setTodaysTasksTimeState(time);
+      await AsyncStorage.setItem(TODAYS_TASKS_TIME_KEY, time);
+      await scheduleBundleForDate(
+        getTodayStr(),
+        tasks,
+        enabled,
+        todaysTasksEnabled,
+        time
+      );
+      await scheduleBundleForDate(
+        getTomorrowStr(),
+        tasks,
+        enabled,
+        todaysTasksEnabled,
+        time
+      );
+    },
+    [enabled, todaysTasksEnabled, scheduleBundleForDate]
+  );
 
   return (
-    <NotificationsContext.Provider value={{
-      enabled, todaysTasksEnabled, todaysTasksTime, permissionDenied,
-      setEnabled, setTodaysTasksEnabled, setTodaysTasksTime,
-      scheduleForTask, cancelForTask, rescheduleAll, refreshBundles, handleCompleteAction,
-    }}>
+    <NotificationsContext.Provider
+      value={{
+        enabled,
+        todaysTasksEnabled,
+        todaysTasksTime,
+        permissionDenied,
+        setEnabled,
+        setTodaysTasksEnabled,
+        setTodaysTasksTime,
+        scheduleForTask,
+        cancelForTask,
+        rescheduleAll,
+        refreshBundles,
+      }}
+    >
       {children}
     </NotificationsContext.Provider>
   );
