@@ -23,14 +23,15 @@ export default function ConfirmScreen() {
 
   const handleConfirm = () => {
     const path = (params.returnPath || "/(tabs)/") as Href;
-    // Navigate back and pass confirmed + action as params
-    router.navigate({
+    // Dismiss all screens above the return path (e.g. task-actions + confirm)
+    // so the back gesture never resurfaces dead confirmation screens.
+    router.dismissTo({
       pathname: path,
       params: {
         confirmed: "true",
         action: params.action ?? "",
       },
-      // biome-ignore lint/suspicious/noExplicitAny: expo-router navigate with dynamic pathname requires any
+      // biome-ignore lint/suspicious/noExplicitAny: expo-router dismissTo with dynamic pathname requires any
     } as any);
   };
 
