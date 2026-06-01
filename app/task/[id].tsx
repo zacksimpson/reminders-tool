@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     paddingRight: n(22),
   },
-  subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(14) },
+  subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(15) },
   subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   taskDone: { textDecorationLine: "line-through", opacity: 0.4 },
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     paddingRight: n(18),
     paddingBottom: n(8),
   },
-  addSubtaskBtn: { paddingHorizontal: n(14), paddingVertical: n(14) },
+  addSubtaskBtn: { paddingHorizontal: n(14), paddingTop: n(15), paddingBottom: n(14) },
   subtaskInputRow: { paddingLeft: n(48), paddingRight: n(22), paddingVertical: n(10) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingLeft: 0 },
   deleteRow: {
