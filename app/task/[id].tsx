@@ -572,6 +572,7 @@ const styles = StyleSheet.create({
   subtaskRow: {
     flexDirection: "row",
     alignItems: "flex-start",
+    paddingLeft: n(8),
     paddingRight: n(22),
   },
   subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(15) },
@@ -583,8 +584,8 @@ const styles = StyleSheet.create({
     paddingRight: n(18),
     paddingBottom: n(8),
   },
-  addSubtaskBtn: { paddingHorizontal: n(14), paddingTop: n(15), paddingBottom: n(14) },
-  subtaskInputRow: { paddingLeft: n(48), paddingRight: n(22), paddingVertical: n(10) },
+  addSubtaskBtn: { marginLeft: n(8), paddingHorizontal: n(14), paddingTop: n(15), paddingBottom: n(14) },
+  subtaskInputRow: { paddingLeft: n(56), paddingRight: n(22), paddingVertical: n(10) },
   subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingLeft: 0 },
   deleteRow: {
     paddingHorizontal: n(22),
