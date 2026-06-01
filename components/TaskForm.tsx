@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Animated,
   Keyboard,
@@ -92,7 +92,10 @@ export function TaskForm({
     Array<{ id: string; title: string; completed: boolean }>
   >([]);
   const [newSubtask, setNewSubtask] = useState("");
+  const newSubtaskRef = useRef("");
   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
   const [recurrence, setRecurrence] = useState<Recurrence | undefined>(
     undefined
@@ -114,7 +117,10 @@ export function TaskForm({
       setAmPm("AM");
       setSubtasks([]);
       setNewSubtask("");
+      newSubtaskRef.current = "";
       setShowSubtaskInput(false);
+      setEditingSubtaskId(null);
+      setEditingSubtaskTitle("");
       setRecurrence(undefined);
     },
     [resolvedListId, defaultDate]
@@ -351,9 +357,54 @@ export function TaskForm({
                         size={20}
                       />
                     </View>
-                    <StyledText style={styles.subtaskTitle}>
-                      {sub.title}
-                    </StyledText>
+                    {editingSubtaskId === sub.id ? (
+                      <RNTextInput
+                        allowFontScaling={false}
+                        autoFocus
+                        blurOnSubmit
+                        cursorColor={textColor}
+                        multiline
+                        onBlur={() => {
+                          const t = editingSubtaskTitle.trim();
+                          setEditingSubtaskId(null);
+                          if (t) {
+                            setSubtasks((prev) =>
+                              prev.map((s) =>
+                                s.id === sub.id ? { ...s, title: t } : s
+                              )
+                            );
+                          }
+                        }}
+                        onChangeText={setEditingSubtaskTitle}
+                        onSubmitEditing={() => {
+                          const t = editingSubtaskTitle.trim();
+                          setEditingSubtaskId(null);
+                          if (t) {
+                            setSubtasks((prev) =>
+                              prev.map((s) =>
+                                s.id === sub.id ? { ...s, title: t } : s
+                              )
+                            );
+                          }
+                        }}
+                        returnKeyType="done"
+                        selectionColor={textColor}
+                        style={[styles.subtaskTitle, { color: textColor, paddingLeft: 0 }]}
+                        value={editingSubtaskTitle}
+                      />
+                    ) : (
+                      <HapticPressable
+                        onPress={() => {
+                          setEditingSubtaskId(sub.id);
+                          setEditingSubtaskTitle(sub.title);
+                        }}
+                        style={{ flex: 1 }}
+                      >
+                        <StyledText style={styles.subtaskTitle}>
+                          {sub.title}
+                        </StyledText>
+                      </HapticPressable>
+                    )}
                     <View style={styles.subtaskDeleteIcon}>
                       <HapticPressable
                         onPress={() =>
@@ -369,7 +420,37 @@ export function TaskForm({
                   </View>
                 ))}
                 {showSubtaskInput ? (
-                  <View style={styles.subtaskInputRow}>
+                  <View style={styles.subtaskRow}>
+                    <View style={styles.subtaskCheckboxIcon}>
+                      <HapticPressable
+                        onPress={() => {
+                          const t = newSubtaskRef.current.trim();
+                          if (t) {
+                            setSubtasks((prev) => [
+                              ...prev,
+                              { id: generateId(), title: t, completed: false },
+                            ]);
+                          }
+                          newSubtaskRef.current = "";
+                          setNewSubtask("");
+                          setShowSubtaskInput(false);
+                        }}
+                        style={styles.plusIconWrapper}
+                      >
+                        <Svg
+                          fill="none"
+                          height={n(20)}
+                          viewBox="0 0 84 84"
+                          width={n(20)}
+                        >
+                          <Path
+                            d="M42.0068 0.5C64.8971 0.500151 83.5 19.1215 83.5 42.0098C83.5 64.8984 64.8935 83.4998 42.0068 83.5C19.1203 83.5 0.5 64.8987 0.5 42.0098C0.500041 19.1212 19.12 0.5 42.0068 0.5ZM42.0068 6.625C22.4399 6.625 6.62797 22.4411 6.62793 42.0098C6.62793 61.5749 22.4396 77.375 42.0068 77.375C61.5705 77.3749 77.3682 61.5783 77.3682 42.0098C77.3681 22.4433 61.5733 6.62515 42.0068 6.625ZM45.0654 38.9375H60.1494C60.8631 38.9348 61.5518 39.1833 62.0986 39.6289L62.3242 39.832L62.3252 39.834C62.9032 40.4122 63.2244 41.1966 63.2207 42.0117C63.2169 42.8232 62.8916 43.5996 62.3184 44.1729L62.3164 44.1758C61.7403 44.7443 60.9612 45.0646 60.1494 45.0615V45.0625H45.0654V60.1514C45.0693 60.9643 44.7472 61.745 44.1738 62.3223C43.6004 62.8996 42.8236 63.2253 42.0078 63.2256L42.0088 63.2266C41.1924 63.2304 40.4082 62.9043 39.834 62.3301C39.2568 61.7528 38.9307 60.9683 38.9346 60.1514V45.0625H23.8516V45.0615C23.0395 45.0648 22.2599 44.7445 21.6836 44.1758L21.6816 44.1729C21.1084 43.5996 20.7831 42.8232 20.7793 42.0117C20.7756 41.1965 21.0966 40.4112 21.6748 39.833L21.6758 39.832C22.2521 39.2595 23.0355 38.9342 23.8516 38.9375H38.9346V23.8506C38.9384 23.0363 39.2635 22.26 39.8369 21.6865L39.8379 21.6855C40.4146 21.1126 41.1947 20.7897 42.0068 20.793C43.6947 20.7968 45.0615 22.1638 45.0654 23.8516V38.9375Z"
+                            fill={textColor}
+                            stroke={textColor}
+                          />
+                        </Svg>
+                      </HapticPressable>
+                    </View>
                     <RNTextInput
                       allowFontScaling={false}
                       autoFocus
@@ -378,16 +459,20 @@ export function TaskForm({
                         setShowSubtaskInput(false);
                         setNewSubtask("");
                       }}
-                      onChangeText={setNewSubtask}
+                      onChangeText={(text) => {
+                        newSubtaskRef.current = text;
+                        setNewSubtask(text);
+                      }}
                       onFocus={triggerHaptic}
                       onSubmitEditing={() => {
-                        const t = newSubtask.trim();
+                        const t = newSubtaskRef.current.trim();
                         if (t) {
                           setSubtasks((prev) => [
                             ...prev,
                             { id: generateId(), title: t, completed: false },
                           ]);
                         }
+                        newSubtaskRef.current = "";
                         setNewSubtask("");
                         setShowSubtaskInput(false);
                       }}
@@ -395,7 +480,7 @@ export function TaskForm({
                       placeholderTextColor={textColor}
                       returnKeyType="done"
                       selectionColor={textColor}
-                      style={[styles.subtaskInput, { color: textColor }]}
+                      style={[styles.subtaskTitle, { color: textColor, paddingLeft: 0 }]}
                       value={newSubtask}
                     />
                   </View>
@@ -565,7 +650,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     paddingRight: n(22),
   },
-  subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(14) },
+  subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(15) },
   subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
   deleteSubtask: {
@@ -573,7 +658,8 @@ const styles = StyleSheet.create({
     paddingRight: n(18),
     paddingBottom: n(8),
   },
-  addSubtaskBtn: { paddingHorizontal: n(14), paddingVertical: n(14) },
+  addSubtaskBtn: { paddingHorizontal: n(14), paddingTop: n(15), paddingBottom: n(14) },
+  plusIconWrapper: { paddingHorizontal: n(14) },
   subtaskInputRow: { paddingLeft: n(48), paddingRight: n(22), paddingVertical: n(10) },
   subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingLeft: 0 },
   modalFooter: {

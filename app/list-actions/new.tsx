@@ -48,11 +48,13 @@ export default function NewListScreen() {
               <TextInput
                 allowFontScaling={false}
                 autoFocus
+                cursorColor={textColor}
                 onChangeText={setTitle}
                 onSubmitEditing={handleSave}
                 placeholder="List name"
-                placeholderTextColor={dimColor}
+                placeholderTextColor={textColor}
                 returnKeyType="done"
+                selectionColor={textColor}
                 style={[styles.input, { color: textColor }]}
                 value={title}
               />

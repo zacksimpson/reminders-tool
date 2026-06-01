@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   scrollTrack: scrollIndicatorBaseStyles.track,
   scrollThumb: scrollIndicatorBaseStyles.thumb,
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
-  emptyText: { fontSize: n(20), opacity: 0.4 },
+  emptyText: { fontSize: n(20) },
   taskRow: {
     flexDirection: "row",
     alignItems: "flex-start",
