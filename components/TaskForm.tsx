@@ -344,7 +344,7 @@ export function TaskForm({
                 </View>
                 {subtasks.map((sub) => (
                   <View key={sub.id} style={styles.subtaskRow}>
-                    <View style={styles.subtaskCheckboxIcon}>
+                    <View style={[styles.subtaskCheckboxIcon, sub.completed && styles.taskDone]}>
                       <TaskCheckbox
                         checked={sub.completed}
                         onToggle={() =>
@@ -404,7 +404,7 @@ export function TaskForm({
                         }}
                         style={{ flex: 1 }}
                       >
-                        <StyledText style={styles.subtaskTitle}>
+                        <StyledText style={[styles.subtaskTitle, sub.completed && styles.taskDone]}>
                           {sub.title}
                         </StyledText>
                       </HapticPressable>
@@ -666,6 +666,7 @@ const styles = StyleSheet.create({
   subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(15) },
   subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
+  taskDone: { opacity: 0.4 },
   deleteSubtask: {
     paddingLeft: n(8),
     paddingRight: n(18),
