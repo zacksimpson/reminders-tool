@@ -351,7 +351,7 @@ export default function TaskScreen() {
 
                   {task.subtasks.map((sub) => (
                     <View key={sub.id} style={styles.subtaskRow}>
-                      <View style={styles.subtaskCheckboxIcon}>
+                      <View style={[styles.subtaskCheckboxIcon, sub.completed && styles.taskDone]}>
                         <TaskCheckbox
                           checked={sub.completed}
                           onToggle={() => toggleSubtask(task.id, sub.id)}
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   subtaskCheckboxIcon: { alignSelf: "flex-start", paddingTop: n(15) },
   subtaskDeleteIcon: { alignSelf: "flex-start", paddingTop: n(17) },
   subtaskTitle: { flex: 1, fontSize: n(22), paddingVertical: n(10) },
-  taskDone: { textDecorationLine: "line-through", opacity: 0.4 },
+  taskDone: { opacity: 0.4 },
   deleteSubtask: {
     paddingLeft: n(8),
     paddingRight: n(18),
