@@ -12,9 +12,9 @@ Built with [vandamd's light-template](https://github.com/vandamd/light-template)
 ## Features
 
 * Organize tasks into multiple lists
-* Add due dates, times, and subtasks to any task
-* Today view to see all of the day's tasks in one place
-* Recurring reminders can repeat on a schedule you define
+* Add due dates and times to any task
+* Today view shows only tasks due today
+* Subtasks on any task, including when adding a new task
 * Check off tasks and subtasks with a tap
 * Completed tasks move to a collapsible group at the bottom
 * Long-press a list to rename, reorder, clear completed, or delete it
