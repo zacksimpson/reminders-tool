@@ -59,7 +59,6 @@ export default function TaskScreen() {
   } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
-  const dimColor = invertColors ? "#AAAAAA" : "#555555";
 
   const {
     handleScroll,
@@ -90,6 +89,7 @@ export default function TaskScreen() {
   const [timeDigits, setTimeDigits] = useState(initTimeParts.digits);
   const [ampm, setAmPm] = useState<"AM" | "PM">(initTimeParts.ampm);
   const [newSubtask, setNewSubtask] = useState("");
+  const newSubtaskRef = useRef("");
   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
   const [recurrence, setRecurrence] = useState<Recurrence | undefined>(
     task?.recurrence
@@ -112,6 +112,11 @@ export default function TaskScreen() {
     if (!(task && title.trim())) {
       return;
     }
+    const pending = newSubtaskRef.current.trim();
+    if (pending) {
+      addSubtask(task.id, pending);
+      newSubtaskRef.current = "";
+    }
     updateTask(task.id, {
       title: title.trim(),
       listId,
@@ -120,7 +125,7 @@ export default function TaskScreen() {
       recurrence,
     });
     router.back();
-  }, [task, title, listId, date, confirmedTime, recurrence, updateTask]);
+  }, [task, title, listId, date, confirmedTime, recurrence, updateTask, addSubtask]);
 
   const handleDelete = useCallback(() => {
     if (!task) {
@@ -320,9 +325,7 @@ export default function TaskScreen() {
                       </StyledText>
                       {recurrence ? (
                         <View style={styles.fieldValueRow}>
-                          <StyledText
-                            style={[styles.fieldValue, { color: textColor }]}
-                          >
+                          <StyledText style={styles.fieldValue}>
                             {formatRecurrence(recurrence)}
                           </StyledText>
                           <HapticPressable
@@ -333,9 +336,7 @@ export default function TaskScreen() {
                           </HapticPressable>
                         </View>
                       ) : (
-                        <StyledText
-                          style={[styles.fieldValue, { color: textColor }]}
-                        >
+                        <StyledText style={styles.fieldValue}>
                           None
                         </StyledText>
                       )}
@@ -371,7 +372,7 @@ export default function TaskScreen() {
                           onSubmitEditing={() => handleRenameSubtask(sub.id)}
                           returnKeyType="done"
                           selectionColor={textColor}
-                          style={[styles.subtaskTitle, { color: textColor }]}
+                          style={[styles.subtaskTitle, { color: textColor, paddingLeft: 0 }]}
                           value={editingSubtaskTitle}
                         />
                       ) : (
@@ -404,19 +405,53 @@ export default function TaskScreen() {
                   ))}
 
                   {showSubtaskInput ? (
-                    <View style={styles.subtaskInputRow}>
+                    <View style={styles.subtaskRow}>
+                      <View style={styles.subtaskCheckboxIcon}>
+                        <HapticPressable
+                          onPress={() => {
+                            const t = newSubtaskRef.current.trim();
+                            if (t && task) addSubtask(task.id, t);
+                            newSubtaskRef.current = "";
+                            setNewSubtask("");
+                            setShowSubtaskInput(false);
+                          }}
+                          style={styles.plusIconWrapper}
+                        >
+                          <Svg
+                            fill="none"
+                            height={n(20)}
+                            viewBox="0 0 84 84"
+                            width={n(20)}
+                          >
+                            <Path
+                              d="M42.0068 0.5C64.8971 0.500151 83.5 19.1215 83.5 42.0098C83.5 64.8984 64.8935 83.4998 42.0068 83.5C19.1203 83.5 0.5 64.8987 0.5 42.0098C0.500041 19.1212 19.12 0.5 42.0068 0.5ZM42.0068 6.625C22.4399 6.625 6.62797 22.4411 6.62793 42.0098C6.62793 61.5749 22.4396 77.375 42.0068 77.375C61.5705 77.3749 77.3682 61.5783 77.3682 42.0098C77.3681 22.4433 61.5733 6.62515 42.0068 6.625ZM45.0654 38.9375H60.1494C60.8631 38.9348 61.5518 39.1833 62.0986 39.6289L62.3242 39.832L62.3252 39.834C62.9032 40.4122 63.2244 41.1966 63.2207 42.0117C63.2169 42.8232 62.8916 43.5996 62.3184 44.1729L62.3164 44.1758C61.7403 44.7443 60.9612 45.0646 60.1494 45.0615V45.0625H45.0654V60.1514C45.0693 60.9643 44.7472 61.745 44.1738 62.3223C43.6004 62.8996 42.8236 63.2253 42.0078 63.2256L42.0088 63.2266C41.1924 63.2304 40.4082 62.9043 39.834 62.3301C39.2568 61.7528 38.9307 60.9683 38.9346 60.1514V45.0625H23.8516V45.0615C23.0395 45.0648 22.2599 44.7445 21.6836 44.1758L21.6816 44.1729C21.1084 43.5996 20.7831 42.8232 20.7793 42.0117C20.7756 41.1965 21.0966 40.4112 21.6748 39.833L21.6758 39.832C22.2521 39.2595 23.0355 38.9342 23.8516 38.9375H38.9346V23.8506C38.9384 23.0363 39.2635 22.26 39.8369 21.6865L39.8379 21.6855C40.4146 21.1126 41.1947 20.7897 42.0068 20.793C43.6947 20.7968 45.0615 22.1638 45.0654 23.8516V38.9375Z"
+                              fill={textColor}
+                              stroke={textColor}
+                            />
+                          </Svg>
+                        </HapticPressable>
+                      </View>
                       <RNTextInput
                         allowFontScaling={false}
                         autoFocus
                         cursorColor={textColor}
                         onBlur={() => {
-                          setShowSubtaskInput(false);
+                          const t = newSubtaskRef.current.trim();
+                          if (t && task) addSubtask(task.id, t);
+                          newSubtaskRef.current = "";
                           setNewSubtask("");
+                          setShowSubtaskInput(false);
                         }}
-                        onChangeText={setNewSubtask}
+                        onChangeText={(text) => {
+                          newSubtaskRef.current = text;
+                          setNewSubtask(text);
+                        }}
                         onFocus={triggerHaptic}
                         onSubmitEditing={() => {
-                          if (newSubtask.trim()) handleAddSubtask();
+                          const t = newSubtaskRef.current.trim();
+                          if (t && task) addSubtask(task.id, t);
+                          newSubtaskRef.current = "";
+                          setNewSubtask("");
                           setShowSubtaskInput(false);
                         }}
                         placeholder="Add subtask…"
@@ -424,7 +459,7 @@ export default function TaskScreen() {
                         ref={subtaskInputRef}
                         returnKeyType="done"
                         selectionColor={textColor}
-                        style={[styles.subtaskField, { color: textColor }]}
+                        style={[styles.subtaskTitle, { color: textColor, paddingLeft: 0 }]}
                         value={newSubtask}
                       />
                     </View>
@@ -550,7 +585,6 @@ const styles = StyleSheet.create({
   scrollTrack: scrollIndicatorBaseStyles.track,
   scrollThumb: scrollIndicatorBaseStyles.thumb,
   field: { paddingHorizontal: n(22), paddingVertical: n(13) },
-  subtasksField: { paddingTop: n(28) },
   fieldLabel: { fontSize: n(14), marginBottom: n(4) },
   fieldValue: { fontSize: n(24), fontFamily: "PublicSans-Regular" },
   fieldValueRow: {
@@ -567,7 +601,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     marginRight: n(18),
   },
-  sectionHeader: { paddingHorizontal: n(22), paddingVertical: n(12) },
+  sectionHeader: { paddingHorizontal: n(22), paddingTop: n(28), paddingBottom: n(12) },
   sectionLabel: { fontSize: n(14) },
   subtaskRow: {
     flexDirection: "row",
@@ -585,8 +619,7 @@ const styles = StyleSheet.create({
     paddingBottom: n(8),
   },
   addSubtaskBtn: { marginLeft: n(8), paddingHorizontal: n(14), paddingTop: n(15), paddingBottom: n(14) },
-  subtaskInputRow: { paddingLeft: n(56), paddingRight: n(22), paddingVertical: n(10) },
-  subtaskField: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingLeft: 0 },
+  plusIconWrapper: { paddingHorizontal: n(14) },
   deleteRow: {
     paddingHorizontal: n(22),
     paddingVertical: n(28),

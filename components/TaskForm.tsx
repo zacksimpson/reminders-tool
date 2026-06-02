@@ -64,7 +64,6 @@ export function TaskForm({
   const { lists, settings, addTask } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
-  const dimColor = invertColors ? "#AAAAAA" : "#555555";
 
   const resolvedListId = defaultListId ?? settings.defaultListId;
   const {
@@ -131,13 +130,18 @@ export function TaskForm({
       return;
     }
     Keyboard.dismiss();
+    const pending = newSubtaskRef.current.trim();
+    const finalSubtasks = pending
+      ? [...subtasks, { id: generateId(), title: pending, completed: false }]
+      : subtasks;
+    newSubtaskRef.current = "";
     addTask({
       title: title.trim(),
       listId: selectedListId,
       date,
       time: confirmedTime,
       recurrence,
-      subtasks: subtasks.map((s) => ({
+      subtasks: finalSubtasks.map((s) => ({
         id: s.id,
         title: s.title,
         completed: s.completed,
@@ -456,8 +460,16 @@ export function TaskForm({
                       autoFocus
                       cursorColor={textColor}
                       onBlur={() => {
-                        setShowSubtaskInput(false);
+                        const t = newSubtaskRef.current.trim();
+                        if (t) {
+                          setSubtasks((prev) => [
+                            ...prev,
+                            { id: generateId(), title: t, completed: false },
+                          ]);
+                        }
+                        newSubtaskRef.current = "";
                         setNewSubtask("");
+                        setShowSubtaskInput(false);
                       }}
                       onChangeText={(text) => {
                         newSubtaskRef.current = text;
@@ -662,7 +674,6 @@ const styles = StyleSheet.create({
   addSubtaskBtn: { marginLeft: n(8), paddingHorizontal: n(14), paddingTop: n(15), paddingBottom: n(14) },
   plusIconWrapper: { paddingHorizontal: n(14) },
   subtaskInputRow: { paddingLeft: n(48), paddingRight: n(22), paddingVertical: n(10) },
-  subtaskInput: { fontSize: n(22), fontFamily: "PublicSans-Regular", paddingLeft: 0 },
   modalFooter: {
     flexDirection: "row",
     alignItems: "center",
