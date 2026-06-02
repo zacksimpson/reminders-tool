@@ -22,6 +22,7 @@ export default function TodayViewScreen() {
         <Header headerTitle="Today View" />
         <View style={styles.row}>
           <ToggleSwitch
+            description="indicated with *"
             label="Show Overdue"
             onValueChange={(v) => updateSettings({ showOverdue: v })}
             value={settings.showOverdue ?? true}

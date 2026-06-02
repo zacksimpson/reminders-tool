@@ -61,12 +61,14 @@ const ToggleSwitchGraphic = ({ value }: { value: boolean }) => {
 };
 
 interface ToggleSwitchProps {
+  description?: string;
   label: string;
   onValueChange: (value: boolean) => void;
   value: boolean;
 }
 
 export function ToggleSwitch({
+  description,
   label,
   value,
   onValueChange,
@@ -74,13 +76,16 @@ export function ToggleSwitch({
   return (
     <HapticPressable
       onPress={() => onValueChange(!value)}
-      style={styles.container}
+      style={[styles.container, description ? styles.containerTop : null]}
     >
-      <View style={styles.switchTouchable}>
+      <View style={[styles.switchTouchable, description ? styles.switchTouchableTop : null]}>
         <ToggleSwitchGraphic value={value} />
       </View>
       <View style={styles.textTouchable}>
         <StyledText style={styles.label}>{label}</StyledText>
+        {description && (
+          <StyledText style={styles.description}>{description}</StyledText>
+        )}
       </View>
     </HapticPressable>
   );
@@ -92,15 +97,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: n(9),
   },
+  containerTop: {
+    alignItems: "flex-start",
+  },
   switchTouchable: {
-    marginTop: n(13),
+    marginTop: n(6),
     marginRight: n(20),
     marginLeft: n(8.5),
+  },
+  switchTouchableTop: {
+    marginTop: n(17),
   },
   textTouchable: {
     flex: 1,
   },
   label: {
     fontSize: n(30),
+  },
+  description: {
+    fontSize: n(16),
+    letterSpacing: 0.4,
+    marginTop: n(2),
   },
 });
