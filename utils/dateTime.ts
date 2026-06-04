@@ -13,15 +13,29 @@ const MONTHS = [
   "Dec",
 ];
 
+/** Format a Date object as "YYYY-MM-DD" */
+export function formatISODate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/** Parse "YYYY-MM-DD" into numeric parts */
+export function parseDateStr(dateStr: string): {
+  y: number;
+  mo: number;
+  d: number;
+} {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  return { y, mo, d };
+}
+
 export function getTodayStr(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return formatISODate(new Date());
 }
 
 export function getTomorrowStr(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return formatISODate(d);
 }
 
 /** "HH:MM" 24h → "h:mm AM/PM" */
@@ -73,6 +87,37 @@ export function digitsToTime(digits: string, ampm: "AM" | "PM"): string {
     h = 0;
   }
   return `${String(h).padStart(2, "0")}:${m}`;
+}
+
+/**
+ * Sort comparator for tasks within the same date: timed tasks before untimed,
+ * untimed tasks by their manual order field.
+ */
+export function compareTasksByDateTime(
+  a: { time?: string; order: number },
+  b: { time?: string; order: number }
+): number {
+  if (!(a.time || b.time)) {
+    return a.order - b.order;
+  }
+  if (!a.time) {
+    return -1;
+  }
+  if (!b.time) {
+    return 1;
+  }
+  return a.time.localeCompare(b.time);
+}
+
+/** Sort comparator across dates, then by time within a date. */
+export function compareTasksByDateThenTime(
+  a: { date?: string; time?: string; order: number },
+  b: { date?: string; time?: string; order: number }
+): number {
+  if (a.date !== b.date) {
+    return (a.date ?? "") < (b.date ?? "") ? -1 : 1;
+  }
+  return compareTasksByDateTime(a, b);
 }
 
 /** "HH:MM" 24h → TimePicker { digits, ampm } */

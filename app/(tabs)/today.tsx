@@ -18,7 +18,13 @@ import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
 } from "@/hooks/useScrollIndicator";
-import { formatDate, formatTime, getTodayStr } from "@/utils/dateTime";
+import {
+  compareTasksByDateThenTime,
+  compareTasksByDateTime,
+  formatDate,
+  formatTime,
+  getTodayStr,
+} from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
 
 function isOverdue(task: Task): boolean {
@@ -139,38 +145,13 @@ export default function TodayScreen() {
   const overdueTasks = showOverdue
     ? tasks
         .filter((t) => !t.completed && isOverdue(t))
-        .sort((a, b) => {
-          if (a.date !== b.date) {
-            return (a.date ?? "") < (b.date ?? "") ? -1 : 1;
-          }
-          if (!(a.time || b.time)) {
-            return a.order - b.order;
-          }
-          if (!a.time) {
-            return -1;
-          }
-          if (!b.time) {
-            return 1;
-          }
-          return a.time.localeCompare(b.time);
-        })
+        .sort(compareTasksByDateThenTime)
     : [];
 
   // Today's active tasks (exclude overdue so they don't appear in both lists)
   const activeTasks = tasks
     .filter((t) => t.date === todayStr && !t.completed && !isOverdue(t))
-    .sort((a, b) => {
-      if (!(a.time || b.time)) {
-        return a.order - b.order;
-      }
-      if (!a.time) {
-        return -1;
-      }
-      if (!b.time) {
-        return 1;
-      }
-      return a.time.localeCompare(b.time);
-    });
+    .sort(compareTasksByDateTime);
 
   // Completed tasks (today + overdue)
   const completedTasks = tasks

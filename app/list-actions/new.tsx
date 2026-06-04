@@ -18,8 +18,6 @@ export default function NewListScreen() {
   const { addList } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
-  const dimColor = invertColors ? "#AAAAAA" : "#555555";
-
   const [title, setTitle] = useState("");
   const canSave = title.trim().length > 0;
 
