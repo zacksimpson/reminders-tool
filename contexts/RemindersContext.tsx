@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { formatISODate, parseDateStr } from "@/utils/dateTime";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -141,49 +142,62 @@ export const useReminders = () => {
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
+function addInterval(
+  date: Date,
+  unit: Recurrence["unit"],
+  interval: number
+): Date {
+  const d = new Date(date);
+  switch (unit) {
+    case "day":
+      d.setDate(d.getDate() + interval);
+      break;
+    case "week":
+      d.setDate(d.getDate() + interval * 7);
+      break;
+    case "month":
+      d.setMonth(d.getMonth() + interval);
+      break;
+    case "year":
+      d.setFullYear(d.getFullYear() + interval);
+      break;
+    default:
+      break;
+  }
+  return d;
+}
+
 function getNextOccurrenceDate(
   dateStr: string,
   recurrence: Recurrence
 ): string {
-  const [y, mo, d] = dateStr.split("-").map(Number);
+  const { y, mo, d } = parseDateStr(dateStr);
   let date = new Date(y, mo - 1, d);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   do {
-    switch (recurrence.unit) {
-      case "day":
-        date = new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate() + recurrence.interval
-        );
-        break;
-      case "week":
-        date = new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate() + recurrence.interval * 7
-        );
-        break;
-      case "month":
-        date = new Date(
-          date.getFullYear(),
-          date.getMonth() + recurrence.interval,
-          date.getDate()
-        );
-        break;
-      case "year":
-        date = new Date(
-          date.getFullYear() + recurrence.interval,
-          date.getMonth(),
-          date.getDate()
-        );
-        break;
-      default:
-        break;
-    }
+    date = addInterval(date, recurrence.unit, recurrence.interval);
   } while (date < today);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return formatISODate(date);
+}
+
+function spawnNextOccurrence(task: Task): Task | null {
+  if (!(task.date && task.recurrence)) {
+    return null;
+  }
+  const nextDate = getNextOccurrenceDate(task.date, task.recurrence);
+  return {
+    id: generateId(),
+    title: task.title,
+    listId: task.listId,
+    date: nextDate,
+    time: task.time,
+    recurrence: task.recurrence,
+    completed: false,
+    createdAt: Date.now(),
+    order: task.order,
+    subtasks: task.subtasks.map((s) => ({ ...s, completed: false })),
+  };
 }
 
 export function generateId(): string {
@@ -340,14 +354,16 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       const isTop = settings.addPosition === "top";
       let order: number;
       if (isTop) {
-        const minOrder =
-          listTasks.length > 0 ? Math.min(...listTasks.map((t) => t.order)) : 0;
+        const minOrder = listTasks.reduce(
+          (acc, t) => Math.min(acc, t.order),
+          0
+        );
         order = minOrder - 1;
       } else {
-        const maxOrder =
-          listTasks.length > 0
-            ? Math.max(...listTasks.map((t) => t.order))
-            : -1;
+        const maxOrder = listTasks.reduce(
+          (acc, t) => Math.max(acc, t.order),
+          -1
+        );
         order = maxOrder + 1;
       }
       const newTask: Task = {
@@ -431,23 +447,10 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       let finalTasks = updatedTasks;
       let nextTask: Task | null = null;
       if (updated?.completed && updated.recurrence && updated.date) {
-        const nextDate = getNextOccurrenceDate(
-          updated.date,
-          updated.recurrence
-        );
-        nextTask = {
-          id: generateId(),
-          title: updated.title,
-          listId: updated.listId,
-          date: nextDate,
-          time: updated.time,
-          recurrence: updated.recurrence,
-          completed: false,
-          createdAt: Date.now(),
-          order: updated.order,
-          subtasks: updated.subtasks.map((s) => ({ ...s, completed: false })),
-        };
-        finalTasks = [...updatedTasks, nextTask];
+        nextTask = spawnNextOccurrence(updated);
+        if (nextTask) {
+          finalTasks = [...updatedTasks, nextTask];
+        }
       }
 
       persistTasks(finalTasks);

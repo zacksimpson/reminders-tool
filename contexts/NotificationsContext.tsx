@@ -11,7 +11,12 @@ import {
   useState,
 } from "react";
 import type { ReminderList, Task } from "@/contexts/RemindersContext";
-import { getTodayStr, getTomorrowStr } from "@/utils/dateTime";
+import {
+  compareTasksByDateThenTime,
+  getTodayStr,
+  getTomorrowStr,
+  parseDateStr,
+} from "@/utils/dateTime";
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 
@@ -50,19 +55,10 @@ function parseTime(time24: string): { hour: number; minute: number } {
   return { hour: h, minute: m };
 }
 
-function parseDate(dateStr: string): {
-  year: number;
-  month: number;
-  day: number;
-} {
-  const [y, mo, d] = dateStr.split("-").map(Number);
-  return { year: y, month: mo, day: d };
-}
-
 function isFuture(dateStr: string, time24: string): boolean {
-  const { year, month, day } = parseDate(dateStr);
+  const { y, mo, d } = parseDateStr(dateStr);
   const { hour, minute } = parseTime(time24);
-  const target = new Date(year, month - 1, day, hour, minute, 0);
+  const target = new Date(y, mo - 1, d, hour, minute, 0);
   return target > new Date();
 }
 
@@ -196,7 +192,7 @@ export function NotificationsProvider({
       );
 
       const list = lists.find((l) => l.id === task.listId);
-      const { year, month, day } = parseDate(task.date);
+      const { y, mo, d } = parseDateStr(task.date);
       const { hour, minute } = parseTime(task.time);
 
       await ExpoNotifications.scheduleNotificationAsync({
@@ -209,7 +205,7 @@ export function NotificationsProvider({
         },
         trigger: {
           type: ExpoNotifications.SchedulableTriggerInputTypes.DATE,
-          date: new Date(year, month - 1, day, hour, minute, 0),
+          date: new Date(y, mo - 1, d, hour, minute, 0),
         },
       });
     },
@@ -248,21 +244,7 @@ export function NotificationsProvider({
       // date — this mirrors the Today tab, which shows overdue tasks alongside today's.
       const bundleTasks = tasks
         .filter((t) => !t.completed && t.date && t.date <= targetDateStr)
-        .sort((a, b) => {
-          if (a.date !== b.date) {
-            return (a.date ?? "") < (b.date ?? "") ? -1 : 1;
-          }
-          if (!(a.time || b.time)) {
-            return a.order - b.order;
-          }
-          if (!a.time) {
-            return -1;
-          }
-          if (!b.time) {
-            return 1;
-          }
-          return a.time.localeCompare(b.time);
-        });
+        .sort(compareTasksByDateThenTime);
 
       if (bundleTasks.length === 0) {
         return;
@@ -274,7 +256,7 @@ export function NotificationsProvider({
         rest > 0 ? `and ${rest} other task${rest === 1 ? "" : "s"}` : "";
 
       const { hour, minute } = parseTime(time);
-      const [y, mo, d] = targetDateStr.split("-").map(Number);
+      const { y, mo, d } = parseDateStr(targetDateStr);
 
       await ExpoNotifications.scheduleNotificationAsync({
         identifier: id,

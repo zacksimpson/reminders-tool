@@ -78,7 +78,12 @@ export function ToggleSwitch({
       onPress={() => onValueChange(!value)}
       style={[styles.container, description ? styles.containerTop : null]}
     >
-      <View style={[styles.switchTouchable, description ? styles.switchTouchableTop : null]}>
+      <View
+        style={[
+          styles.switchTouchable,
+          description ? styles.switchTouchableTop : null,
+        ]}
+      >
         <ToggleSwitchGraphic value={value} />
       </View>
       <View style={styles.textTouchable}>
