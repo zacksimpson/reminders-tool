@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   taskRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    paddingRight: n(22),
+    paddingRight: n(32),
   },
   taskRowDimmed: { opacity: 0.4 },
   asteriskHitArea: {
