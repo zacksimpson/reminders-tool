@@ -1,4 +1,3 @@
-import { MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
@@ -8,109 +7,14 @@ import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
-import { TaskCheckbox } from "@/components/TaskCheckbox";
+import { TaskRow } from "@/components/TaskRow";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import {
-  formatRecurrence,
-  type Task,
-  useReminders,
-} from "@/contexts/RemindersContext";
+import { useReminders } from "@/contexts/RemindersContext";
 import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
 } from "@/hooks/useScrollIndicator";
-import { formatDate, formatTime } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
-
-interface TaskRowProps {
-  dimmed?: boolean;
-  isFirst: boolean;
-  isLast: boolean;
-  isReordering: boolean;
-  listTitle: string;
-  onLongPress: () => void;
-  onMoveDown: () => void;
-  onMoveUp: () => void;
-  onPress: () => void;
-  onToggle: () => void;
-  task: Task;
-}
-
-function TaskRow({
-  task,
-  listTitle,
-  isReordering,
-  isFirst,
-  isLast,
-  onToggle,
-  onPress,
-  onLongPress,
-  onMoveUp,
-  onMoveDown,
-  dimmed,
-}: TaskRowProps) {
-  const { invertColors } = useInvertColors();
-  const textColor = invertColors ? "black" : "white";
-  const dimColor = invertColors ? "#AAAAAA" : "#555555";
-
-  const subtaskCount = task.subtasks?.length ?? 0;
-  const subtaskLabel =
-    subtaskCount > 0
-      ? `${subtaskCount} ${subtaskCount === 1 ? "Subtask" : "Subtasks"}`
-      : null;
-  const meta = [
-    listTitle,
-    task.date ? formatDate(task.date) : null,
-    task.time ? formatTime(task.time) : null,
-    subtaskLabel,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const recurrenceLabel = task.recurrence
-    ? formatRecurrence(task.recurrence)
-    : null;
-
-  return (
-    <View style={[styles.taskRow, dimmed && styles.taskRowDimmed]}>
-      {!isReordering && (
-        <TaskCheckbox checked={task.completed} onToggle={onToggle} />
-      )}
-      <HapticPressable
-        delayLongPress={400}
-        onLongPress={onLongPress}
-        onPress={onPress}
-        style={[
-          styles.taskContent,
-          isReordering && styles.taskContentReordering,
-        ]}
-      >
-        <StyledText style={styles.taskTitle}>{task.title}</StyledText>
-        {meta ? <StyledText style={styles.taskMeta}>{meta}</StyledText> : null}
-        {recurrenceLabel ? (
-          <StyledText style={styles.taskMeta}>{recurrenceLabel}</StyledText>
-        ) : null}
-      </HapticPressable>
-      {isReordering && (
-        <View style={styles.arrowGroup}>
-          <HapticPressable disabled={isFirst} onPress={onMoveUp}>
-            <MaterialIcons
-              color={isFirst ? dimColor : textColor}
-              name="keyboard-arrow-up"
-              size={n(32)}
-            />
-          </HapticPressable>
-          <HapticPressable disabled={isLast} onPress={onMoveDown}>
-            <MaterialIcons
-              color={isLast ? dimColor : textColor}
-              name="keyboard-arrow-down"
-              size={n(32)}
-            />
-          </HapticPressable>
-        </View>
-      )}
-    </View>
-  );
-}
 
 export default function ListScreen() {
   const { id, startReorder, confirmed, action } = useLocalSearchParams<{
@@ -321,22 +225,6 @@ const styles = StyleSheet.create({
   scrollWrapper: { flex: 1, flexDirection: "row", position: "relative" },
   scrollTrack: scrollIndicatorBaseStyles.track,
   scrollThumb: scrollIndicatorBaseStyles.thumb,
-  taskRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingRight: n(32),
-  },
-  taskRowDimmed: { opacity: 0.4 },
-  taskContent: { flex: 1, paddingVertical: n(11) },
-  taskContentReordering: { paddingLeft: n(22) },
-  taskTitle: { fontSize: n(23) },
-  taskMeta: { fontSize: n(16), marginTop: n(2) },
-  arrowGroup: {
-    flexDirection: "row",
-    gap: n(8),
-    paddingRight: n(12),
-    paddingTop: n(11),
-  },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { fontSize: n(24) },
   completedHeader: { paddingHorizontal: n(22), paddingVertical: n(14) },
