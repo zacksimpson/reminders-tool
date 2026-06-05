@@ -5,15 +5,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AddTaskModal } from "@/components/AddTaskModal";
 import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
-import { OverdueAsterisk } from "@/components/OverdueAsterisk";
 import { StyledText } from "@/components/StyledText";
-import { TaskCheckbox } from "@/components/TaskCheckbox";
+import { TaskRow } from "@/components/TaskRow";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import {
-  formatRecurrence,
-  type Task,
-  useReminders,
-} from "@/contexts/RemindersContext";
+import { useReminders } from "@/contexts/RemindersContext";
 import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
@@ -21,78 +16,10 @@ import {
 import {
   compareTasksByDateThenTime,
   compareTasksByDateTime,
-  formatDate,
-  formatTime,
   getTodayStr,
+  isOverdue,
 } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
-
-function isOverdue(task: Task): boolean {
-  if (!task.date) {
-    return false;
-  }
-  const todayStr = getTodayStr();
-  if (task.time) {
-    const [y, mo, d] = task.date.split("-").map(Number);
-    const [h, m] = task.time.split(":").map(Number);
-    return new Date(y, mo - 1, d, h, m, 0) < new Date();
-  }
-  return task.date < todayStr;
-}
-
-interface TaskRowProps {
-  dimmed?: boolean;
-  listTitle: string;
-  onPress: () => void;
-  onToggle: () => void;
-  overdue?: boolean;
-  task: Task;
-}
-
-function TaskRow({
-  task,
-  listTitle,
-  overdue,
-  onToggle,
-  onPress,
-  dimmed,
-}: TaskRowProps) {
-  const subtaskCount = task.subtasks?.length ?? 0;
-  const subtaskLabel =
-    subtaskCount > 0
-      ? `${subtaskCount} ${subtaskCount === 1 ? "Subtask" : "Subtasks"}`
-      : null;
-  const meta = [
-    listTitle,
-    task.date ? formatDate(task.date) : null,
-    task.time ? formatTime(task.time) : null,
-    subtaskLabel,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const recurrenceLabel = task.recurrence
-    ? formatRecurrence(task.recurrence)
-    : null;
-
-  return (
-    <View style={[styles.taskRow, dimmed && styles.taskRowDimmed]}>
-      {overdue && !task.completed ? (
-        <HapticPressable onPress={onToggle} style={styles.asteriskHitArea}>
-          <OverdueAsterisk size={22} />
-        </HapticPressable>
-      ) : (
-        <TaskCheckbox checked={task.completed} onToggle={onToggle} />
-      )}
-      <HapticPressable onPress={onPress} style={styles.taskContent}>
-        <StyledText style={styles.taskTitle}>{task.title}</StyledText>
-        {meta ? <StyledText style={styles.taskMeta}>{meta}</StyledText> : null}
-        {recurrenceLabel ? (
-          <StyledText style={styles.taskMeta}>{recurrenceLabel}</StyledText>
-        ) : null}
-      </HapticPressable>
-    </View>
-  );
-}
 
 export default function TodayScreen() {
   const { invertColors } = useInvertColors();
@@ -291,21 +218,6 @@ const styles = StyleSheet.create({
   scrollThumb: scrollIndicatorBaseStyles.thumb,
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { fontSize: n(20) },
-  taskRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingRight: n(32),
-  },
-  taskRowDimmed: { opacity: 0.4 },
-  asteriskHitArea: {
-    paddingHorizontal: n(14),
-    paddingTop: n(17),
-    paddingBottom: n(8),
-    alignSelf: "flex-start",
-  },
-  taskContent: { flex: 1, paddingVertical: n(11) },
-  taskTitle: { fontSize: n(23) },
-  taskMeta: { fontSize: n(16), marginTop: n(2) },
   completedHeader: { paddingHorizontal: n(22), paddingVertical: n(14) },
   completedLabel: { fontSize: n(18), opacity: 0.5 },
 });
