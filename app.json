@@ -28,6 +28,7 @@
       ],
       "./plugins/withAndroidConfigChanges",
       "./plugins/withAndroidTheme",
+      "./plugins/withDebugApplicationIdSuffix",
       [
         "expo-notifications",
         {
