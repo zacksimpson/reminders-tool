@@ -4,7 +4,7 @@
 A LightOS reminders/task manager app for the **Light Phone III**. Built as a native Android app using React Native / Expo. Android only — no iOS target. The app is minimal and monochromatic to match the Light Phone aesthetic.
 
 **GitHub:** https://github.com/zacksimpson/reminders-tool  
-**Working directory:** `~/Dev/reminders` (Mac) or `C:\Dev\reminders` (Windows)  
+**Working directory:** `C:\Dev\reminders`  
 **Primary branch:** `main`
 
 ---
