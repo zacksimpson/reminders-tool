@@ -8,7 +8,7 @@ import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { TaskRow } from "@/components/TaskRow";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import { type Task, useReminders } from "@/contexts/RemindersContext";
+import { useReminders } from "@/contexts/RemindersContext";
 import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
@@ -17,21 +17,9 @@ import {
   compareTasksByDateThenTime,
   compareTasksByDateTime,
   getTodayStr,
+  isOverdue,
 } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
-
-function isOverdue(task: Task): boolean {
-  if (!task.date) {
-    return false;
-  }
-  const todayStr = getTodayStr();
-  if (task.time) {
-    const [y, mo, d] = task.date.split("-").map(Number);
-    const [h, m] = task.time.split(":").map(Number);
-    return new Date(y, mo - 1, d, h, m, 0) < new Date();
-  }
-  return task.date < todayStr;
-}
 
 export default function TodayScreen() {
   const { invertColors } = useInvertColors();
