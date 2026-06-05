@@ -14,6 +14,7 @@ import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
 } from "@/hooks/useScrollIndicator";
+import { isOverdue } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
 
 export default function ListScreen() {
@@ -144,6 +145,7 @@ export default function ListScreen() {
                       });
                     }}
                     onToggle={() => toggleTask(task.id)}
+                    overdue={isOverdue(task)}
                     task={task}
                   />
                 ))}
