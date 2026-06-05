@@ -89,6 +89,20 @@ export function digitsToTime(digits: string, ampm: "AM" | "PM"): string {
   return `${String(h).padStart(2, "0")}:${m}`;
 }
 
+/** Returns true if the task's date/time is in the past. */
+export function isOverdue(task: { date?: string; time?: string }): boolean {
+  if (!task.date) {
+    return false;
+  }
+  const todayStr = getTodayStr();
+  if (task.time) {
+    const { y, mo, d } = parseDateStr(task.date);
+    const [h, m] = task.time.split(":").map(Number);
+    return new Date(y, mo - 1, d, h, m, 0) < new Date();
+  }
+  return task.date < todayStr;
+}
+
 /**
  * Sort comparator for tasks within the same date: timed tasks before untimed,
  * untimed tasks by their manual order field.
