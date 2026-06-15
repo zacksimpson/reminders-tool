@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react";
 import {
   digitsToTime,
-  formatDisplayTime,
+  formatTime,
   timeToDisplayParts,
 } from "@/utils/dateTime";
 
-export function useTimePickerState(initialTime?: string) {
+export function useTimePickerState(initialTime?: string, use24Hour = false) {
   const initParts = initialTime
-    ? timeToDisplayParts(initialTime)
+    ? timeToDisplayParts(initialTime, use24Hour)
     : { digits: "", ampm: "AM" as const };
 
   const [confirmedTime, setConfirmedTime] = useState<string | undefined>(
@@ -21,9 +21,9 @@ export function useTimePickerState(initialTime?: string) {
     if (timeDigits.length !== 3 && timeDigits.length !== 4) {
       return false;
     }
-    setConfirmedTime(digitsToTime(timeDigits, ampm));
+    setConfirmedTime(digitsToTime(timeDigits, ampm, use24Hour));
     return true;
-  }, [timeDigits, ampm]);
+  }, [timeDigits, ampm, use24Hour]);
 
   const clear = useCallback(() => {
     setConfirmedTime(undefined);
@@ -54,7 +54,7 @@ export function useTimePickerState(initialTime?: string) {
     clear,
     confirm,
     confirmedTime,
-    displayTime: confirmedTime ? formatDisplayTime(timeDigits, ampm) : null,
+    displayTime: confirmedTime ? formatTime(confirmedTime, use24Hour) : null,
     onPickerDismiss,
     setAmPm,
     timeDigits,

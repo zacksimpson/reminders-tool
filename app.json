@@ -36,7 +36,8 @@
           "color": "#000000",
           "androidMode": "default"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
