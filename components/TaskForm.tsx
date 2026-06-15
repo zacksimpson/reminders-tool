@@ -29,6 +29,7 @@ import {
   type Recurrence,
   useReminders,
 } from "@/contexts/RemindersContext";
+import { use24HourClock } from "@/hooks/use24HourClock";
 import { useMonthNavigation } from "@/hooks/useMonthNavigation";
 import {
   scrollIndicatorBaseStyles,
@@ -60,6 +61,7 @@ export function TaskForm({
 }: TaskFormProps) {
   const { invertColors } = useInvertColors();
   const { lists, settings, addTask } = useReminders();
+  const use24Hour = use24HourClock();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
 
@@ -84,7 +86,7 @@ export function TaskForm({
     appendDigit,
     backspace,
     displayTime,
-  } = useTimePickerState();
+  } = useTimePickerState(undefined, use24Hour);
 
   const [title, setTitle] = useState("");
   const [selectedListId, setSelectedListId] = useState(resolvedListId);
@@ -547,6 +549,7 @@ export function TaskForm({
           setShowTimePicker(false);
           onTimePickerDismiss();
         }}
+        use24Hour={use24Hour}
         visible={showTimePicker}
       />
 

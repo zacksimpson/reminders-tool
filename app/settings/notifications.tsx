@@ -11,6 +11,7 @@ import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
 import { useReminders } from "@/contexts/RemindersContext";
+import { use24HourClock } from "@/hooks/use24HourClock";
 import { digitsToTime, formatTime, timeToDisplayParts } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
 
@@ -27,8 +28,9 @@ export default function NotificationsScreen() {
     setTodaysTasksTime,
   } = useNotifications();
   const bg = invertColors ? "white" : "black";
+  const use24Hour = use24HourClock();
 
-  const initParts = timeToDisplayParts(todaysTasksTime);
+  const initParts = timeToDisplayParts(todaysTasksTime, use24Hour);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [timeDigits, setTimeDigits] = useState(initParts.digits);
   const [ampm, setAmPm] = useState<"AM" | "PM">(initParts.ampm);
@@ -37,7 +39,7 @@ export default function NotificationsScreen() {
     if (timeDigits.length !== 3 && timeDigits.length !== 4) {
       return;
     }
-    const t24 = digitsToTime(timeDigits, ampm);
+    const t24 = digitsToTime(timeDigits, ampm, use24Hour);
     setTodaysTasksTime(t24, tasks, lists);
     setShowTimePicker(false);
   }, [timeDigits, ampm, tasks, lists, setTodaysTasksTime]);
@@ -89,7 +91,7 @@ export default function NotificationsScreen() {
                   Notification Time
                 </StyledText>
                 <StyledText style={styles.selectorValue}>
-                  {formatTime(todaysTasksTime)}
+                  {formatTime(todaysTasksTime, use24Hour)}
                 </StyledText>
               </HapticPressable>
             )}
@@ -106,6 +108,7 @@ export default function NotificationsScreen() {
             setTimeDigits((prev) => (prev.length < 4 ? prev + d : prev))
           }
           onDismiss={() => setShowTimePicker(false)}
+          use24Hour={use24Hour}
           visible={showTimePicker}
         />
       </SafeAreaView>
