@@ -28,6 +28,7 @@ import {
   type Recurrence,
   useReminders,
 } from "@/contexts/RemindersContext";
+import { use24HourClock } from "@/hooks/use24HourClock";
 import { useMonthNavigation } from "@/hooks/useMonthNavigation";
 import {
   scrollIndicatorBaseStyles,
@@ -45,6 +46,7 @@ export default function TaskScreen() {
     action?: string;
   }>();
   const { invertColors } = useInvertColors();
+  const use24Hour = use24HourClock();
   const {
     tasks,
     lists,
@@ -80,7 +82,7 @@ export default function TaskScreen() {
     appendDigit,
     backspace,
     displayTime,
-  } = useTimePickerState(task?.time);
+  } = useTimePickerState(task?.time, use24Hour);
 
   // Handle returning from confirm screen
   useEffect(() => {
@@ -523,6 +525,7 @@ export default function TaskScreen() {
             setShowTimePicker(false);
             onTimePickerDismiss();
           }}
+          use24Hour={use24Hour}
           visible={showTimePicker}
         />
         <ListPickerModal

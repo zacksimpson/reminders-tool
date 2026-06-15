@@ -17,6 +17,8 @@
     "expo-font": "^55.0.4",
     "expo-haptics": "~55.0.0",
     "expo-linking": "~55.0.0",
+    "expo-localization": "~55.0.15",
+    "expo-notifications": "~55.0.0",
     "expo-router": "~55.0.0",
     "expo-splash-screen": "^55.0.13",
     "expo-system-ui": "~55.0.0",
@@ -25,7 +27,6 @@
     "react-native-gesture-handler": "~2.30.0",
     "react-native-safe-area-context": "^5.6.2",
     "react-native-screens": "^4.23.0",
-    "expo-notifications": "~55.0.0",
     "react-native-svg": "~15.15.0"
   },
   "devDependencies": {

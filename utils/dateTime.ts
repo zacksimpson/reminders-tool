@@ -38,8 +38,9 @@ export function getTomorrowStr(): string {
   return formatISODate(d);
 }
 
-/** "HH:MM" 24h → "h:mm AM/PM" */
-export function formatTime(time24: string): string {
+/** "HH:MM" 24h → "h:mm AM/PM" (or "HH:MM" when use24Hour is true) */
+export function formatTime(time24: string, use24Hour = false): string {
+  if (use24Hour) return time24;
   const [hStr, mStr] = time24.split(":");
   const h = Number.parseInt(hStr, 10);
   const ampm = h >= 12 ? "PM" : "AM";
@@ -70,7 +71,11 @@ export function formatDisplayTime(digits: string, ampm: "AM" | "PM"): string {
 }
 
 /** TimePicker digits + ampm → "HH:MM" 24h for storage */
-export function digitsToTime(digits: string, ampm: "AM" | "PM"): string {
+export function digitsToTime(
+  digits: string,
+  ampm: "AM" | "PM",
+  use24Hour = false
+): string {
   let h: number;
   let m: string;
   if (digits.length === 3) {
@@ -80,11 +85,13 @@ export function digitsToTime(digits: string, ampm: "AM" | "PM"): string {
     h = Number.parseInt(digits.slice(0, 2), 10);
     m = digits.slice(2, 4);
   }
-  if (ampm === "PM" && h !== 12) {
-    h += 12;
-  }
-  if (ampm === "AM" && h === 12) {
-    h = 0;
+  if (!use24Hour) {
+    if (ampm === "PM" && h !== 12) {
+      h += 12;
+    }
+    if (ampm === "AM" && h === 12) {
+      h = 0;
+    }
   }
   return `${String(h).padStart(2, "0")}:${m}`;
 }
@@ -135,11 +142,17 @@ export function compareTasksByDateThenTime(
 }
 
 /** "HH:MM" 24h → TimePicker { digits, ampm } */
-export function timeToDisplayParts(time24: string): {
+export function timeToDisplayParts(
+  time24: string,
+  use24Hour = false
+): {
   digits: string;
   ampm: "AM" | "PM";
 } {
   const [hStr, mStr] = time24.split(":");
+  if (use24Hour) {
+    return { digits: `${hStr}${mStr}`, ampm: "AM" };
+  }
   let h = Number.parseInt(hStr, 10);
   const ampm: "AM" | "PM" = h >= 12 ? "PM" : "AM";
   if (h > 12) {

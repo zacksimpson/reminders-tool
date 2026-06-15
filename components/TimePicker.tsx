@@ -24,7 +24,11 @@ import { n } from "@/utils/scaling";
 //                    BUT also check full 3-digit time is valid: h=d[0], m=d[1]d[2]
 // Position 4 (d[3]): check full 4-digit time: h=d[0]d[1], m=d[2]d[3]
 
-function isValidNextDigit(current: string, next: string): boolean {
+function isValidNextDigit(
+  current: string,
+  next: string,
+  use24Hour: boolean
+): boolean {
   const proposed = current + next;
 
   switch (proposed.length) {
@@ -33,21 +37,24 @@ function isValidNextDigit(current: string, next: string): boolean {
       return true;
 
     case 2:
-      // If first digit is 0, second digit is the hour (1-9)
+      // If first digit is 0, second digit is the hour ones
       if (proposed[0] === "0") {
-        return Number.parseInt(next, 10) >= 1 && Number.parseInt(next, 10) <= 9;
+        // 24h: 00–09 all valid; 12h: 01–09
+        const min = use24Hour ? 0 : 1;
+        return Number.parseInt(next, 10) >= min && Number.parseInt(next, 10) <= 9;
       }
       // Otherwise second digit is always minutes-tens (0-5)
       return Number.parseInt(next, 10) <= 5;
 
     case 3: {
       const firstDigit = Number.parseInt(proposed[0], 10);
-      // Leading zero case: "014" → on way to "0145" = 01:45
-      // d[0]=0 (leading zero), d[1]=hour-ones (1-9), d[2]=minutes-tens (0-5)
+      // Leading zero case: "0yz" → on way to "0yzw" = 0y:zw
       if (firstDigit === 0) {
         const hourOnes = Number.parseInt(proposed[1], 10);
         const minTens = Number.parseInt(proposed[2], 10);
-        return hourOnes >= 1 && hourOnes <= 9 && minTens >= 0 && minTens <= 5;
+        // 24h: hour ones 0–9; 12h: 1–9
+        const minHourOnes = use24Hour ? 0 : 1;
+        return hourOnes >= minHourOnes && hourOnes <= 9 && minTens >= 0 && minTens <= 5;
       }
       // Normal H:MM case: first digit is hour (1-9), last two are minutes
       const m = Number.parseInt(proposed.slice(1), 10);
@@ -58,7 +65,9 @@ function isValidNextDigit(current: string, next: string): boolean {
       // 4-digit time: HH:MM
       const h = Number.parseInt(proposed.slice(0, 2), 10);
       const m = Number.parseInt(proposed.slice(2), 10);
-      return h >= 1 && h <= 12 && m >= 0 && m <= 59;
+      const maxH = use24Hour ? 23 : 12;
+      const minH = use24Hour ? 0 : 1;
+      return h >= minH && h <= maxH && m >= 0 && m <= 59;
     }
 
     default:
@@ -94,6 +103,7 @@ interface TimePickerProps {
   onConfirm: () => void;
   onDigit: (d: string) => void;
   onDismiss: () => void;
+  use24Hour?: boolean;
   visible: boolean;
 }
 
@@ -106,6 +116,7 @@ export function TimePicker({
   onAmPm,
   onConfirm,
   onDismiss,
+  use24Hour = false,
 }: TimePickerProps) {
   const { invertColors } = useInvertColors();
   const bg = invertColors ? "white" : "black";
@@ -134,7 +145,7 @@ export function TimePicker({
     if (digits.length >= 4) {
       return;
     }
-    if (isValidNextDigit(digits, d)) {
+    if (isValidNextDigit(digits, d, use24Hour)) {
       onDigit(d);
     }
   };
@@ -144,6 +155,21 @@ export function TimePicker({
     ["4", "5", "6"],
     ["7", "8", "9"],
   ];
+
+  const renderAmPm = (value: "AM" | "PM") => {
+    const sideStyle = value === "AM" ? styles.ampmLeft : styles.ampmRight;
+    if (use24Hour) {
+      return <View style={[sideStyle, styles.ampmSpacer]} />;
+    }
+    return (
+      <HapticPressable onPress={() => onAmPm(value)} style={sideStyle}>
+        <StyledText style={styles.ampmText}>{value}</StyledText>
+        {ampm === value && (
+          <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />
+        )}
+      </HapticPressable>
+    );
+  };
 
   return (
     <Modal
@@ -157,15 +183,7 @@ export function TimePicker({
 
         {/* AM/PM + time display */}
         <View style={styles.topSection}>
-          {/* AM/PM pinned to left/right edges */}
-          <HapticPressable onPress={() => onAmPm("AM")} style={styles.ampmLeft}>
-            <StyledText style={styles.ampmText}>AM</StyledText>
-            {ampm === "AM" && (
-              <View
-                style={[styles.ampmUnderline, { backgroundColor: textColor }]}
-              />
-            )}
-          </HapticPressable>
+          {renderAmPm("AM")}
 
           {/* Time display centered absolutely so it never affects AM/PM position */}
           <View pointerEvents="none" style={styles.timeContainer}>
@@ -174,17 +192,7 @@ export function TimePicker({
             </StyledText>
           </View>
 
-          <HapticPressable
-            onPress={() => onAmPm("PM")}
-            style={styles.ampmRight}
-          >
-            <StyledText style={styles.ampmText}>PM</StyledText>
-            {ampm === "PM" && (
-              <View
-                style={[styles.ampmUnderline, { backgroundColor: textColor }]}
-              />
-            )}
-          </HapticPressable>
+          {renderAmPm("PM")}
         </View>
 
         {/* Numpad */}
@@ -245,6 +253,9 @@ const styles = StyleSheet.create({
     paddingBottom: n(8),
     position: "relative",
     marginHorizontal: n(-32),
+  },
+  ampmSpacer: {
+    height: n(34),
   },
   ampmLeft: { alignItems: "center", width: n(60), paddingLeft: n(8) },
   ampmRight: { alignItems: "center", width: n(60), paddingRight: n(8) },
