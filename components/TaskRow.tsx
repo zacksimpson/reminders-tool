@@ -7,6 +7,7 @@ import { StyledText } from "@/components/StyledText";
 import { TaskCheckbox } from "@/components/TaskCheckbox";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { formatRecurrence, type Task } from "@/contexts/RemindersContext";
+import { use24HourClock } from "@/hooks/use24HourClock";
 import { formatDate, formatTime } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
 
@@ -25,7 +26,7 @@ export interface TaskRowProps {
   task: Task;
 }
 
-function buildMeta(task: Task, listTitle: string): string {
+function buildMeta(task: Task, listTitle: string, use24Hour: boolean): string {
   const subtaskCount = task.subtasks?.length ?? 0;
   const subtaskLabel =
     subtaskCount > 0
@@ -34,7 +35,7 @@ function buildMeta(task: Task, listTitle: string): string {
   return [
     listTitle,
     task.date ? formatDate(task.date) : null,
-    task.time ? formatTime(task.time) : null,
+    task.time ? formatTime(task.time, use24Hour) : null,
     subtaskLabel,
   ]
     .filter(Boolean)
@@ -58,8 +59,9 @@ export function TaskRow({
   const { invertColors } = useInvertColors();
   const textColor = invertColors ? "black" : "white";
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
+  const use24Hour = use24HourClock();
 
-  const meta = buildMeta(task, listTitle);
+  const meta = buildMeta(task, listTitle, use24Hour);
   const recurrenceLabel = task.recurrence
     ? formatRecurrence(task.recurrence)
     : null;
