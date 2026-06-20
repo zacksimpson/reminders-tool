@@ -54,7 +54,13 @@ EAS will build the APK in the cloud and provide a download link.
 
 ---
 
-## SupportIf any of my tools have been useful to you, I'd love to hear from you! Feel free to reach out [here](mailto:zacksimpson24@gmail.com). Another way to support is to [consider sponsoring](https:## Credits## Creditsgithub.com## Creditssponsors## Creditszacksimpson). Either way, it means a lot!## Creditsn## Creditsn---## Creditsn## Creditsn## Credits
+## Support
+
+If any of my tools have been useful to you, I'd love to hear from you! Feel free to reach out [here](mailto:zacksimpson24@gmail.com). Another way to support is to [consider sponsoring](https://github.com/sponsors/zacksimpson). Either way, it means a lot!
+
+---
+
+## Credits
 
 * [vandamd](https://github.com/vandamd) — [light-template](https://github.com/vandamd/light-template), the community Expo template this app is built on
 * [iamkory](https://www.reddit.com/user/iamkory/) — [LighterOS Figma design toolkit](https://www.figma.com/design/1k2PkAjOSet8f9jjVdhM2L/LighterOS?node-id=65-2018&t=3Qd2sXdySZCzTVtK-1) excellent reference for recreating the LightOS aesthetic
