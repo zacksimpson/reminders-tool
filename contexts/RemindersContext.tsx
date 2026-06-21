@@ -114,6 +114,13 @@ interface RemindersContextType {
   moveListDown: (id: string) => void;
   moveListUp: (id: string) => void;
   renameList: (id: string, title: string) => void;
+
+  // Backup
+  restoreBackup: (data: {
+    lists: ReminderList[];
+    tasks: Task[];
+    settings: Settings;
+  }) => Promise<void>;
   settings: Settings;
 
   // Task reordering
@@ -550,6 +557,24 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     [tasks, persistTasks]
   );
 
+  // ── Backup ───────────────────────────────────────────────────────────────
+
+  const restoreBackup = useCallback(
+    async (data: {
+      lists: ReminderList[];
+      tasks: Task[];
+      settings: Settings;
+    }) => {
+      await Promise.all([
+        persistLists(data.lists),
+        persistTasks(data.tasks),
+        persistSettings(data.settings),
+      ]);
+      notificationScheduler?.rescheduleAll(data.tasks, data.lists);
+    },
+    [persistLists, persistTasks, persistSettings]
+  );
+
   // ── Settings ─────────────────────────────────────────────────────────────
 
   const updateSettings = useCallback(
@@ -581,6 +606,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         addSubtask,
         toggleSubtask,
         deleteSubtask,
+        restoreBackup,
         updateSettings,
       }}
     >
