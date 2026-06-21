@@ -1,11 +1,12 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
+import { Toast } from "@/components/Toast";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useReminders } from "@/contexts/RemindersContext";
 import { exportBackup, importBackup } from "@/utils/backup";
@@ -16,6 +17,22 @@ export default function BackupScreen() {
   const { lists, tasks, settings, restoreBackup } = useReminders();
   const bg = invertColors ? "white" : "black";
   const [busy, setBusy] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
+  const goBackOnToastClose = useRef(false);
+
+  function showToast(message: string, goBack = false) {
+    goBackOnToastClose.current = goBack;
+    setToastMessage(message);
+    setToastVisible(true);
+  }
+
+  function handleToastHide() {
+    setToastVisible(false);
+    if (goBackOnToastClose.current) {
+      router.back();
+    }
+  }
 
   async function handleExport() {
     if (busy) {
@@ -24,6 +41,7 @@ export default function BackupScreen() {
     setBusy(true);
     try {
       await exportBackup(lists, tasks, settings);
+      showToast("exported");
     } catch {
       Alert.alert("Export failed", "Something went wrong. Please try again.");
     } finally {
@@ -53,7 +71,7 @@ export default function BackupScreen() {
             onPress: async () => {
               try {
                 await restoreBackup(data);
-                router.back();
+                showToast("imported", true);
               } catch {
                 Alert.alert(
                   "Restore failed",
@@ -97,6 +115,12 @@ export default function BackupScreen() {
           <StyledText style={styles.rowText}>Restore from backup</StyledText>
         </HapticPressable>
       </SafeAreaView>
+
+      <Toast
+        message={toastMessage}
+        onHide={handleToastHide}
+        visible={toastVisible}
+      />
     </SwipeBackContainer>
   );
 }
