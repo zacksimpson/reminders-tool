@@ -5,7 +5,7 @@ import {
   EncodingType,
   readAsStringAsync,
   writeAsStringAsync,
-} from "expo-file-system";
+} from "expo-file-system/legacy";
 import { shareAsync } from "expo-sharing";
 import type { ReminderList, Settings, Task } from "@/contexts/RemindersContext";
 
