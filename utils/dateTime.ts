@@ -40,7 +40,9 @@ export function getTomorrowStr(): string {
 
 /** "HH:MM" 24h → "h:mm AM/PM" (or "HH:MM" when use24Hour is true) */
 export function formatTime(time24: string, use24Hour = false): string {
-  if (use24Hour) return time24;
+  if (use24Hour) {
+    return time24;
+  }
   const [hStr, mStr] = time24.split(":");
   const h = Number.parseInt(hStr, 10);
   const ampm = h >= 12 ? "PM" : "AM";
