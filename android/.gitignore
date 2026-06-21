@@ -14,3 +14,6 @@ local.properties
 
 # Bundle artifacts
 *.jsbundle
+
+# Debug signing key — machine-specific, regenerate with keytool
+app/debug.keystore
