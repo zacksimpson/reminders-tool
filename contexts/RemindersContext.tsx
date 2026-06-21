@@ -119,7 +119,6 @@ interface RemindersContextType {
   restoreBackup: (data: {
     lists: ReminderList[];
     tasks: Task[];
-    settings: Settings;
   }) => Promise<void>;
   settings: Settings;
 
@@ -565,14 +564,22 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       tasks: Task[];
       settings: Settings;
     }) => {
-      await Promise.all([
-        persistLists(data.lists),
-        persistTasks(data.tasks),
-        persistSettings(data.settings),
-      ]);
-      notificationScheduler?.rescheduleAll(data.tasks, data.lists);
+      const existingTaskIds = new Set(tasks.map((t) => t.id));
+      const mergedTasks = [
+        ...tasks,
+        ...data.tasks.filter((t) => !existingTaskIds.has(t.id)),
+      ];
+
+      const existingListIds = new Set(lists.map((l) => l.id));
+      const mergedLists = [
+        ...lists,
+        ...data.lists.filter((l) => !existingListIds.has(l.id)),
+      ];
+
+      await Promise.all([persistLists(mergedLists), persistTasks(mergedTasks)]);
+      notificationScheduler?.rescheduleAll(mergedTasks, mergedLists);
     },
-    [persistLists, persistTasks, persistSettings]
+    [lists, tasks, persistLists, persistTasks]
   );
 
   // ── Settings ─────────────────────────────────────────────────────────────
