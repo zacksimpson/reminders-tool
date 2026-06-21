@@ -41,7 +41,9 @@ function isValidNextDigit(
       if (proposed[0] === "0") {
         // 24h: 00–09 all valid; 12h: 01–09
         const min = use24Hour ? 0 : 1;
-        return Number.parseInt(next, 10) >= min && Number.parseInt(next, 10) <= 9;
+        return (
+          Number.parseInt(next, 10) >= min && Number.parseInt(next, 10) <= 9
+        );
       }
       // Otherwise second digit is always minutes-tens (0-5)
       return Number.parseInt(next, 10) <= 5;
@@ -54,7 +56,12 @@ function isValidNextDigit(
         const minTens = Number.parseInt(proposed[2], 10);
         // 24h: hour ones 0–9; 12h: 1–9
         const minHourOnes = use24Hour ? 0 : 1;
-        return hourOnes >= minHourOnes && hourOnes <= 9 && minTens >= 0 && minTens <= 5;
+        return (
+          hourOnes >= minHourOnes &&
+          hourOnes <= 9 &&
+          minTens >= 0 &&
+          minTens <= 5
+        );
       }
       // Normal H:MM case: first digit is hour (1-9), last two are minutes
       const m = Number.parseInt(proposed.slice(1), 10);
@@ -165,7 +172,9 @@ export function TimePicker({
       <HapticPressable onPress={() => onAmPm(value)} style={sideStyle}>
         <StyledText style={styles.ampmText}>{value}</StyledText>
         {ampm === value && (
-          <View style={[styles.ampmUnderline, { backgroundColor: textColor }]} />
+          <View
+            style={[styles.ampmUnderline, { backgroundColor: textColor }]}
+          />
         )}
       </HapticPressable>
     );
