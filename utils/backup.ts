@@ -41,8 +41,7 @@ export async function exportBackup(
   };
 
   const json = JSON.stringify(backup, null, 2);
-  const date = new Date().toISOString().slice(0, 10);
-  const filename = `reminders-backup-${date}.json`;
+  const filename = "reminders-backup.json";
   const fileUri = `${cacheDirectory}${filename}`;
 
   await writeAsStringAsync(fileUri, json, {
