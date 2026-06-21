@@ -62,12 +62,11 @@ export default function BackupScreen() {
       }
       Alert.alert(
         "Restore backup?",
-        "This will replace all your current lists and tasks.",
+        "Reminders from the backup that aren't already in your app will be added. Nothing will be removed or overwritten.",
         [
           { text: "Cancel", style: "cancel", onPress: () => setBusy(false) },
           {
             text: "Restore",
-            style: "destructive",
             onPress: async () => {
               try {
                 await restoreBackup(data);
