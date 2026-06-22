@@ -2,7 +2,9 @@ import Constants from "expo-constants";
 import { getDocumentAsync } from "expo-document-picker";
 import {
   cacheDirectory,
+  documentDirectory,
   EncodingType,
+  getInfoAsync,
   readAsStringAsync,
   writeAsStringAsync,
 } from "expo-file-system/legacy";
@@ -10,6 +12,7 @@ import { shareAsync } from "expo-sharing";
 import type { ReminderList, Settings, Task } from "@/contexts/RemindersContext";
 
 const BACKUP_VERSION = 1;
+const AUTO_BACKUP_FILENAME = "reminders-auto-backup.json";
 
 interface BackupFile {
   appVersion: string;
@@ -26,12 +29,17 @@ export interface RestoredData {
   tasks: Task[];
 }
 
-export async function exportBackup(
+export interface AutoBackupInfo {
+  exists: boolean;
+  savedAt: string | null;
+}
+
+function makeBackupFile(
   lists: ReminderList[],
   tasks: Task[],
   settings: Settings
-): Promise<void> {
-  const backup: BackupFile = {
+): BackupFile {
+  return {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     appVersion: Constants.expoConfig?.version ?? "unknown",
@@ -39,15 +47,28 @@ export async function exportBackup(
     tasks,
     settings,
   };
+}
 
-  const json = JSON.stringify(backup, null, 2);
-  const filename = "reminders-backup.json";
-  const fileUri = `${cacheDirectory}${filename}`;
+function parseBackupFile(json: string): BackupFile {
+  const raw = JSON.parse(json) as BackupFile;
+  if (
+    typeof raw.version !== "number" ||
+    !Array.isArray(raw.lists) ||
+    !Array.isArray(raw.tasks)
+  ) {
+    throw new Error("Invalid backup file.");
+  }
+  return migrate(raw);
+}
 
-  await writeAsStringAsync(fileUri, json, {
-    encoding: EncodingType.UTF8,
-  });
-
+export async function exportBackup(
+  lists: ReminderList[],
+  tasks: Task[],
+  settings: Settings
+): Promise<void> {
+  const json = JSON.stringify(makeBackupFile(lists, tasks, settings), null, 2);
+  const fileUri = `${cacheDirectory}reminders-backup.json`;
+  await writeAsStringAsync(fileUri, json, { encoding: EncodingType.UTF8 });
   await shareAsync(fileUri, {
     mimeType: "application/json",
     dialogTitle: "Save Reminders backup",
@@ -59,28 +80,66 @@ export async function importBackup(): Promise<RestoredData | null> {
     type: "application/json",
     copyToCacheDirectory: true,
   });
-
   if (result.canceled) {
     return null;
   }
-
-  const file = result.assets[0];
-  const json = await readAsStringAsync(file.uri, {
+  const json = await readAsStringAsync(result.assets[0].uri, {
     encoding: EncodingType.UTF8,
   });
+  const migrated = parseBackupFile(json);
+  return {
+    lists: migrated.lists,
+    tasks: migrated.tasks,
+    settings: migrated.settings,
+  };
+}
 
-  const raw = JSON.parse(json) as BackupFile;
+export async function autoBackup(
+  lists: ReminderList[],
+  tasks: Task[],
+  settings: Settings
+): Promise<void> {
+  const json = JSON.stringify(makeBackupFile(lists, tasks, settings), null, 2);
+  await writeAsStringAsync(
+    `${documentDirectory}${AUTO_BACKUP_FILENAME}`,
+    json,
+    {
+      encoding: EncodingType.UTF8,
+    }
+  );
+}
 
-  if (
-    typeof raw.version !== "number" ||
-    !Array.isArray(raw.lists) ||
-    !Array.isArray(raw.tasks)
-  ) {
-    throw new Error("Invalid backup file.");
+export async function getAutoBackupInfo(): Promise<AutoBackupInfo> {
+  const info = await getInfoAsync(
+    `${documentDirectory}${AUTO_BACKUP_FILENAME}`
+  );
+  if (!info.exists) {
+    return { exists: false, savedAt: null };
   }
+  try {
+    const json = await readAsStringAsync(
+      `${documentDirectory}${AUTO_BACKUP_FILENAME}`,
+      { encoding: EncodingType.UTF8 }
+    );
+    const raw = JSON.parse(json) as BackupFile;
+    return { exists: true, savedAt: raw.exportedAt ?? null };
+  } catch {
+    return { exists: true, savedAt: null };
+  }
+}
 
-  const migrated = migrate(raw);
-
+export async function importAutoBackup(): Promise<RestoredData | null> {
+  const info = await getInfoAsync(
+    `${documentDirectory}${AUTO_BACKUP_FILENAME}`
+  );
+  if (!info.exists) {
+    return null;
+  }
+  const json = await readAsStringAsync(
+    `${documentDirectory}${AUTO_BACKUP_FILENAME}`,
+    { encoding: EncodingType.UTF8 }
+  );
+  const migrated = parseBackupFile(json);
   return {
     lists: migrated.lists,
     tasks: migrated.tasks,

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HapticPressable } from "@/components/HapticPressable";
@@ -9,7 +9,14 @@ import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { Toast } from "@/components/Toast";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useReminders } from "@/contexts/RemindersContext";
-import { exportBackup, importBackup } from "@/utils/backup";
+import {
+  type AutoBackupInfo,
+  exportBackup,
+  getAutoBackupInfo,
+  importAutoBackup,
+  importBackup,
+} from "@/utils/backup";
+import { formatDate } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
 
 export default function BackupScreen() {
@@ -18,6 +25,18 @@ export default function BackupScreen() {
   const bg = invertColors ? "white" : "black";
   const [busy, setBusy] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [autoBackupInfo, setAutoBackupInfo] = useState<AutoBackupInfo>({
+    exists: false,
+    savedAt: null,
+  });
+
+  useEffect(() => {
+    getAutoBackupInfo()
+      .then(setAutoBackupInfo)
+      .catch(() => {
+        /* auto-backup info is optional — ignore errors */
+      });
+  }, []);
 
   async function handleExport() {
     if (busy) {
@@ -33,13 +52,14 @@ export default function BackupScreen() {
     }
   }
 
-  async function handleRestore() {
+  async function handleRestore(source: "manual" | "auto") {
     if (busy) {
       return;
     }
     setBusy(true);
     try {
-      const data = await importBackup();
+      const data =
+        source === "auto" ? await importAutoBackup() : await importBackup();
       if (!data) {
         setBusy(false);
         return;
@@ -91,11 +111,29 @@ export default function BackupScreen() {
         </HapticPressable>
 
         <HapticPressable
-          onPress={handleRestore}
+          onPress={() => handleRestore("manual")}
           style={[styles.row, busy && styles.rowDisabled]}
         >
-          <StyledText style={styles.rowText}>Restore from backup</StyledText>
+          <StyledText style={styles.rowText}>
+            Restore from manual backup
+          </StyledText>
         </HapticPressable>
+
+        {autoBackupInfo.exists && (
+          <HapticPressable
+            onPress={() => handleRestore("auto")}
+            style={[styles.row, busy && styles.rowDisabled]}
+          >
+            <StyledText style={styles.rowText}>
+              Restore from auto-backup
+            </StyledText>
+            {autoBackupInfo.savedAt && (
+              <StyledText style={styles.rowSubtext}>
+                last saved {formatDate(autoBackupInfo.savedAt.slice(0, 10))}
+              </StyledText>
+            )}
+          </HapticPressable>
+        )}
       </SafeAreaView>
 
       <Toast
@@ -117,5 +155,6 @@ const styles = StyleSheet.create({
     paddingVertical: n(16),
   },
   rowDisabled: { opacity: 0.4 },
-  rowText: { fontSize: n(30), paddingBottom: n(10) },
+  rowText: { fontSize: n(30), paddingBottom: n(4) },
+  rowSubtext: { fontSize: n(20), opacity: 0.5 },
 });
