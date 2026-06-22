@@ -171,6 +171,6 @@ const styles = StyleSheet.create({
     paddingVertical: n(16),
   },
   rowDisabled: { opacity: 0.4 },
-  rowText: { fontSize: n(30), paddingBottom: n(4) },
+  rowText: { fontSize: n(30) },
   rowSubtext: { fontSize: n(16), letterSpacing: 0.4, marginTop: n(2) },
 });
