@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { autoBackup } from "@/utils/backup";
 import { formatISODate, parseDateStr } from "@/utils/dateTime";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,6 +62,8 @@ export interface Settings {
 const LISTS_KEY = "reminders:lists";
 const TASKS_KEY = "reminders:tasks";
 const SETTINGS_KEY = "reminders:settings";
+const AUTO_BACKUP_KEY = "reminders:lastAutoBackup";
+const AUTO_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // ─── Default Data ─────────────────────────────────────────────────────────────
 
@@ -210,13 +213,59 @@ export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function parseStoredData(
+  rawLists: string | null,
+  rawTasks: string | null,
+  rawSettings: string | null
+): { lists: ReminderList[]; settings: Settings; tasks: Task[] } {
+  let lists: ReminderList[] = [DEFAULT_LIST];
+  let tasks: Task[] = [];
+  let settings: Settings = DEFAULT_SETTINGS;
+  try {
+    if (rawLists) {
+      lists = JSON.parse(rawLists);
+    }
+  } catch {
+    /* ignore corrupt data, keep default */
+  }
+  try {
+    if (rawTasks) {
+      tasks = JSON.parse(rawTasks);
+    }
+  } catch {
+    /* ignore corrupt data, keep default */
+  }
+  try {
+    if (rawSettings) {
+      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(rawSettings) };
+    }
+  } catch {
+    /* ignore corrupt data, keep default */
+  }
+  return { lists, tasks, settings };
+}
+
+async function runDailyAutoBackup(
+  lists: ReminderList[],
+  tasks: Task[],
+  settings: Settings
+): Promise<void> {
+  const lastStr = await AsyncStorage.getItem(AUTO_BACKUP_KEY);
+  const last = lastStr ? Number(lastStr) : 0;
+  if (Date.now() - last < AUTO_BACKUP_INTERVAL_MS) {
+    return;
+  }
+  await autoBackup(lists, tasks, settings);
+  await AsyncStorage.setItem(AUTO_BACKUP_KEY, String(Date.now()));
+}
+
 export function RemindersProvider({ children }: { children: ReactNode }) {
   const [lists, setLists] = useState<ReminderList[]>([DEFAULT_LIST]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
 
-  // Load from AsyncStorage on mount
+  // Load from AsyncStorage on mount, then trigger daily auto-backup
   useEffect(() => {
     const load = async () => {
       const [rawLists, rawTasks, rawSettings] = await Promise.all([
@@ -224,29 +273,16 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(TASKS_KEY),
         AsyncStorage.getItem(SETTINGS_KEY),
       ]);
-
-      try {
-        if (rawLists) {
-          setLists(JSON.parse(rawLists));
-        }
-      } catch {
-        /* ignore corrupt data, keep default */
-      }
-      try {
-        if (rawTasks) {
-          setTasks(JSON.parse(rawTasks));
-        }
-      } catch {
-        /* ignore corrupt data, keep default */
-      }
-      try {
-        if (rawSettings) {
-          setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(rawSettings) });
-        }
-      } catch {
-        /* ignore corrupt data, keep default */
-      }
+      const parsed = parseStoredData(rawLists, rawTasks, rawSettings);
+      setLists(parsed.lists);
+      setTasks(parsed.tasks);
+      setSettings(parsed.settings);
       setLoaded(true);
+      try {
+        await runDailyAutoBackup(parsed.lists, parsed.tasks, parsed.settings);
+      } catch {
+        /* don't let backup failure affect startup */
+      }
     };
     load();
   }, []);
