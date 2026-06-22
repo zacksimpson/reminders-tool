@@ -123,16 +123,7 @@ export default function BackupScreen() {
           onPress={handleExport}
           style={[styles.row, busy && styles.rowDisabled]}
         >
-          <StyledText style={styles.rowText}>Export backup</StyledText>
-        </HapticPressable>
-
-        <HapticPressable
-          onPress={() => handleRestore("manual")}
-          style={[styles.row, busy && styles.rowDisabled]}
-        >
-          <StyledText style={styles.rowText}>
-            Restore from manual backup
-          </StyledText>
+          <StyledText style={styles.rowText}>Export Backup</StyledText>
         </HapticPressable>
 
         {autoBackupInfo.exists && (
@@ -140,16 +131,24 @@ export default function BackupScreen() {
             onPress={() => handleRestore("auto")}
             style={[styles.row, busy && styles.rowDisabled]}
           >
-            <StyledText style={styles.rowText}>
-              Restore from auto-backup
-            </StyledText>
+            <StyledText style={styles.rowText}>Restore Backup</StyledText>
             {autoBackupInfo.savedAt && (
               <StyledText style={styles.rowSubtext}>
-                last saved {formatDate(autoBackupInfo.savedAt.slice(0, 10))}
+                auto-saved {formatDate(autoBackupInfo.savedAt.slice(0, 10))}
               </StyledText>
             )}
           </HapticPressable>
         )}
+
+        <HapticPressable
+          onPress={() => handleRestore("manual")}
+          style={[styles.row, busy && styles.rowDisabled]}
+        >
+          <StyledText style={styles.rowText}>Restore From File</StyledText>
+          <StyledText style={styles.rowSubtext}>
+            import manual backup
+          </StyledText>
+        </HapticPressable>
       </SafeAreaView>
 
       <Toast
