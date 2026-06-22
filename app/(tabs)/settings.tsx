@@ -34,14 +34,6 @@ export default function SettingsScreen() {
       <Header headerTitle="Settings" hideBackButton />
 
       <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
-        {/* Backup */}
-        <HapticPressable
-          onPress={() => router.push("/settings/backup")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorValue}>Backup</StyledText>
-        </HapticPressable>
-
         {/* Notifications */}
         <HapticPressable
           onPress={() => router.push("/settings/notifications")}
@@ -90,6 +82,14 @@ export default function SettingsScreen() {
             {ADD_POSITION_LABELS[settings.addPosition ?? "bottom"] ??
               "Bottom of List"}
           </StyledText>
+        </HapticPressable>
+
+        {/* Backup */}
+        <HapticPressable
+          onPress={() => router.push("/settings/backup")}
+          style={styles.row}
+        >
+          <StyledText style={styles.selectorValue}>Backup</StyledText>
         </HapticPressable>
 
         {/* Invert Colors */}
