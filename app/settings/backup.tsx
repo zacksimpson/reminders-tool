@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import {
   getAutoBackupInfo,
   importAutoBackup,
   importBackup,
+  type RestoredData,
 } from "@/utils/backup";
 import { formatDate } from "@/utils/dateTime";
 import { n } from "@/utils/scaling";
@@ -22,9 +23,11 @@ import { n } from "@/utils/scaling";
 export default function BackupScreen() {
   const { invertColors } = useInvertColors();
   const { lists, tasks, settings, restoreBackup } = useReminders();
+  const { confirmed } = useLocalSearchParams<{ confirmed?: string }>();
   const bg = invertColors ? "white" : "black";
   const [busy, setBusy] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [pendingData, setPendingData] = useState<RestoredData | null>(null);
   const [autoBackupInfo, setAutoBackupInfo] = useState<AutoBackupInfo>({
     exists: false,
     savedAt: null,
@@ -37,6 +40,29 @@ export default function BackupScreen() {
         /* auto-backup info is optional — ignore errors */
       });
   }, []);
+
+  // Called when the confirm screen dismisses back here with confirmed=true
+  useEffect(() => {
+    if (confirmed !== "true" || !pendingData) {
+      return;
+    }
+    router.setParams({ confirmed: undefined });
+    const doRestore = async () => {
+      setBusy(true);
+      try {
+        await restoreBackup(pendingData);
+        setPendingData(null);
+        setToastVisible(true);
+      } catch {
+        Alert.alert(
+          "Restore failed",
+          "Something went wrong. Please try again."
+        );
+        setBusy(false);
+      }
+    };
+    doRestore();
+  }, [confirmed, pendingData, restoreBackup]);
 
   async function handleExport() {
     if (busy) {
@@ -64,28 +90,18 @@ export default function BackupScreen() {
         setBusy(false);
         return;
       }
-      Alert.alert(
-        "Restore backup?",
-        "Reminders from the backup that aren't already in your app will be added. Nothing will be removed or overwritten.",
-        [
-          { text: "Cancel", style: "cancel", onPress: () => setBusy(false) },
-          {
-            text: "Restore",
-            onPress: async () => {
-              try {
-                await restoreBackup(data);
-                setToastVisible(true);
-              } catch {
-                Alert.alert(
-                  "Restore failed",
-                  "Something went wrong. Please try again."
-                );
-                setBusy(false);
-              }
-            },
-          },
-        ]
-      );
+      setPendingData(data);
+      setBusy(false);
+      router.push({
+        pathname: "/confirm",
+        params: {
+          message:
+            "Reminders from the backup that aren't already in your app will be added. Nothing will be removed or overwritten.",
+          confirmText: "Restore",
+          action: "restore",
+          returnPath: "/settings/backup",
+        },
+      });
     } catch {
       Alert.alert(
         "Invalid file",
@@ -156,5 +172,5 @@ const styles = StyleSheet.create({
   },
   rowDisabled: { opacity: 0.4 },
   rowText: { fontSize: n(30), paddingBottom: n(4) },
-  rowSubtext: { fontSize: n(20), opacity: 0.5 },
+  rowSubtext: { fontSize: n(16), letterSpacing: 0.4, marginTop: n(2) },
 });
