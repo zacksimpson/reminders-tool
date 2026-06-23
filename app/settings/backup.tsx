@@ -139,7 +139,7 @@ export default function BackupScreen() {
             onPress={() => handleRestore("auto")}
             style={[styles.row, busy && styles.rowDisabled]}
           >
-            <StyledText style={styles.rowText}>Restore Auto Backup</StyledText>
+            <StyledText style={styles.rowText}>Restore Auto-Backup</StyledText>
             {autoBackupInfo.savedAt && (
               <StyledText style={styles.rowSubtext}>
                 auto-saved {formatDate(autoBackupInfo.savedAt.slice(0, 10))}
