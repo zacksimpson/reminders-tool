@@ -105,22 +105,18 @@ function run() {
   // iterating app.listGroups() separately.
   const listObjects = {};
 
-  const topLists = app.lists();
-  for (let i = 0; i < topLists.length; i++) {
-    const list = topLists[i];
+  function registerList(list) {
     listObjects[list.name().toLowerCase()] = list;
   }
 
-  try {
-    const groups = app.listGroups();
-    for (let i = 0; i < groups.length; i++) {
-      const groupLists = groups[i].lists();
-      for (let j = 0; j < groupLists.length; j++) {
-        const list = groupLists[j];
-        listObjects[list.name().toLowerCase()] = list;
-      }
-    }
-  } catch (_) {}
+  const topLists = app.lists();
+  for (let i = 0; i < topLists.length; i++) registerList(topLists[i]);
+
+  const groups = app.listGroups();
+  for (let i = 0; i < groups.length; i++) {
+    const groupLists = groups[i].lists();
+    for (let j = 0; j < groupLists.length; j++) registerList(groupLists[j]);
+  }
 
   // ── 2. Find or create each list (case-insensitive) ────────────────────────
   for (let i = 0; i < data.lists.length; i++) {
@@ -128,9 +124,8 @@ function run() {
     const key = title.toLowerCase();
     if (!listObjects[key]) {
       app.lists.push(app.List({ name: title }));
-      // Retrieve the newly created list object so we can push reminders to it
       const updated = app.lists();
-      for (let j = 0; j < updated.length; j++) {
+      for (let j = updated.length - 1; j >= 0; j--) {
         if (updated[j].name().toLowerCase() === key) {
           listObjects[key] = updated[j];
           break;
@@ -139,18 +134,18 @@ function run() {
     }
   }
 
-  // ── 3. Build dedup Set in one pass across all lists ───────────────────────
-  // Key: "listNameLower::title::YYYY-MM-DD" (date empty for undated reminders)
-  // One upfront scan beats re-scanning per task when there are thousands of reminders.
+  // ── 3. Build dedup Set using bulk property access ─────────────────────────
+  // list.reminders.name() fetches all names in one IPC call instead of one
+  // call per reminder — essential when scanning thousands of existing reminders.
   const existingKeys = new Set();
   const listKeys = Object.keys(listObjects);
   for (let i = 0; i < listKeys.length; i++) {
     const list = listObjects[listKeys[i]];
     const listNameLower = listKeys[i];
-    const reminders = list.reminders();
-    for (let j = 0; j < reminders.length; j++) {
-      const r = reminders[j];
-      existingKeys.add(reminderKey(listNameLower, r.name(), dateKey(r.dueDate())));
+    const names = list.reminders.name();
+    const dueDates = list.reminders.dueDate();
+    for (let j = 0; j < names.length; j++) {
+      existingKeys.add(reminderKey(listNameLower, names[j], dateKey(dueDates[j])));
     }
   }
 
