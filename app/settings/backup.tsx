@@ -122,7 +122,7 @@ export default function BackupScreen() {
         edges={["top"]}
         style={[styles.container, { backgroundColor: bg }]}
       >
-        <Header headerTitle="Backup" />
+        <Header headerTitle="Backup & Restore" />
 
         <HapticPressable
           onPress={handleExport}
@@ -130,7 +130,7 @@ export default function BackupScreen() {
         >
           <StyledText style={styles.rowText}>Export Backup</StyledText>
           <StyledText style={styles.rowSubtext}>
-            share or save a backup file
+            manually save a backup file
           </StyledText>
         </HapticPressable>
 
