@@ -16,13 +16,58 @@ import { n } from "@/utils/scaling";
 //
 // Validation rules per position:
 // Position 1 (d[0]): could be minutes-ones (0-9) or future hour — always allow
-// Position 2 (d[1]): this will ALWAYS become the minutes-tens digit
-//                    (either in a 3-digit time as d[0]:d[1]d[2],
-//                     or in a 4-digit time as d[0]d[1]:d[2]d[3])
-//                    Minutes tens must be 0-5.
-// Position 3 (d[2]): minutes-ones in 3-digit time → 0-9, always valid
-//                    BUT also check full 3-digit time is valid: h=d[0], m=d[1]d[2]
+// Position 2 (d[1]): usually minutes-tens (0-5), except in 24h mode where d[0]="1"
+//                    allows d[1]=6-9 (hours 16-19) on the way to a 4-digit time
+// Position 3 (d[2]): check full 3-digit time h=d[0], m=d[1]d[2]; in 24h mode
+//                    also allow as 4-digit prefix where h=d[0]d[1], minTens=d[2]
 // Position 4 (d[3]): check full 4-digit time: h=d[0]d[1], m=d[2]d[3]
+
+function isValid2Digits(proposed: string, use24Hour: boolean): boolean {
+  const b = Number.parseInt(proposed[1], 10);
+  if (proposed[0] === "0") {
+    // 24h: 00–09 all valid; 12h: 01–09
+    return b >= (use24Hour ? 0 : 1) && b <= 9;
+  }
+  // In 24h mode, "1" followed by 6–9 is valid (hours 16–19)
+  if (use24Hour && proposed[0] === "1") {
+    return b <= 9;
+  }
+  // Otherwise second digit is minutes-tens (0–5)
+  return b <= 5;
+}
+
+function isValid3Digits(proposed: string, use24Hour: boolean): boolean {
+  const firstDigit = Number.parseInt(proposed[0], 10);
+  // Leading zero case: "0yz" → on way to "0yzw" = 0y:zw
+  if (firstDigit === 0) {
+    const hourOnes = Number.parseInt(proposed[1], 10);
+    const minTens = Number.parseInt(proposed[2], 10);
+    const minHourOnes = use24Hour ? 0 : 1;
+    return (
+      hourOnes >= minHourOnes && hourOnes <= 9 && minTens >= 0 && minTens <= 5
+    );
+  }
+  // In 24h mode, "1x" where x is 6–9 means we're building a 4-digit time
+  // (e.g. "160" → "1600" = 16:00). Validate as HH:M_ prefix.
+  if (use24Hour) {
+    const h = Number.parseInt(proposed.slice(0, 2), 10);
+    const minTens = Number.parseInt(proposed[2], 10);
+    if (h >= 10 && h <= 23 && minTens >= 0 && minTens <= 5) {
+      return true;
+    }
+  }
+  // Normal H:MM case: first digit is hour (1–9), last two are minutes
+  const m = Number.parseInt(proposed.slice(1), 10);
+  return firstDigit >= 1 && firstDigit <= 9 && m >= 0 && m <= 59;
+}
+
+function isValid4Digits(proposed: string, use24Hour: boolean): boolean {
+  const h = Number.parseInt(proposed.slice(0, 2), 10);
+  const m = Number.parseInt(proposed.slice(2), 10);
+  const maxH = use24Hour ? 23 : 12;
+  const minH = use24Hour ? 0 : 1;
+  return h >= minH && h <= maxH && m >= 0 && m <= 59;
+}
 
 function isValidNextDigit(
   current: string,
@@ -30,53 +75,15 @@ function isValidNextDigit(
   use24Hour: boolean
 ): boolean {
   const proposed = current + next;
-
   switch (proposed.length) {
     case 1:
-      // Always allow — any digit can start a valid time
       return true;
-
     case 2:
-      // If first digit is 0, second digit is the hour ones
-      if (proposed[0] === "0") {
-        // 24h: 00–09 all valid; 12h: 01–09
-        const min = use24Hour ? 0 : 1;
-        return (
-          Number.parseInt(next, 10) >= min && Number.parseInt(next, 10) <= 9
-        );
-      }
-      // Otherwise second digit is always minutes-tens (0-5)
-      return Number.parseInt(next, 10) <= 5;
-
-    case 3: {
-      const firstDigit = Number.parseInt(proposed[0], 10);
-      // Leading zero case: "0yz" → on way to "0yzw" = 0y:zw
-      if (firstDigit === 0) {
-        const hourOnes = Number.parseInt(proposed[1], 10);
-        const minTens = Number.parseInt(proposed[2], 10);
-        // 24h: hour ones 0–9; 12h: 1–9
-        const minHourOnes = use24Hour ? 0 : 1;
-        return (
-          hourOnes >= minHourOnes &&
-          hourOnes <= 9 &&
-          minTens >= 0 &&
-          minTens <= 5
-        );
-      }
-      // Normal H:MM case: first digit is hour (1-9), last two are minutes
-      const m = Number.parseInt(proposed.slice(1), 10);
-      return firstDigit >= 1 && firstDigit <= 9 && m >= 0 && m <= 59;
-    }
-
-    case 4: {
-      // 4-digit time: HH:MM
-      const h = Number.parseInt(proposed.slice(0, 2), 10);
-      const m = Number.parseInt(proposed.slice(2), 10);
-      const maxH = use24Hour ? 23 : 12;
-      const minH = use24Hour ? 0 : 1;
-      return h >= minH && h <= maxH && m >= 0 && m <= 59;
-    }
-
+      return isValid2Digits(proposed, use24Hour);
+    case 3:
+      return isValid3Digits(proposed, use24Hour);
+    case 4:
+      return isValid4Digits(proposed, use24Hour);
     default:
       return false;
   }
