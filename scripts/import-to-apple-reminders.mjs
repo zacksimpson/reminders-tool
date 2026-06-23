@@ -102,13 +102,16 @@ function run() {
 
   // ── 1. Build lowercase → actual-name map of existing lists ────────────────
   const existingLists = {};
-  for (const list of app.lists()) {
-    existingLists[list.name().toLowerCase()] = list.name();
+  const allLists = app.lists();
+  for (let i = 0; i < allLists.length; i++) {
+    const name = allLists[i].name();
+    existingLists[name.toLowerCase()] = name;
   }
 
   // ── 2. Find or create each list (case-insensitive) ────────────────────────
   const listMap = {};
-  for (const { title } of data.lists) {
+  for (let i = 0; i < data.lists.length; i++) {
+    const title = data.lists[i].title;
     const key = title.toLowerCase();
     if (existingLists[key]) {
       listMap[key] = existingLists[key];
@@ -123,9 +126,13 @@ function run() {
   // Key: "listNameLower::title::YYYY-MM-DD" (date empty for undated reminders)
   // One upfront scan beats re-scanning per task when there are thousands of reminders.
   const existingKeys = new Set();
-  for (const list of app.lists()) {
+  const allListsNow = app.lists();
+  for (let i = 0; i < allListsNow.length; i++) {
+    const list = allListsNow[i];
     const listNameLower = list.name().toLowerCase();
-    for (const r of list.reminders()) {
+    const reminders = list.reminders();
+    for (let j = 0; j < reminders.length; j++) {
+      const r = reminders[j];
       existingKeys.add(reminderKey(listNameLower, r.name(), dateKey(r.dueDate())));
     }
   }
@@ -173,7 +180,7 @@ function run() {
     }
   }
 
-  return JSON.stringify({ created, skipped });
+  return JSON.stringify({ created, skipped, detectedLists: Object.keys(existingLists) });
 }
 `;
 
@@ -189,7 +196,8 @@ try {
     stdio: ['pipe', 'pipe', 'pipe'],
   }).trim();
 
-  const { created, skipped } = JSON.parse(result);
+  const { created, skipped, detectedLists } = JSON.parse(result);
+  console.log(`Detected lists in Apple Reminders: ${detectedLists.join(', ')}`);
   console.log(`Done.`);
   console.log(`  Created : ${created}`);
   console.log(`  Skipped : ${skipped} (already exist)`);
