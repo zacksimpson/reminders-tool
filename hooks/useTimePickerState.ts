@@ -1,9 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  digitsToTime,
-  formatTime,
-  timeToDisplayParts,
-} from "@/utils/dateTime";
+import { digitsToTime, formatTime, timeToDisplayParts } from "@/utils/dateTime";
 
 export function useTimePickerState(initialTime?: string, use24Hour = false) {
   const initParts = initialTime
