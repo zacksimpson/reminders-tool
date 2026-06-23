@@ -84,6 +84,14 @@ export default function SettingsScreen() {
           </StyledText>
         </HapticPressable>
 
+        {/* Backup */}
+        <HapticPressable
+          onPress={() => router.push("/settings/backup")}
+          style={styles.row}
+        >
+          <StyledText style={styles.selectorValue}>Backup</StyledText>
+        </HapticPressable>
+
         {/* Invert Colors */}
         <View style={styles.row}>
           <ToggleSwitch

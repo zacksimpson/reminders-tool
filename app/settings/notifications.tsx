@@ -42,7 +42,7 @@ export default function NotificationsScreen() {
     const t24 = digitsToTime(timeDigits, ampm, use24Hour);
     setTodaysTasksTime(t24, tasks, lists);
     setShowTimePicker(false);
-  }, [timeDigits, ampm, tasks, lists, setTodaysTasksTime]);
+  }, [timeDigits, ampm, use24Hour, tasks, lists, setTodaysTasksTime]);
 
   return (
     <SwipeBackContainer onSwipeBack={() => router.back()}>
