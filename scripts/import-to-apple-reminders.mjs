@@ -84,27 +84,16 @@ function readJSON(path) {
   return JSON.parse(ObjC.unwrap(str));
 }
 
-function findListByName(app, name) {
-  for (const list of app.lists()) {
-    if (list.name() === name) return list;
-  }
-  return null;
+function dateKey(d) {
+  if (!d) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return \`\${y}-\${m}-\${day}\`;
 }
 
-function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-}
-
-function isDuplicate(list, title, dueDateOnly) {
-  for (const r of list.reminders()) {
-    if (r.name() !== title) continue;
-    if (!dueDateOnly) return true;
-    const rDate = r.dueDate();
-    if (rDate && sameDay(rDate, new Date(dueDateOnly))) return true;
-  }
-  return false;
+function reminderKey(listNameLower, title, dueDateOnly) {
+  return \`\${listNameLower}::\${title}::\${dueDateOnly || ''}\`;
 }
 
 function run() {
@@ -130,18 +119,31 @@ function run() {
     }
   }
 
-  // ── 3. Import tasks ────────────────────────────────────────────────────────
+  // ── 3. Build dedup Set in one pass across all lists ───────────────────────
+  // Key: "listNameLower::title::YYYY-MM-DD" (date empty for undated reminders)
+  // One upfront scan beats re-scanning per task when there are thousands of reminders.
+  const existingKeys = new Set();
+  for (const list of app.lists()) {
+    const listNameLower = list.name().toLowerCase();
+    for (const r of list.reminders()) {
+      existingKeys.add(reminderKey(listNameLower, r.name(), dateKey(r.dueDate())));
+    }
+  }
+
+  // ── 4. Import tasks ────────────────────────────────────────────────────────
   let created = 0;
   let skipped = 0;
 
   for (const task of data.tasks) {
-    const targetListName = listMap[task.listTitle.toLowerCase()];
+    const targetListNameLower = task.listTitle.toLowerCase();
+    const targetListName = listMap[targetListNameLower];
     if (!targetListName) { skipped++; continue; }
 
-    const list = findListByName(app, targetListName);
-    if (!list) { skipped++; continue; }
+    const key = reminderKey(targetListNameLower, task.title, task.dueDateOnly);
+    if (existingKeys.has(key)) { skipped++; continue; }
 
-    if (isDuplicate(list, task.title, task.dueDateOnly)) { skipped++; continue; }
+    const list = app.lists.whose({ name: targetListName })[0];
+    if (!list) { skipped++; continue; }
 
     const props = { name: task.title, completed: task.completed };
 
@@ -161,6 +163,7 @@ function run() {
 
     const reminder = app.Reminder(props);
     list.reminders.push(reminder);
+    existingKeys.add(key);
     created++;
 
     for (const sub of task.subtasks) {
