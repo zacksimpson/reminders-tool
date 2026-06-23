@@ -124,6 +124,9 @@ export default function BackupScreen() {
           style={[styles.row, busy && styles.rowDisabled]}
         >
           <StyledText style={styles.rowText}>Export Backup</StyledText>
+          <StyledText style={styles.rowSubtext}>
+            share or save a backup file
+          </StyledText>
         </HapticPressable>
 
         {autoBackupInfo.exists && (
@@ -131,7 +134,7 @@ export default function BackupScreen() {
             onPress={() => handleRestore("auto")}
             style={[styles.row, busy && styles.rowDisabled]}
           >
-            <StyledText style={styles.rowText}>Restore Backup</StyledText>
+            <StyledText style={styles.rowText}>Restore Auto Backup</StyledText>
             {autoBackupInfo.savedAt && (
               <StyledText style={styles.rowSubtext}>
                 auto-saved {formatDate(autoBackupInfo.savedAt.slice(0, 10))}
@@ -144,9 +147,9 @@ export default function BackupScreen() {
           onPress={() => handleRestore("manual")}
           style={[styles.row, busy && styles.rowDisabled]}
         >
-          <StyledText style={styles.rowText}>Restore From File</StyledText>
+          <StyledText style={styles.rowText}>Import From File</StyledText>
           <StyledText style={styles.rowSubtext}>
-            import manual backup
+            use a file you manually exported
           </StyledText>
         </HapticPressable>
       </SafeAreaView>
