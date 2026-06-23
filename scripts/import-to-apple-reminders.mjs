@@ -100,25 +100,42 @@ function run() {
   const data = readJSON('${TMP_DATA}');
   const app = Application('Reminders');
 
-  // ── 1. Build lowercase → actual-name map of existing lists ────────────────
-  const existingLists = {};
-  const allLists = app.lists();
-  for (let i = 0; i < allLists.length; i++) {
-    const name = allLists[i].name();
-    existingLists[name.toLowerCase()] = name;
+  // ── 1. Build lowercase → list object map (top-level + grouped lists) ────────
+  // app.lists() only returns top-level lists — lists inside a group require
+  // iterating app.listGroups() separately.
+  const listObjects = {};
+
+  const topLists = app.lists();
+  for (let i = 0; i < topLists.length; i++) {
+    const list = topLists[i];
+    listObjects[list.name().toLowerCase()] = list;
   }
 
+  try {
+    const groups = app.listGroups();
+    for (let i = 0; i < groups.length; i++) {
+      const groupLists = groups[i].lists();
+      for (let j = 0; j < groupLists.length; j++) {
+        const list = groupLists[j];
+        listObjects[list.name().toLowerCase()] = list;
+      }
+    }
+  } catch (_) {}
+
   // ── 2. Find or create each list (case-insensitive) ────────────────────────
-  const listMap = {};
   for (let i = 0; i < data.lists.length; i++) {
     const title = data.lists[i].title;
     const key = title.toLowerCase();
-    if (existingLists[key]) {
-      listMap[key] = existingLists[key];
-    } else {
+    if (!listObjects[key]) {
       app.lists.push(app.List({ name: title }));
-      listMap[key] = title;
-      existingLists[key] = title;
+      // Retrieve the newly created list object so we can push reminders to it
+      const updated = app.lists();
+      for (let j = 0; j < updated.length; j++) {
+        if (updated[j].name().toLowerCase() === key) {
+          listObjects[key] = updated[j];
+          break;
+        }
+      }
     }
   }
 
@@ -126,10 +143,10 @@ function run() {
   // Key: "listNameLower::title::YYYY-MM-DD" (date empty for undated reminders)
   // One upfront scan beats re-scanning per task when there are thousands of reminders.
   const existingKeys = new Set();
-  const allListsNow = app.lists();
-  for (let i = 0; i < allListsNow.length; i++) {
-    const list = allListsNow[i];
-    const listNameLower = list.name().toLowerCase();
+  const listKeys = Object.keys(listObjects);
+  for (let i = 0; i < listKeys.length; i++) {
+    const list = listObjects[listKeys[i]];
+    const listNameLower = listKeys[i];
     const reminders = list.reminders();
     for (let j = 0; j < reminders.length; j++) {
       const r = reminders[j];
@@ -143,14 +160,11 @@ function run() {
 
   for (const task of data.tasks) {
     const targetListNameLower = task.listTitle.toLowerCase();
-    const targetListName = listMap[targetListNameLower];
-    if (!targetListName) { skipped++; continue; }
+    const list = listObjects[targetListNameLower];
+    if (!list) { skipped++; continue; }
 
     const key = reminderKey(targetListNameLower, task.title, task.dueDateOnly);
     if (existingKeys.has(key)) { skipped++; continue; }
-
-    const list = app.lists.whose({ name: targetListName })[0];
-    if (!list) { skipped++; continue; }
 
     const props = { name: task.title, completed: task.completed };
 
@@ -180,7 +194,7 @@ function run() {
     }
   }
 
-  return JSON.stringify({ created, skipped, detectedLists: Object.keys(existingLists) });
+  return JSON.stringify({ created, skipped, detectedLists: Object.keys(listObjects) });
 }
 `;
 
