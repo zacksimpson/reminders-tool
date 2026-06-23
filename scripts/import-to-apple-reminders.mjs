@@ -100,23 +100,25 @@ function run() {
   const data = readJSON('${TMP_DATA}');
   const app = Application('Reminders');
 
-  // ── 1. Build lowercase → list object map (top-level + grouped lists) ────────
-  // app.lists() only returns top-level lists — lists inside a group require
-  // iterating app.listGroups() separately.
+  // ── 1. Build lowercase → list object map ─────────────────────────────────
+  // app.lists() may not include lists inside groups. Iterating via accounts
+  // ensures we find every list regardless of where it lives.
   const listObjects = {};
 
   function registerList(list) {
-    listObjects[list.name().toLowerCase()] = list;
+    try { listObjects[list.name().toLowerCase()] = list; } catch (_) {}
   }
 
   const topLists = app.lists();
   for (let i = 0; i < topLists.length; i++) registerList(topLists[i]);
 
-  const groups = app.listGroups();
-  for (let i = 0; i < groups.length; i++) {
-    const groupLists = groups[i].lists();
-    for (let j = 0; j < groupLists.length; j++) registerList(groupLists[j]);
-  }
+  try {
+    const accounts = app.accounts();
+    for (let i = 0; i < accounts.length; i++) {
+      const accountLists = accounts[i].lists();
+      for (let j = 0; j < accountLists.length; j++) registerList(accountLists[j]);
+    }
+  } catch (_) {}
 
   // ── 2. Find or create each list (case-insensitive) ────────────────────────
   for (let i = 0; i < data.lists.length; i++) {
@@ -135,15 +137,26 @@ function run() {
   }
 
   // ── 3. Build dedup Set using bulk property access ─────────────────────────
-  // list.reminders.name() fetches all names in one IPC call instead of one
-  // call per reminder — essential when scanning thousands of existing reminders.
+  // Bulk fetch (list.reminders.name()) collects all values in one IPC call
+  // rather than one call per reminder — critical for large reminder libraries.
   const existingKeys = new Set();
   const listKeys = Object.keys(listObjects);
   for (let i = 0; i < listKeys.length; i++) {
     const list = listObjects[listKeys[i]];
     const listNameLower = listKeys[i];
-    const names = list.reminders.name();
-    const dueDates = list.reminders.dueDate();
+    let names, dueDates;
+    try {
+      names = list.reminders.name();
+      dueDates = list.reminders.dueDate();
+    } catch (_) {
+      const rs = list.reminders();
+      names = [];
+      dueDates = [];
+      for (let j = 0; j < rs.length; j++) {
+        names.push(rs[j].name());
+        dueDates.push(rs[j].dueDate());
+      }
+    }
     for (let j = 0; j < names.length; j++) {
       existingKeys.add(reminderKey(listNameLower, names[j], dateKey(dueDates[j])));
     }
