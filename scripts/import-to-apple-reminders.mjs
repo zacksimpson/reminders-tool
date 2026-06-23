@@ -194,7 +194,7 @@ function run() {
     }
   }
 
-  return JSON.stringify({ created, skipped, detectedLists: Object.keys(listObjects) });
+  return JSON.stringify({ created, skipped });
 }
 `;
 
@@ -210,8 +210,7 @@ try {
     stdio: ['pipe', 'pipe', 'pipe'],
   }).trim();
 
-  const { created, skipped, detectedLists } = JSON.parse(result);
-  console.log(`Detected lists in Apple Reminders: ${detectedLists.join(', ')}`);
+  const { created, skipped } = JSON.parse(result);
   console.log(`Done.`);
   console.log(`  Created : ${created}`);
   console.log(`  Skipped : ${skipped} (already exist)`);
