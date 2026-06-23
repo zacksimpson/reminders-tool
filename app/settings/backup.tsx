@@ -103,11 +103,16 @@ export default function BackupScreen() {
         },
       });
     } catch {
-      Alert.alert(
-        "Invalid file",
-        "The selected file is not a valid Reminders backup."
-      );
       setBusy(false);
+      router.push({
+        pathname: "/confirm",
+        params: {
+          message: "The selected file is not a valid Reminders backup.",
+          confirmText: "Understood",
+          action: "invalid-file",
+          returnPath: "/settings/backup",
+        },
+      });
     }
   }
 
