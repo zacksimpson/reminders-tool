@@ -120,8 +120,8 @@ const styles = StyleSheet.create({
     fontSize: n(30),
   },
   description: {
-    fontSize: n(16),
-    letterSpacing: 0.4,
+    fontSize: n(17),
+    letterSpacing: 0.5,
     marginTop: n(2),
   },
 });
