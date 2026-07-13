@@ -1,10 +1,8 @@
 # Reminders
 
-A reminders app for the Light Phone III.
+A reminders tool for the Light Phone III.
 
 Organize tasks into lists, add due dates and times, check things off as you go, and get notified when it matters.
-
-Built with [vandamd's light-template](https://github.com/vandamd/light-template) — a community-made Expo template for building LightOS-style apps for the Light Phone III.
 
 ![Reminders screenshots](assets/images/example.png)
 ---
@@ -15,13 +13,12 @@ Built with [vandamd's light-template](https://github.com/vandamd/light-template)
 * Add due dates and times to any task
 * Today view shows only tasks due today
 * Subtasks on any task, including when adding a new task
-* Check off tasks and subtasks with a tap
 * Completed tasks move to a collapsible group at the bottom
 * Long-press a list to rename, reorder, clear completed, or delete it
 * Notifications for tasks with a set time
-* Daily bundled notification for today's untimed tasks
+* Daily bundled notification for today's tasks
+* Set recurring reminders for routine tasks
 * Custom LightOS-style date and time pickers
-* Respects LightOS theme (black/white mode)
 
 ---
 
@@ -62,6 +59,6 @@ If any of my tools have been useful to you, I'd love to hear from you! Feel free
 
 ## Credits
 
-* [vandamd](https://github.com/vandamd) — [light-template](https://github.com/vandamd/light-template), the community Expo template this app is built on
-* [iamkory](https://www.reddit.com/user/iamkory/) — [LighterOS Figma design toolkit](https://www.figma.com/design/1k2PkAjOSet8f9jjVdhM2L/LighterOS?node-id=65-2018&t=3Qd2sXdySZCzTVtK-1) excellent reference for recreating the LightOS aesthetic
-* [The Light Phone](https://www.thelightphone.com) — for building a phone worth making apps for
+* [vandamd](https://github.com/vandamd) – [light-template](https://github.com/vandamd/light-template), the community Expo template this app is built on
+* [iamkory](https://www.reddit.com/user/iamkory/) – [LighterOS Figma design toolkit](https://www.figma.com/design/1k2PkAjOSet8f9jjVdhM2L/LighterOS?node-id=65-2018&t=3Qd2sXdySZCzTVtK-1) excellent reference for recreating the LightOS aesthetic
+* [The Light Phone](https://www.thelightphone.com) – for building a phone worth making apps for
