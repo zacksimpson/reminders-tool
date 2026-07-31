@@ -5,10 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { autoBackup } from "@/utils/backup";
 import { formatISODate, parseDateStr } from "@/utils/dateTime";
+import { applyOrder, reorderIds } from "@/utils/ordering";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +36,9 @@ export interface Task {
   completedAt?: number;
   createdAt: number;
   date?: string; // ISO date string "YYYY-MM-DD"
+  // Sync bookkeeping (matches reminders-web's Task shape). Soft-delete tombstone:
+  // never physically removed, so a deletion can propagate to other synced clients.
+  deleted: boolean;
   id: string;
   listId: string;
   order: number;
@@ -41,20 +46,39 @@ export interface Task {
   subtasks: Subtask[];
   time?: string; // "HH:MM" 24h
   title: string;
+  updatedAt: number;
 }
 
 export interface ReminderList {
   createdAt: number;
+  deleted: boolean;
   id: string;
   order: number;
+  // Ordered ids of this list's active tasks, written as a single field on reorder
+  // instead of rewriting each task's own `order` (matches reminders-web). Null/empty
+  // means "fall back to `order`", see utils/ordering.ts applyOrder.
+  taskOrder?: string[] | null;
   title: string;
+  updatedAt: number;
 }
 
 export interface Settings {
   addPosition: "top" | "bottom";
   afterAddBehavior: "toast" | "go-to-list";
   defaultListId: string;
+  // Ordered ids of all active lists, written as a single field on reorder instead of
+  // rewriting each list's own `order` (matches reminders-web). Null/empty means
+  // "fall back to `order`".
+  listOrder?: string[] | null;
   showOverdue: boolean;
+  updatedAt: number;
+}
+
+/** Full snapshot including soft-deleted tombstones, for the sync engine. */
+export interface SyncSnapshot {
+  lists: ReminderList[];
+  settings: Settings;
+  tasks: Task[];
 }
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
@@ -67,11 +91,15 @@ const AUTO_BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // ─── Default Data ─────────────────────────────────────────────────────────────
 
+const DEFAULT_LIST_CREATED_AT = Date.now();
 const DEFAULT_LIST: ReminderList = {
   id: "inbox",
   title: "Inbox",
-  createdAt: Date.now(),
+  createdAt: DEFAULT_LIST_CREATED_AT,
   order: 0,
+  updatedAt: DEFAULT_LIST_CREATED_AT,
+  deleted: false,
+  taskOrder: null,
 };
 
 const DEFAULT_SETTINGS: Settings = {
@@ -79,7 +107,38 @@ const DEFAULT_SETTINGS: Settings = {
   afterAddBehavior: "toast",
   addPosition: "bottom",
   showOverdue: true,
+  updatedAt: 0,
+  listOrder: null,
 };
+
+// ─── Normalization ────────────────────────────────────────────────────────────
+// Fills sync-bookkeeping fields for data persisted before this feature existed
+// (local storage or an old backup file), same defaulting reminders-web/native use.
+
+export function normalizeTask(t: Task): Task {
+  return {
+    ...t,
+    updatedAt: t.updatedAt ?? t.createdAt,
+    deleted: t.deleted ?? false,
+  };
+}
+
+export function normalizeList(l: ReminderList): ReminderList {
+  return {
+    ...l,
+    updatedAt: l.updatedAt ?? l.createdAt,
+    deleted: l.deleted ?? false,
+    taskOrder: l.taskOrder ?? null,
+  };
+}
+
+export function normalizeSettings(s: Settings): Settings {
+  return {
+    ...s,
+    updatedAt: s.updatedAt ?? 0,
+    listOrder: s.listOrder ?? null,
+  };
+}
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -104,8 +163,18 @@ interface RemindersContextType {
 
   // Task operations
   addTask: (
-    task: Omit<Task, "id" | "createdAt" | "order" | "subtasks" | "completed">
+    task: Omit<
+      Task,
+      "id" | "createdAt" | "order" | "completed" | "updatedAt" | "deleted"
+    > & { subtasks?: Subtask[] }
   ) => Task;
+
+  // Sync
+  applySyncedState: (
+    lists: ReminderList[],
+    tasks: Task[],
+    settings: Settings
+  ) => Promise<void>;
 
   // Bulk task operations
   clearCompletedTasks: (listId: string) => void;
@@ -116,17 +185,22 @@ interface RemindersContextType {
   loaded: boolean;
   moveListDown: (id: string) => void;
   moveListUp: (id: string) => void;
+
+  // Task reordering
+  moveTaskDown: (id: string, listId: string) => void;
+  moveTaskUp: (id: string, listId: string) => void;
   renameList: (id: string, title: string) => void;
 
   // Backup
   restoreBackup: (data: {
     lists: ReminderList[];
+    settings: Settings;
     tasks: Task[];
   }) => Promise<void>;
   settings: Settings;
 
-  // Task reordering
-  swapTaskOrder: (idA: string, idB: string) => void;
+  // Sync
+  snapshotForSync: () => SyncSnapshot;
   tasks: Task[];
   toggleSubtask: (taskId: string, subtaskId: string) => void;
   toggleTask: (id: string) => void;
@@ -195,6 +269,7 @@ function spawnNextOccurrence(task: Task): Task | null {
     return null;
   }
   const nextDate = getNextOccurrenceDate(task.date, task.recurrence);
+  const now = Date.now();
   return {
     id: generateId(),
     title: task.title,
@@ -203,7 +278,9 @@ function spawnNextOccurrence(task: Task): Task | null {
     time: task.time,
     recurrence: task.recurrence,
     completed: false,
-    createdAt: Date.now(),
+    createdAt: now,
+    updatedAt: now,
+    deleted: false,
     order: task.order,
     subtasks: task.subtasks.map((s) => ({ ...s, completed: false })),
   };
@@ -223,21 +300,24 @@ function parseStoredData(
   let settings: Settings = DEFAULT_SETTINGS;
   try {
     if (rawLists) {
-      lists = JSON.parse(rawLists);
+      lists = (JSON.parse(rawLists) as ReminderList[]).map(normalizeList);
     }
   } catch {
     /* ignore corrupt data, keep default */
   }
   try {
     if (rawTasks) {
-      tasks = JSON.parse(rawTasks);
+      tasks = (JSON.parse(rawTasks) as Task[]).map(normalizeTask);
     }
   } catch {
     /* ignore corrupt data, keep default */
   }
   try {
     if (rawSettings) {
-      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(rawSettings) };
+      settings = normalizeSettings({
+        ...DEFAULT_SETTINGS,
+        ...JSON.parse(rawSettings),
+      });
     }
   } catch {
     /* ignore corrupt data, keep default */
@@ -279,7 +359,11 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       setSettings(parsed.settings);
       setLoaded(true);
       try {
-        await runDailyAutoBackup(parsed.lists, parsed.tasks, parsed.settings);
+        await runDailyAutoBackup(
+          parsed.lists.filter((l) => !l.deleted),
+          parsed.tasks.filter((t) => !t.deleted),
+          parsed.settings
+        );
       } catch {
         /* don't let backup failure affect startup */
       }
@@ -309,13 +393,17 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
 
   const addList = useCallback(
     (title: string) => {
+      const now = Date.now();
       const next = [
         ...lists,
         {
           id: generateId(),
           title,
-          createdAt: Date.now(),
-          order: lists.length,
+          createdAt: now,
+          order: lists.filter((l) => !l.deleted).length,
+          updatedAt: now,
+          deleted: false,
+          taskOrder: null,
         },
       ];
       persistLists(next);
@@ -325,74 +413,85 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
 
   const renameList = useCallback(
     (id: string, title: string) => {
-      persistLists(lists.map((l) => (l.id === id ? { ...l, title } : l)));
+      persistLists(
+        lists.map((l) =>
+          l.id === id ? { ...l, title, updatedAt: Date.now() } : l
+        )
+      );
     },
     [lists, persistLists]
   );
 
   const deleteList = useCallback(
     (id: string) => {
-      // Move tasks from deleted list to default list
+      // Soft-delete the list (tombstone, so the deletion syncs) and reassign its
+      // tasks to the default list.
       const defaultId = settings.defaultListId;
-      persistLists(lists.filter((l) => l.id !== id));
+      const now = Date.now();
+      persistLists(
+        lists.map((l) =>
+          l.id === id ? { ...l, deleted: true, updatedAt: now } : l
+        )
+      );
       persistTasks(
-        tasks.map((t) => (t.listId === id ? { ...t, listId: defaultId } : t))
+        tasks.map((t) =>
+          t.listId === id ? { ...t, listId: defaultId, updatedAt: now } : t
+        )
       );
     },
     [lists, tasks, settings.defaultListId, persistLists, persistTasks]
   );
 
-  const moveListUp = useCallback(
-    (id: string) => {
-      const sorted = [...lists].sort((a, b) => a.order - b.order);
-      const idx = sorted.findIndex((l) => l.id === id);
-      if (idx <= 0) {
+  /** Persists the reordered active-list array as one field on Settings, a single
+   *  write no matter how many lists exist, matching reminders-web's `reorderLists()`.
+   *  Individual lists' own `order` field is left untouched; it only remains as the
+   *  fallback sort key for ids not yet in the array. */
+  const reorderList = useCallback(
+    (id: string, direction: -1 | 1) => {
+      const active = lists.filter((l) => !l.deleted);
+      const sorted = applyOrder(
+        active,
+        (l) => l.id,
+        settings.listOrder,
+        (l) => l.order
+      );
+      const nextOrder = reorderIds(sorted, (l) => l.id, id, direction);
+      if (!nextOrder) {
         return;
       }
-      const next = sorted.map((l, i) => {
-        if (i === idx - 1) {
-          return { ...l, order: idx };
-        }
-        if (i === idx) {
-          return { ...l, order: idx - 1 };
-        }
-        return l;
+      persistSettings({
+        ...settings,
+        listOrder: nextOrder,
+        updatedAt: Date.now(),
       });
-      persistLists(next);
     },
-    [lists, persistLists]
+    [lists, settings, persistSettings]
+  );
+
+  const moveListUp = useCallback(
+    (id: string) => reorderList(id, -1),
+    [reorderList]
   );
 
   const moveListDown = useCallback(
-    (id: string) => {
-      const sorted = [...lists].sort((a, b) => a.order - b.order);
-      const idx = sorted.findIndex((l) => l.id === id);
-      if (idx < 0 || idx >= sorted.length - 1) {
-        return;
-      }
-      const next = sorted.map((l, i) => {
-        if (i === idx) {
-          return { ...l, order: idx + 1 };
-        }
-        if (i === idx + 1) {
-          return { ...l, order: idx };
-        }
-        return l;
-      });
-      persistLists(next);
-    },
-    [lists, persistLists]
+    (id: string) => reorderList(id, 1),
+    [reorderList]
   );
 
   // ── Task operations ──────────────────────────────────────────────────────
 
   const addTask = useCallback(
     (
-      task: Omit<Task, "id" | "createdAt" | "order" | "completed"> & {
+      task: Omit<
+        Task,
+        "id" | "createdAt" | "order" | "completed" | "updatedAt" | "deleted"
+      > & {
         subtasks?: Subtask[];
       }
     ): Task => {
-      const listTasks = tasks.filter((t) => t.listId === task.listId);
+      const listTasks = tasks.filter(
+        (t) => t.listId === task.listId && !t.deleted
+      );
       const isTop = settings.addPosition === "top";
       let order: number;
       if (isTop) {
@@ -408,10 +507,13 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         );
         order = maxOrder + 1;
       }
+      const now = Date.now();
       const newTask: Task = {
         ...task,
         id: generateId(),
-        createdAt: Date.now(),
+        createdAt: now,
+        updatedAt: now,
+        deleted: false,
         order,
         subtasks: task.subtasks ?? [],
         completed: false,
@@ -428,7 +530,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
   const updateTask = useCallback(
     (id: string, updates: Partial<Omit<Task, "id" | "createdAt">>) => {
       const updatedTasks = tasks.map((t) =>
-        t.id === id ? { ...t, ...updates } : t
+        t.id === id ? { ...t, ...updates, updatedAt: Date.now() } : t
       );
       persistTasks(updatedTasks);
       const updated = updatedTasks.find((t) => t.id === id);
@@ -436,8 +538,11 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         notificationScheduler?.cancelForTask(id);
         notificationScheduler?.scheduleForTask(updated, lists);
       }
-      // Pass undefined — the date may have changed, so refresh both bundles conservatively
-      notificationScheduler?.refreshBundles(updatedTasks, undefined);
+      // Pass undefined: the date may have changed, so refresh both bundles conservatively
+      notificationScheduler?.refreshBundles(
+        updatedTasks.filter((t) => !t.deleted),
+        undefined
+      );
     },
     [tasks, lists, persistTasks]
   );
@@ -445,42 +550,57 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
   const deleteTask = useCallback(
     (id: string) => {
       const deletedDate = tasks.find((t) => t.id === id)?.date;
-      const remaining = tasks.filter((t) => t.id !== id);
-      persistTasks(remaining);
+      const now = Date.now();
+      const updated = tasks.map((t) =>
+        t.id === id ? { ...t, deleted: true, updatedAt: now } : t
+      );
+      persistTasks(updated);
       notificationScheduler?.cancelForTask(id);
-      notificationScheduler?.refreshBundles(remaining, deletedDate);
+      notificationScheduler?.refreshBundles(
+        updated.filter((t) => !t.deleted),
+        deletedDate
+      );
     },
     [tasks, persistTasks]
   );
 
   const clearCompletedTasks = useCallback(
     (listId: string) => {
-      const remaining = tasks.filter(
-        (t) => !(t.listId === listId && t.completed)
+      const now = Date.now();
+      const removed = tasks.filter(
+        (t) => t.listId === listId && t.completed && !t.deleted
       );
-      const removed = tasks.filter((t) => t.listId === listId && t.completed);
-      persistTasks(remaining);
+      const updated = tasks.map((t) =>
+        t.listId === listId && t.completed && !t.deleted
+          ? { ...t, deleted: true, updatedAt: now }
+          : t
+      );
+      persistTasks(updated);
       for (const t of removed) {
         notificationScheduler?.cancelForTask(t.id);
       }
       // Completed tasks are filtered out of bundles so content won't change,
       // but call for consistency with all other mutations
-      notificationScheduler?.refreshBundles(remaining, undefined);
+      notificationScheduler?.refreshBundles(
+        updated.filter((t) => !t.deleted),
+        undefined
+      );
     },
     [tasks, persistTasks]
   );
 
   const toggleTask = useCallback(
     (id: string) => {
+      const now = Date.now();
       const updatedTasks = tasks.map((t) => {
         if (t.id !== id) {
           return t;
         }
         if (t.completed) {
           const { completedAt: _, ...rest } = t;
-          return { ...rest, completed: false };
+          return { ...rest, completed: false, updatedAt: now };
         }
-        return { ...t, completed: true, completedAt: Date.now() };
+        return { ...t, completed: true, completedAt: now, updatedAt: now };
       });
 
       const updated = updatedTasks.find((t) => t.id === id);
@@ -505,7 +625,10 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       } else if (updated) {
         notificationScheduler?.scheduleForTask(updated, lists);
       }
-      notificationScheduler?.refreshBundles(finalTasks, updated?.date);
+      notificationScheduler?.refreshBundles(
+        finalTasks.filter((t) => !t.deleted),
+        updated?.date
+      );
     },
     [tasks, lists, persistTasks]
   );
@@ -525,7 +648,11 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
             completed: false,
             createdAt: Date.now(),
           };
-          return { ...t, subtasks: [...t.subtasks, subtask] };
+          return {
+            ...t,
+            subtasks: [...t.subtasks, subtask],
+            updatedAt: Date.now(),
+          };
         })
       );
     },
@@ -544,6 +671,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
             subtasks: t.subtasks.map((s) =>
               s.id === subtaskId ? { ...s, completed: !s.completed } : s
             ),
+            updatedAt: Date.now(),
           };
         })
       );
@@ -561,6 +689,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
           return {
             ...t,
             subtasks: t.subtasks.filter((s) => s.id !== subtaskId),
+            updatedAt: Date.now(),
           };
         })
       );
@@ -568,28 +697,48 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     [tasks, persistTasks]
   );
 
-  const swapTaskOrder = useCallback(
-    (idA: string, idB: string) => {
-      const taskA = tasks.find((t) => t.id === idA);
-      const taskB = tasks.find((t) => t.id === idB);
-      if (!(taskA && taskB)) {
+  /** Persists the reordered active-task array as one field on the list's own doc, a
+   *  single write no matter how many tasks are in the list, matching reminders-web's
+   *  `reorderTasks()`. Tasks' own `order` field is left untouched; it only remains as
+   *  the fallback sort key for ids not yet in the array. */
+  const reorderTask = useCallback(
+    (id: string, listId: string, direction: -1 | 1) => {
+      const list = lists.find((l) => l.id === listId);
+      if (!list) {
         return;
       }
-      const orderA = taskA.order;
-      const orderB = taskB.order;
-      persistTasks(
-        tasks.map((t) => {
-          if (t.id === idA) {
-            return { ...t, order: orderB };
-          }
-          if (t.id === idB) {
-            return { ...t, order: orderA };
-          }
-          return t;
-        })
+      const active = tasks.filter(
+        (t) => t.listId === listId && !t.completed && !t.deleted
+      );
+      const sorted = applyOrder(
+        active,
+        (t) => t.id,
+        list.taskOrder,
+        (t) => t.order
+      );
+      const nextOrder = reorderIds(sorted, (t) => t.id, id, direction);
+      if (!nextOrder) {
+        return;
+      }
+      persistLists(
+        lists.map((l) =>
+          l.id === listId
+            ? { ...l, taskOrder: nextOrder, updatedAt: Date.now() }
+            : l
+        )
       );
     },
-    [tasks, persistTasks]
+    [lists, tasks, persistLists]
+  );
+
+  const moveTaskUp = useCallback(
+    (id: string, listId: string) => reorderTask(id, listId, -1),
+    [reorderTask]
+  );
+
+  const moveTaskDown = useCallback(
+    (id: string, listId: string) => reorderTask(id, listId, 1),
+    [reorderTask]
   );
 
   // ── Backup ───────────────────────────────────────────────────────────────
@@ -600,20 +749,26 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       tasks: Task[];
       settings: Settings;
     }) => {
+      const incomingTasks = data.tasks.map(normalizeTask);
+      const incomingLists = data.lists.map(normalizeList);
+
       const existingTaskIds = new Set(tasks.map((t) => t.id));
       const mergedTasks = [
         ...tasks,
-        ...data.tasks.filter((t) => !existingTaskIds.has(t.id)),
+        ...incomingTasks.filter((t) => !existingTaskIds.has(t.id)),
       ];
 
       const existingListIds = new Set(lists.map((l) => l.id));
       const mergedLists = [
         ...lists,
-        ...data.lists.filter((l) => !existingListIds.has(l.id)),
+        ...incomingLists.filter((l) => !existingListIds.has(l.id)),
       ];
 
       await Promise.all([persistLists(mergedLists), persistTasks(mergedTasks)]);
-      notificationScheduler?.rescheduleAll(mergedTasks, mergedLists);
+      notificationScheduler?.rescheduleAll(
+        mergedTasks.filter((t) => !t.deleted),
+        mergedLists.filter((l) => !l.deleted)
+      );
     },
     [lists, tasks, persistLists, persistTasks]
   );
@@ -622,17 +777,52 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
 
   const updateSettings = useCallback(
     (updates: Partial<Settings>) => {
-      const next = { ...settings, ...updates };
+      const next = { ...settings, ...updates, updatedAt: Date.now() };
       persistSettings(next);
     },
     [settings, persistSettings]
   );
 
+  // ── Sync ─────────────────────────────────────────────────────────────────
+
+  /** Full snapshot including soft-deleted tombstones, for the sync engine to
+   *  reconcile with the remote side. */
+  const snapshotForSync = useCallback(
+    (): SyncSnapshot => ({ lists, tasks, settings }),
+    [lists, tasks, settings]
+  );
+
+  /** Replaces lists/tasks/settings wholesale with the sync engine's reconciled
+   *  result. */
+  const applySyncedState = useCallback(
+    async (
+      nextLists: ReminderList[],
+      nextTasks: Task[],
+      nextSettings: Settings
+    ) => {
+      await Promise.all([
+        persistLists(nextLists),
+        persistTasks(nextTasks),
+        persistSettings(nextSettings),
+      ]);
+      notificationScheduler?.rescheduleAll(
+        nextTasks.filter((t) => !t.deleted),
+        nextLists.filter((l) => !l.deleted)
+      );
+    },
+    [persistLists, persistTasks, persistSettings]
+  );
+
+  // Public view: soft-deleted tombstones are hidden from the rest of the app. Raw
+  // state (with tombstones) is only used internally and via snapshotForSync.
+  const visibleLists = useMemo(() => lists.filter((l) => !l.deleted), [lists]);
+  const visibleTasks = useMemo(() => tasks.filter((t) => !t.deleted), [tasks]);
+
   return (
     <RemindersContext.Provider
       value={{
-        lists,
-        tasks,
+        lists: visibleLists,
+        tasks: visibleTasks,
         settings,
         loaded,
         addList,
@@ -645,12 +835,15 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         deleteTask,
         clearCompletedTasks,
         toggleTask,
-        swapTaskOrder,
+        moveTaskUp,
+        moveTaskDown,
         addSubtask,
         toggleSubtask,
         deleteSubtask,
         restoreBackup,
         updateSettings,
+        snapshotForSync,
+        applySyncedState,
       }}
     >
       {children}

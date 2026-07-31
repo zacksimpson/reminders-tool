@@ -143,6 +143,17 @@ export function compareTasksByDateThenTime(
   return compareTasksByDateTime(a, b);
 }
 
+/** epoch millis → "Jan 5, 2:30 PM" (or 24h time when use24Hour is true), for the
+ *  Account screen's "Last Synced" row. */
+export function formatLastSyncedAt(epochMillis: number, use24Hour = false): string {
+  const dt = new Date(epochMillis);
+  const dateStr = formatISODate(dt);
+  const timeStr = `${String(dt.getHours()).padStart(2, "0")}:${String(
+    dt.getMinutes()
+  ).padStart(2, "0")}`;
+  return `${formatDate(dateStr)}, ${formatTime(timeStr, use24Hour)}`;
+}
+
 /** "HH:MM" 24h → TimePicker { digits, ampm } */
 export function timeToDisplayParts(
   time24: string,

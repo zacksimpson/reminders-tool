@@ -11,6 +11,7 @@ SplashScreen.preventAutoHideAsync();
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NotificationsBridge } from "@/components/NotificationsBridge";
+import { AuthProvider } from "@/contexts/AuthContext";
 import {
   InvertColorsProvider,
   useInvertColors,
@@ -92,7 +93,9 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <InvertColorsProvider>
         <RemindersProvider>
-          <AppWithReminders />
+          <AuthProvider>
+            <AppWithReminders />
+          </AuthProvider>
         </RemindersProvider>
       </InvertColorsProvider>
     </GestureHandlerRootView>

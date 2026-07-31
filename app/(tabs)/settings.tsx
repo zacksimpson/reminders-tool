@@ -34,6 +34,14 @@ export default function SettingsScreen() {
       <Header headerTitle="Settings" hideBackButton />
 
       <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
+        {/* Account */}
+        <HapticPressable
+          onPress={() => router.push("/settings/account")}
+          style={styles.row}
+        >
+          <StyledText style={styles.selectorValue}>Account</StyledText>
+        </HapticPressable>
+
         {/* Notifications */}
         <HapticPressable
           onPress={() => router.push("/settings/notifications")}

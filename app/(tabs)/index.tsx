@@ -12,12 +12,19 @@ import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
 } from "@/hooks/useScrollIndicator";
+import { applyOrder } from "@/utils/ordering";
 import { n } from "@/utils/scaling";
 
 export default function ListsScreen() {
   const { invertColors } = useInvertColors();
-  const { lists, deleteList, moveListUp, moveListDown, clearCompletedTasks } =
-    useReminders();
+  const {
+    lists,
+    settings,
+    deleteList,
+    moveListUp,
+    moveListDown,
+    clearCompletedTasks,
+  } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const dimColor = invertColors ? "#AAAAAA" : "#555555";
@@ -37,7 +44,12 @@ export default function ListsScreen() {
   } = useScrollIndicator();
 
   const [isReordering, setIsReordering] = useState(false);
-  const sorted = [...lists].sort((a, b) => a.order - b.order);
+  const sorted = applyOrder(
+    lists,
+    (l) => l.id,
+    settings.listOrder,
+    (l) => l.order
+  );
 
   // Handle confirm screen returning with a delete action
   useEffect(() => {

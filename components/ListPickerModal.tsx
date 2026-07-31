@@ -5,6 +5,8 @@ import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import type { ReminderList } from "@/contexts/RemindersContext";
+import { useReminders } from "@/contexts/RemindersContext";
+import { applyOrder } from "@/utils/ordering";
 import { n } from "@/utils/scaling";
 
 interface ListPickerModalProps {
@@ -23,9 +25,15 @@ export function ListPickerModal({
   onDismiss,
 }: ListPickerModalProps) {
   const { invertColors } = useInvertColors();
+  const { settings } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
-  const sorted = [...lists].sort((a, b) => a.order - b.order);
+  const sorted = applyOrder(
+    lists,
+    (l) => l.id,
+    settings.listOrder,
+    (l) => l.order
+  );
 
   return (
     <Modal

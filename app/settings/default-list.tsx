@@ -11,6 +11,7 @@ import {
   scrollIndicatorBaseStyles,
   useScrollIndicator,
 } from "@/hooks/useScrollIndicator";
+import { applyOrder } from "@/utils/ordering";
 import { n } from "@/utils/scaling";
 
 export default function DefaultListScreen() {
@@ -26,7 +27,12 @@ export default function DefaultListScreen() {
     setScrollViewHeight,
   } = useScrollIndicator();
 
-  const sorted = [...lists].sort((a, b) => a.order - b.order);
+  const sorted = applyOrder(
+    lists,
+    (l) => l.id,
+    settings.listOrder,
+    (l) => l.order
+  );
 
   const handleSelect = (id: string) => {
     updateSettings({ defaultListId: id });

@@ -15,6 +15,7 @@ import {
   useScrollIndicator,
 } from "@/hooks/useScrollIndicator";
 import { isOverdue } from "@/utils/dateTime";
+import { applyOrder } from "@/utils/ordering";
 import { n } from "@/utils/scaling";
 
 export default function ListScreen() {
@@ -25,8 +26,14 @@ export default function ListScreen() {
     action?: string;
   }>();
   const { invertColors } = useInvertColors();
-  const { lists, tasks, toggleTask, deleteTask, swapTaskOrder } =
-    useReminders();
+  const {
+    lists,
+    tasks,
+    toggleTask,
+    deleteTask,
+    moveTaskUp: moveTaskUpCtx,
+    moveTaskDown: moveTaskDownCtx,
+  } = useReminders();
   const bg = invertColors ? "white" : "black";
   const textColor = invertColors ? "black" : "white";
   const [showCompleted, setShowCompleted] = useState(false);
@@ -43,9 +50,12 @@ export default function ListScreen() {
   const list = lists.find((l) => l.id === id);
   const listTitle = list?.title ?? "List";
   const listTasks = tasks.filter((t) => t.listId === id);
-  const active = listTasks
-    .filter((t) => !t.completed)
-    .sort((a, b) => a.order - b.order);
+  const active = applyOrder(
+    listTasks.filter((t) => !t.completed),
+    (t) => t.id,
+    list?.taskOrder,
+    (t) => t.order
+  );
   const completed = listTasks
     .filter((t) => t.completed)
     .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0));
@@ -67,21 +77,8 @@ export default function ListScreen() {
     }
   }, [confirmed, action, deleteTask]);
 
-  const moveTaskUp = (taskId: string) => {
-    const idx = active.findIndex((t) => t.id === taskId);
-    if (idx <= 0) {
-      return;
-    }
-    swapTaskOrder(taskId, active[idx - 1].id);
-  };
-
-  const moveTaskDown = (taskId: string) => {
-    const idx = active.findIndex((t) => t.id === taskId);
-    if (idx < 0 || idx >= active.length - 1) {
-      return;
-    }
-    swapTaskOrder(taskId, active[idx + 1].id);
-  };
+  const moveTaskUp = (taskId: string) => moveTaskUpCtx(taskId, id);
+  const moveTaskDown = (taskId: string) => moveTaskDownCtx(taskId, id);
 
   return (
     <SwipeBackContainer onSwipeBack={() => router.back()}>
