@@ -2,7 +2,7 @@
   "expo": {
     "name": "Reminders",
     "slug": "reminders-tool",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "orientation": "portrait",
     "scheme": "reminders-tool",
     "icon": "./assets/images/icon.png",

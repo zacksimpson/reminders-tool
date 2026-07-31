@@ -9,6 +9,7 @@
       }
     },
     "production": {
+      "environment": "production",
       "android": {
         "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
       }
