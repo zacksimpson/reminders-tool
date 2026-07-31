@@ -1,30 +1,27 @@
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
-import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import { useReminders } from "@/contexts/RemindersContext";
+import {
+  scrollIndicatorBaseStyles,
+  useScrollIndicator,
+} from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
 
-const AFTER_QUICK_ADD_LABELS: Record<string, string> = {
-  toast: "Add Next",
-  "go-to-list": "Go to List",
-};
-
-const ADD_POSITION_LABELS: Record<string, string> = {
-  top: "Top of List",
-  bottom: "Bottom of List",
-};
-
 export default function SettingsScreen() {
-  const { invertColors, setInvertColors } = useInvertColors();
-  const { lists, settings } = useReminders();
+  const { invertColors } = useInvertColors();
   const bg = invertColors ? "white" : "black";
-
-  const defaultList = lists.find((l) => l.id === settings.defaultListId);
+  const textColor = invertColors ? "black" : "white";
+  const {
+    handleScroll,
+    scrollIndicatorHeight,
+    scrollIndicatorPosition,
+    setContentHeight,
+    setScrollViewHeight,
+  } = useScrollIndicator();
 
   return (
     <SafeAreaView
@@ -33,98 +30,84 @@ export default function SettingsScreen() {
     >
       <Header headerTitle="Settings" hideBackButton />
 
-      <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
-        {/* Account */}
-        <HapticPressable
-          onPress={() => router.push("/settings/account")}
-          style={styles.row}
+      <View style={styles.scrollWrapper}>
+        <Animated.ScrollView
+          onLayout={(e) => setScrollViewHeight(e.nativeEvent.layout.height)}
+          onScroll={handleScroll}
+          overScrollMode="never"
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
         >
-          <StyledText style={styles.selectorValue}>Account</StyledText>
-        </HapticPressable>
+          <View onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}>
+            {/* Account */}
+            <HapticPressable
+              onPress={() => router.push("/settings/account")}
+              style={styles.row}
+            >
+              <StyledText style={styles.selectorValue}>Account</StyledText>
+            </HapticPressable>
 
-        {/* Notifications */}
-        <HapticPressable
-          onPress={() => router.push("/settings/notifications")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorValue}>Notifications</StyledText>
-        </HapticPressable>
+            {/* Notifications */}
+            <HapticPressable
+              onPress={() => router.push("/settings/notifications")}
+              style={styles.row}
+            >
+              <StyledText style={styles.selectorValue}>
+                Notifications
+              </StyledText>
+            </HapticPressable>
 
-        {/* Today View */}
-        <HapticPressable
-          onPress={() => router.push("/settings/today-view")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorValue}>Today View</StyledText>
-        </HapticPressable>
+            {/* Task Behaviors */}
+            <HapticPressable
+              onPress={() => router.push("/settings/task-behaviors")}
+              style={styles.row}
+            >
+              <StyledText style={styles.selectorValue}>
+                Task Behaviors
+              </StyledText>
+            </HapticPressable>
 
-        {/* Default List */}
-        <HapticPressable
-          onPress={() => router.push("/settings/default-list")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorLabel}>Default List</StyledText>
-          <StyledText style={styles.selectorValue}>
-            {defaultList?.title ?? "Inbox"}
-          </StyledText>
-        </HapticPressable>
+            {/* Backup */}
+            <HapticPressable
+              onPress={() => router.push("/settings/backup")}
+              style={styles.row}
+            >
+              <StyledText style={styles.selectorValue}>
+                Backup & Restore
+              </StyledText>
+            </HapticPressable>
+          </View>
+        </Animated.ScrollView>
 
-        {/* After Quick Add */}
-        <HapticPressable
-          onPress={() => router.push("/settings/after-quick-add")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorLabel}>After Quick Add</StyledText>
-          <StyledText style={styles.selectorValue}>
-            {AFTER_QUICK_ADD_LABELS[settings.afterAddBehavior] ?? "Add Next"}
-          </StyledText>
-        </HapticPressable>
-
-        {/* Add New Tasks */}
-        <HapticPressable
-          onPress={() => router.push("/settings/add-position")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorLabel}>Add New Tasks</StyledText>
-          <StyledText style={styles.selectorValue}>
-            {ADD_POSITION_LABELS[settings.addPosition ?? "bottom"] ??
-              "Bottom of List"}
-          </StyledText>
-        </HapticPressable>
-
-        {/* Backup */}
-        <HapticPressable
-          onPress={() => router.push("/settings/backup")}
-          style={styles.row}
-        >
-          <StyledText style={styles.selectorValue}>Backup & Restore</StyledText>
-        </HapticPressable>
-
-        {/* Invert Colors */}
-        <View style={styles.row}>
-          <ToggleSwitch
-            label="Invert Colors"
-            onValueChange={setInvertColors}
-            value={invertColors}
-          />
-        </View>
-      </ScrollView>
+        {scrollIndicatorHeight > 0 && (
+          <View style={[styles.scrollTrack, { backgroundColor: textColor }]}>
+            <Animated.View
+              style={[
+                styles.scrollThumb,
+                {
+                  backgroundColor: textColor,
+                  height: scrollIndicatorHeight,
+                  transform: [{ translateY: scrollIndicatorPosition }],
+                },
+              ]}
+            />
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollWrapper: { flex: 1, flexDirection: "row", position: "relative" },
+  scrollTrack: scrollIndicatorBaseStyles.track,
+  scrollThumb: scrollIndicatorBaseStyles.thumb,
   row: {
     paddingHorizontal: n(22),
     paddingVertical: n(16),
     flexDirection: "column",
     alignItems: "flex-start",
-  },
-  selectorLabel: {
-    fontSize: n(20),
-    paddingTop: n(7.5),
-    lineHeight: n(20),
   },
   selectorValue: {
     fontSize: n(30),

@@ -30,6 +30,7 @@ export default function AccountScreen() {
     lastSyncedAt,
     signIn,
     signOut,
+    syncError,
     syncNow,
   } = useAuth();
   const bg = invertColors ? "white" : "black";
@@ -71,6 +72,9 @@ export default function AccountScreen() {
                   {getLastSyncedLabel(isSyncing, lastSyncedAt)}
                 </StyledText>
               </HapticPressable>
+              {syncError && (
+                <StyledText style={styles.errorText}>{syncError}</StyledText>
+              )}
             </View>
             <HapticPressable onPress={signOut} style={styles.signOutWrapper}>
               <StyledText style={styles.confirmText}>SIGN OUT</StyledText>

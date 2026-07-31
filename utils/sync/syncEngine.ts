@@ -24,14 +24,27 @@ export interface SyncDeps {
   uid: string;
 }
 
-async function fetchCollection<T>(
+/** A malformed remote document (missing/invalid id or updatedAt, the two fields
+ *  mergeCollection actually relies on) is skipped rather than merged in as-is. */
+function isValidSyncDoc(raw: { id?: unknown; updatedAt?: unknown }): boolean {
+  return (
+    typeof raw.id === "string" &&
+    raw.id.length > 0 &&
+    typeof raw.updatedAt === "number" &&
+    Number.isFinite(raw.updatedAt)
+  );
+}
+
+async function fetchCollection<T extends { id?: unknown; updatedAt?: unknown }>(
   firestore: FirestoreClient,
   uid: string,
   collection: string,
   normalize: (raw: T) => T
 ): Promise<T[]> {
   const docs = await firestore.listDocuments(uid, collection);
-  return docs.map((doc) => normalize(doc.fields as unknown as T));
+  return docs
+    .map((doc) => normalize(doc.fields as unknown as T))
+    .filter(isValidSyncDoc);
 }
 
 /**
@@ -41,7 +54,6 @@ async function fetchCollection<T>(
  */
 export async function runSync(deps: SyncDeps): Promise<void> {
   const { firestore, uid, snapshotForSync, applySyncedState } = deps;
-  const local = snapshotForSync();
 
   const remoteLists = await fetchCollection<ReminderList>(
     firestore,
@@ -64,6 +76,9 @@ export async function runSync(deps: SyncDeps): Promise<void> {
     ? normalizeSettings(remoteSettingsDoc.fields as unknown as Settings)
     : null;
 
+  // Snapshot local state as late as possible, right before merging, so anything the
+  // user changed while the fetches above were in flight isn't clobbered by the merge.
+  const local = snapshotForSync();
   const listsResult = mergeCollection(local.lists, remoteLists);
   const tasksResult = mergeCollection(local.tasks, remoteTasks);
   const settingsResult = mergeSettings(local.settings, remoteSettings);

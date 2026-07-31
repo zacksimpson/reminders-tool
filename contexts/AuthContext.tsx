@@ -46,6 +46,7 @@ interface AuthContextType {
   lastSyncedAt: number | null;
   signIn: (email: string, password: string) => void;
   signOut: () => void;
+  syncError: string | null;
   syncNow: () => void;
 }
 
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const sessionRef = useRef<StoredSession | null>(null);
   const isSyncingRef = useRef(false);
 
@@ -169,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     isSyncingRef.current = true;
     setIsSyncing(true);
+    setSyncError(null);
     const firestore = new FirestoreClient(validIdToken);
     runSync({
       firestore,
@@ -182,8 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return persistSession({ ...latest, lastSyncedAt: Date.now() });
         }
       })
-      .catch(() => {
-        /* transient failure, the next foreground/manual trigger will retry */
+      .catch((e) => {
+        // Surfaced on the Account screen so a persistent failure (e.g. a revoked
+        // refresh token) isn't invisible; the next foreground/manual trigger retries.
+        setSyncError(e instanceof Error ? e.message : "Sync failed.");
       })
       .finally(() => {
         isSyncingRef.current = false;
@@ -246,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastSyncedAt: session?.lastSyncedAt ?? null,
         signIn,
         signOut,
+        syncError,
         syncNow,
       }}
     >

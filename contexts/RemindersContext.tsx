@@ -793,7 +793,10 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
   );
 
   /** Replaces lists/tasks/settings wholesale with the sync engine's reconciled
-   *  result. */
+   *  result. Writes AsyncStorage for all three before touching React state, so a
+   *  failure partway through leaves neither memory nor disk reflecting a partial
+   *  sync, rather than the UI showing "synced" while only some of it was durably
+   *  written. */
   const applySyncedState = useCallback(
     async (
       nextLists: ReminderList[],
@@ -801,16 +804,19 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
       nextSettings: Settings
     ) => {
       await Promise.all([
-        persistLists(nextLists),
-        persistTasks(nextTasks),
-        persistSettings(nextSettings),
+        AsyncStorage.setItem(LISTS_KEY, JSON.stringify(nextLists)),
+        AsyncStorage.setItem(TASKS_KEY, JSON.stringify(nextTasks)),
+        AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(nextSettings)),
       ]);
+      setLists(nextLists);
+      setTasks(nextTasks);
+      setSettings(nextSettings);
       notificationScheduler?.rescheduleAll(
         nextTasks.filter((t) => !t.deleted),
         nextLists.filter((l) => !l.deleted)
       );
     },
-    [persistLists, persistTasks, persistSettings]
+    []
   );
 
   // Public view: soft-deleted tombstones are hidden from the rest of the app. Raw
