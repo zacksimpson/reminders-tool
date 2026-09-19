@@ -62,7 +62,7 @@ private fun SubtaskRow(subtask: Subtask, onRename: () -> Unit, onToggle: () -> U
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 0.5f.gridUnitsAsDp()),
+            .padding(start = 0.5f.gridUnitsAsDp(), end = FIELD_END_INSET.gridUnitsAsDp()),
         verticalAlignment = Alignment.Top,
     ) {
         // top offset tuned against this row's Paragraph text, not copied from
