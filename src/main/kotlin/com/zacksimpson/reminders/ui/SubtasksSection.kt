@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -25,11 +26,8 @@ import com.zacksimpson.reminders.data.Subtask
 /** what the subtask rows are showing: checkboxes, or move arrows while reordering. */
 enum class SubtaskMode { NORMAL, REORDER }
 
-/** subtasks list + an add button. shared by Add Task and Task Detail, the caller
- *  decides whether mutations are draft (Add) or immediate (Edit). long-pressing a subtask
- *  enters [SubtaskMode.REORDER] (rows swap their checkbox for move arrows and the add
- *  button is hidden). swiping a row right to left reveals that row's delete icon in place
- *  of its checkbox ([revealedId]), swiping it back left to right hides it again. */
+/** subtasks list + add button, shared by Add Task (draft) and Task Detail (live).
+ *  long-press reorders, swipe a row left to reveal its delete icon, right to hide it. */
 @Composable
 fun SubtasksSection(
     subtasks: List<Subtask>,
@@ -54,27 +52,30 @@ fun SubtasksSection(
             ),
         )
         subtasks.forEachIndexed { index, subtask ->
-            SubtaskRow(
-                subtask = subtask,
-                mode = mode,
-                revealed = subtask.id == revealedId,
-                isFirst = index == 0,
-                isLast = index == subtasks.lastIndex,
-                onRename = { onRename(subtask) },
-                onToggle = { onToggle(subtask.id) },
-                onDelete = {
-                    onRevealChange(null)
-                    onDelete(subtask.id)
-                },
-                onStartReorder = {
-                    onRevealChange(null)
-                    onModeChange(SubtaskMode.REORDER)
-                },
-                onReveal = { onRevealChange(subtask.id) },
-                onHide = { onRevealChange(null) },
-                onMoveUp = { onMove(subtask.id, -1) },
-                onMoveDown = { onMove(subtask.id, 1) },
-            )
+            // keyed so a row's swipe handler stays tied to its own subtask when rows above it go away
+            key(subtask.id) {
+                SubtaskRow(
+                    subtask = subtask,
+                    mode = mode,
+                    revealed = subtask.id == revealedId,
+                    isFirst = index == 0,
+                    isLast = index == subtasks.lastIndex,
+                    onRename = { onRename(subtask) },
+                    onToggle = { onToggle(subtask.id) },
+                    onDelete = {
+                        onRevealChange(null)
+                        onDelete(subtask.id)
+                    },
+                    onStartReorder = {
+                        onRevealChange(null)
+                        onModeChange(SubtaskMode.REORDER)
+                    },
+                    onReveal = { onRevealChange(subtask.id) },
+                    onHide = { onRevealChange(null) },
+                    onMoveUp = { onMove(subtask.id, -1) },
+                    onMoveDown = { onMove(subtask.id, 1) },
+                )
+            }
         }
         if (mode != SubtaskMode.NORMAL) return@Column
         // just the icon, no label, the tappable row still spans full width, so tapping
@@ -119,8 +120,7 @@ private fun SubtaskRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // right-to-left reveals this row's delete icon, left-to-right hides it. fires
-            // as soon as the finger has travelled far enough, no need to lift.
+            // swipe left reveals the delete icon, right hides it, fires without lifting
             .pointerInput(reordering, revealed) {
                 if (reordering) return@pointerInput
                 var total = 0f
@@ -196,9 +196,7 @@ private const val ARROW_SIZE = 1.4f
  *  the taller task and list rows. */
 @Composable
 private fun SubtaskReorderArrows(isFirst: Boolean, isLast: Boolean, onMoveUp: () -> Unit, onMoveDown: () -> Unit) {
-    // UP's ink sits higher in its box than DOWN's, so UP gets its own visual (offset)
-    // shift to land both on the first text line's center. the x offset pushes the ink to
-    // the same right edge as the delete icon, the artwork has margin inside its box.
+    // per-icon offsets center both arrows on the first text line and line the ink up with the delete icon
     Row(modifier = Modifier.offset(x = 0.21f.gridUnitsAsDp())) {
         LightIcon(
             icon = LightIcons.UP,

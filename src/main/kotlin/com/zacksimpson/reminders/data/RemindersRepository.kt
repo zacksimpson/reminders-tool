@@ -293,8 +293,9 @@ class RemindersRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { p ->
             p.writeTasks(
                 p.readTasks().map { t ->
-                    if (t.id != taskId) t
-                    else t.copy(subtasks = RemindersLogic.moveSubtask(t.subtasks, subtaskId, delta), updatedAt = now())
+                    if (t.id != taskId) return@map t
+                    val moved = RemindersLogic.moveSubtask(t.subtasks, subtaskId, delta)
+                    if (moved == t.subtasks) t else t.copy(subtasks = moved, updatedAt = now())
                 },
             )
         }
