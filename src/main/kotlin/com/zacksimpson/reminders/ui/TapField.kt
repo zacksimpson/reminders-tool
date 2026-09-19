@@ -23,6 +23,10 @@ import com.thelightphone.sdk.ui.designVerticalPxToSp
 import com.thelightphone.sdk.ui.gridUnitsAsDp
 import com.thelightphone.sdk.ui.lightClickable
 
+// right inset shared by the title underline, clear icons and subtask delete icons so they
+// end together, leaving a gap before the scroll indicator like Light Calendar's edit screen.
+internal const val FIELD_END_INSET = 1.25f
+
 /**
  * Subheading's size scaled the same way [LightText] scales it, but with the variant's
  * built-in letter-spacing stripped, Subheading's tracking (designed for smaller,
@@ -58,6 +62,7 @@ fun TitleField(
             .padding(
                 start = 1.5f.gridUnitsAsDp(),
                 top = 0.75f.gridUnitsAsDp(),
+                end = FIELD_END_INSET.gridUnitsAsDp(),
                 bottom = 0.75f.gridUnitsAsDp(),
             ),
     ) {
@@ -97,6 +102,8 @@ fun TapField(
     // wrapping; longer status text (e.g. "Last synced <date>, <time>") needs to wrap
     // instead, or it silently loses the end of the string behind an ellipsis.
     singleLine: Boolean = true,
+    // full Heading size instead of the smaller field-value size used on the task screens
+    largeValue: Boolean = false,
 ) {
     Column(
         modifier = modifier
@@ -105,13 +112,23 @@ fun TapField(
             .padding(horizontal = 1.5f.gridUnitsAsDp(), vertical = 0.75f.gridUnitsAsDp()),
     ) {
         LightText(text = label, variant = LightTextVariant.Detail)
-        Text(
-            text = value,
-            style = fieldValueStyle(),
-            maxLines = if (singleLine) 1 else Int.MAX_VALUE,
-            overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
-            modifier = Modifier.padding(top = 0.25f.gridUnitsAsDp()),
-        )
+        if (largeValue) {
+            LightText(
+                text = value,
+                variant = LightTextVariant.Heading,
+                maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+                overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
+                modifier = Modifier.padding(top = 0.25f.gridUnitsAsDp()),
+            )
+        } else {
+            Text(
+                text = value,
+                style = fieldValueStyle(),
+                maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+                overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
+                modifier = Modifier.padding(top = 0.25f.gridUnitsAsDp()),
+            )
+        }
     }
 }
 
@@ -133,7 +150,7 @@ fun ClearableField(label: String, value: String?, onClick: () -> Unit, onClear: 
             .padding(
                 start = 1.5f.gridUnitsAsDp(),
                 top = 0.75f.gridUnitsAsDp(),
-                end = 1.5f.gridUnitsAsDp(),
+                end = FIELD_END_INSET.gridUnitsAsDp(),
                 bottom = 0.75f.gridUnitsAsDp(),
             ),
         horizontalArrangement = Arrangement.SpaceBetween,

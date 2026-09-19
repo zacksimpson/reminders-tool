@@ -3,6 +3,7 @@ id = "com.zacksimpson.reminders"
 label = "Reminders"
 versionCode = 3
 versionName = "2.0.0"
+orientation = "portrait"
 # Notifications are deferred (the SDK has no exact-time local alarm yet); see README.
 # INTERNET/ACCESS_NETWORK_STATE added for phone<->desktop sync over Firebase's REST APIs.
 permissions = ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"]

@@ -92,6 +92,7 @@ class NotificationsScreen(
                         TapField(
                             label = "Notification Time",
                             value = formatTime(todaysTasksTime),
+                            largeValue = true,
                             onClick = {
                                 navigateTo(
                                     screenFactory = { TimePickerScreen(it, todaysTasksTime) },

@@ -32,6 +32,7 @@ import com.zacksimpson.reminders.data.Recurrence
 import com.zacksimpson.reminders.data.RecurrenceUnit
 import com.zacksimpson.reminders.data.RemindersLogic
 import com.zacksimpson.reminders.ui.AkkuratText
+import com.zacksimpson.reminders.ui.UnderlinedHeading
 import com.zacksimpson.reminders.ui.RemindersTheme
 
 /**
@@ -114,10 +115,9 @@ class RecurrencePickerScreen(
                         )
                     }
 
-                    LightText(
+                    UnderlinedHeading(
                         text = unitLabel,
-                        variant = LightTextVariant.Heading,
-                        underline = true,
+                        underlined = true,
                         modifier = Modifier
                             .lightClickable { cycleUnit() }
                             .padding(horizontal = 1f.gridUnitsAsDp(), vertical = 0.5f.gridUnitsAsDp()),
