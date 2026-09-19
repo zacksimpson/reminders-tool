@@ -97,6 +97,8 @@ fun TapField(
     // wrapping; longer status text (e.g. "Last synced <date>, <time>") needs to wrap
     // instead, or it silently loses the end of the string behind an ellipsis.
     singleLine: Boolean = true,
+    // full Heading size instead of the smaller field-value size used on the task screens
+    largeValue: Boolean = false,
 ) {
     Column(
         modifier = modifier
@@ -105,13 +107,23 @@ fun TapField(
             .padding(horizontal = 1.5f.gridUnitsAsDp(), vertical = 0.75f.gridUnitsAsDp()),
     ) {
         LightText(text = label, variant = LightTextVariant.Detail)
-        Text(
-            text = value,
-            style = fieldValueStyle(),
-            maxLines = if (singleLine) 1 else Int.MAX_VALUE,
-            overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
-            modifier = Modifier.padding(top = 0.25f.gridUnitsAsDp()),
-        )
+        if (largeValue) {
+            LightText(
+                text = value,
+                variant = LightTextVariant.Heading,
+                maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+                overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
+                modifier = Modifier.padding(top = 0.25f.gridUnitsAsDp()),
+            )
+        } else {
+            Text(
+                text = value,
+                style = fieldValueStyle(),
+                maxLines = if (singleLine) 1 else Int.MAX_VALUE,
+                overflow = if (singleLine) TextOverflow.Ellipsis else TextOverflow.Clip,
+                modifier = Modifier.padding(top = 0.25f.gridUnitsAsDp()),
+            )
+        }
     }
 }
 
