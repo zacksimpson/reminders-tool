@@ -1,6 +1,7 @@
 package com.zacksimpson.reminders.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import com.thelightphone.sdk.ui.gridUnitsAsDp
 import com.thelightphone.sdk.ui.lightClickable
 import com.zacksimpson.reminders.ui.RemindersTheme
 import com.zacksimpson.reminders.ui.SwipeBackContainer
+import com.zacksimpson.reminders.ui.UnderlinedHeading
 
 data class PickerOption(val key: String, val label: String)
 
@@ -54,10 +56,7 @@ class OptionPickerScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     options.forEach { option ->
-                        LightText(
-                            text = option.label,
-                            variant = LightTextVariant.Heading,
-                            underline = option.key == selectedKey,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .lightClickable { goBack(option.key) }
@@ -66,7 +65,12 @@ class OptionPickerScreen(
                                     top = 0.75f.gridUnitsAsDp(),
                                     bottom = 0.75f.gridUnitsAsDp(),
                                 ),
-                        )
+                        ) {
+                            UnderlinedHeading(
+                                text = option.label,
+                                underlined = option.key == selectedKey,
+                            )
+                        }
                     }
                 }
             }
