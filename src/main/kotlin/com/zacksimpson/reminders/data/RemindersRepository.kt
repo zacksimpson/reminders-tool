@@ -289,6 +289,17 @@ class RemindersRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    suspend fun moveSubtask(taskId: String, subtaskId: String, delta: Int) {
+        dataStore.edit { p ->
+            p.writeTasks(
+                p.readTasks().map { t ->
+                    if (t.id != taskId) t
+                    else t.copy(subtasks = RemindersLogic.moveSubtask(t.subtasks, subtaskId, delta), updatedAt = now())
+                },
+            )
+        }
+    }
+
     // ── settings ─────────────────────────────────────────────────────────────────
 
     suspend fun updateSettings(transform: (Settings) -> Settings) {
