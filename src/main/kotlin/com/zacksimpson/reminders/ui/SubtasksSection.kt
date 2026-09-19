@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,9 +24,31 @@ import com.thelightphone.sdk.ui.LightTextVariant
 import com.thelightphone.sdk.ui.gridUnitsAsDp
 import com.thelightphone.sdk.ui.lightClickable
 import com.zacksimpson.reminders.data.Subtask
+import kotlinx.coroutines.flow.MutableStateFlow
 
-/** what the subtask rows are showing: checkboxes, or move arrows while reordering. */
-enum class SubtaskMode { NORMAL, REORDER }
+/** reorder flag and the one row whose delete icon is showing, held by each screen's view model. */
+class SubtaskUiState {
+    val isReordering = MutableStateFlow(false)
+    val revealedId = MutableStateFlow<String?>(null)
+
+    fun startReorder() {
+        revealedId.value = null
+        isReordering.value = true
+    }
+
+    fun stopReorder() {
+        isReordering.value = false
+    }
+
+    fun reveal(id: String?) {
+        revealedId.value = id
+    }
+
+    fun reset() {
+        isReordering.value = false
+        revealedId.value = null
+    }
+}
 
 /** subtasks list + add button, shared by Add Task (draft) and Task Detail (live).
  *  long-press reorders, swipe a row left to reveal its delete icon, right to hide it. */
@@ -35,12 +59,11 @@ fun SubtasksSection(
     onRename: (Subtask) -> Unit,
     onToggle: (String) -> Unit,
     onDelete: (String) -> Unit,
-    mode: SubtaskMode,
-    onModeChange: (SubtaskMode) -> Unit,
-    revealedId: String?,
-    onRevealChange: (String?) -> Unit,
+    uiState: SubtaskUiState,
     onMove: (id: String, delta: Int) -> Unit,
 ) {
+    val reordering by uiState.isReordering.collectAsState()
+    val revealedId by uiState.revealedId.collectAsState()
     Column {
         LightText(
             text = "Subtasks",
@@ -56,28 +79,25 @@ fun SubtasksSection(
             key(subtask.id) {
                 SubtaskRow(
                     subtask = subtask,
-                    mode = mode,
+                    reordering = reordering,
                     revealed = subtask.id == revealedId,
                     isFirst = index == 0,
                     isLast = index == subtasks.lastIndex,
                     onRename = { onRename(subtask) },
                     onToggle = { onToggle(subtask.id) },
                     onDelete = {
-                        onRevealChange(null)
+                        uiState.reveal(null)
                         onDelete(subtask.id)
                     },
-                    onStartReorder = {
-                        onRevealChange(null)
-                        onModeChange(SubtaskMode.REORDER)
-                    },
-                    onReveal = { onRevealChange(subtask.id) },
-                    onHide = { onRevealChange(null) },
+                    onStartReorder = uiState::startReorder,
+                    onReveal = { uiState.reveal(subtask.id) },
+                    onHide = { uiState.reveal(null) },
                     onMoveUp = { onMove(subtask.id, -1) },
                     onMoveDown = { onMove(subtask.id, 1) },
                 )
             }
         }
-        if (mode != SubtaskMode.NORMAL) return@Column
+        if (reordering) return@Column
         // just the icon, no label, the tappable row still spans full width, so tapping
         // the empty space to the right of the icon also works, not just the icon itself.
         Row(
@@ -101,7 +121,7 @@ fun SubtasksSection(
 @Composable
 private fun SubtaskRow(
     subtask: Subtask,
-    mode: SubtaskMode,
+    reordering: Boolean,
     revealed: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
@@ -114,7 +134,6 @@ private fun SubtaskRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
 ) {
-    val reordering = mode == SubtaskMode.REORDER
     val showDelete = revealed && !reordering
     val swipeThresholdPx = with(LocalDensity.current) { 2.5f.gridUnitsAsDp().toPx() }
     Row(

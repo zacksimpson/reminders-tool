@@ -43,7 +43,7 @@ import com.zacksimpson.reminders.dataStateIn
 import com.zacksimpson.reminders.ui.ClearableField
 import com.zacksimpson.reminders.ui.ConfirmScreen
 import com.zacksimpson.reminders.ui.RemindersTheme
-import com.zacksimpson.reminders.ui.SubtaskMode
+import com.zacksimpson.reminders.ui.SubtaskUiState
 import com.zacksimpson.reminders.ui.SubtasksSection
 import com.zacksimpson.reminders.ui.SwipeBackContainer
 import com.zacksimpson.reminders.ui.TapField
@@ -65,8 +65,7 @@ class TaskDetailViewModel(
     val time = MutableStateFlow<String?>(null)
     val recurrence = MutableStateFlow<Recurrence?>(null)
     val seeded = MutableStateFlow(false)
-    val subtaskMode = MutableStateFlow(SubtaskMode.NORMAL)
-    val revealedSubtaskId = MutableStateFlow<String?>(null)
+    val subtaskUi = SubtaskUiState()
     val notFound = MutableStateFlow(false)
     val state = repo.dataStateIn(viewModelScope, initialData?.let { DataState.Ready(it) } ?: DataState.Loading)
 
@@ -201,8 +200,7 @@ class TaskDetailScreen(
     override fun Content() {
         RemindersTheme {
             val seeded by viewModel.seeded.collectAsState()
-            val subtaskMode by viewModel.subtaskMode.collectAsState()
-            val revealedSubtaskId by viewModel.revealedSubtaskId.collectAsState()
+            val reorderingSubtasks by viewModel.subtaskUi.isReordering.collectAsState()
             val notFound by viewModel.notFound.collectAsState()
             val title by viewModel.title.collectAsState()
             val listId by viewModel.selectedListId.collectAsState()
@@ -228,8 +226,8 @@ class TaskDetailScreen(
                     center = LightTopBarCenter.Text("Edit"),
                     // ACCEPT's artwork fills its box edge-to-edge, unlike BACK's, sized
                     // down to match BACK's visual weight.
-                    rightButton = if (subtaskMode == SubtaskMode.REORDER) {
-                        LightBarButton.Text("DONE", onClick = { viewModel.subtaskMode.value = SubtaskMode.NORMAL })
+                    rightButton = if (reorderingSubtasks) {
+                        LightBarButton.Text("DONE", onClick = viewModel.subtaskUi::stopReorder)
                     } else {
                         LightBarButton.LightIcon(
                             LightIcons.ACCEPT,
@@ -332,10 +330,7 @@ class TaskDetailScreen(
                             },
                             onToggle = { viewModel.toggleSubtask(it) },
                             onDelete = { viewModel.removeSubtask(it) },
-                            mode = subtaskMode,
-                            onModeChange = { viewModel.subtaskMode.value = it },
-                            revealedId = revealedSubtaskId,
-                            onRevealChange = { viewModel.revealedSubtaskId.value = it },
+                            uiState = viewModel.subtaskUi,
                             onMove = { id, delta -> viewModel.moveSubtask(id, delta) },
                         )
 
