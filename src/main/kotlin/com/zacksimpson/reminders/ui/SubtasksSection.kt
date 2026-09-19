@@ -44,9 +44,10 @@ fun SubtasksSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .lightClickable(onClick = onAdd)
-                .padding(top = 0.6f.gridUnitsAsDp(), bottom = 0.5f.gridUnitsAsDp()),
+                .padding(top = 0.785f.gridUnitsAsDp(), bottom = 0.5f.gridUnitsAsDp()),
         ) {
-            // matches TaskCheckboxIcon's size so the two circles read the same size.
+            // same size and top offset as the checkbox in SubtaskRow, so the + sits where the next
+            // subtask's checkbox would.
             PlusCircleIcon(
                 size = 17.dp,
                 // start matches SubtaskRow's own start so this lines up under the
@@ -75,7 +76,7 @@ private fun SubtaskRow(subtask: Subtask, onRename: () -> Unit, onToggle: () -> U
                 .padding(
                     start = 0.9f.gridUnitsAsDp(),
                     end = 0.9f.gridUnitsAsDp(),
-                    top = 0.68f.gridUnitsAsDp(),
+                    top = 0.785f.gridUnitsAsDp(),
                     bottom = 0.1f.gridUnitsAsDp(),
                 )
                 .alpha(if (subtask.completed) 0.4f else 1f),
@@ -93,7 +94,7 @@ private fun SubtaskRow(subtask: Subtask, onRename: () -> Unit, onToggle: () -> U
             size = 14.dp,
             modifier = Modifier
                 .lightClickable(onClick = onDelete)
-                .padding(start = 0.5f.gridUnitsAsDp(), top = 0.75f.gridUnitsAsDp(), bottom = 0.6f.gridUnitsAsDp()),
+                .padding(start = 0.5f.gridUnitsAsDp(), top = 0.905f.gridUnitsAsDp(), bottom = 0.445f.gridUnitsAsDp()),
         )
     }
 }
