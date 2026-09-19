@@ -1,6 +1,7 @@
 package com.zacksimpson.reminders.ui
 
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.thelightphone.sdk.ui.LightIcon
 import com.thelightphone.sdk.ui.LightIcons
@@ -19,10 +22,14 @@ import com.thelightphone.sdk.ui.gridUnitsAsDp
 import com.thelightphone.sdk.ui.lightClickable
 import com.zacksimpson.reminders.data.Subtask
 
+/** what the subtask rows are showing: checkboxes, or move arrows while reordering. */
+enum class SubtaskMode { NORMAL, REORDER }
+
 /** subtasks list + an add button. shared by Add Task and Task Detail, the caller
  *  decides whether mutations are draft (Add) or immediate (Edit). long-pressing a subtask
- *  calls [onStartReorder], while [isReordering] the rows swap their checkbox/delete for
- *  move arrows and the add button is hidden. */
+ *  enters [SubtaskMode.REORDER] (rows swap their checkbox for move arrows and the add
+ *  button is hidden). swiping a row right to left reveals that row's delete icon in place
+ *  of its checkbox ([revealedId]), swiping it back left to right hides it again. */
 @Composable
 fun SubtasksSection(
     subtasks: List<Subtask>,
@@ -30,8 +37,10 @@ fun SubtasksSection(
     onRename: (Subtask) -> Unit,
     onToggle: (String) -> Unit,
     onDelete: (String) -> Unit,
-    isReordering: Boolean,
-    onStartReorder: () -> Unit,
+    mode: SubtaskMode,
+    onModeChange: (SubtaskMode) -> Unit,
+    revealedId: String?,
+    onRevealChange: (String?) -> Unit,
     onMove: (id: String, delta: Int) -> Unit,
 ) {
     Column {
@@ -47,18 +56,27 @@ fun SubtasksSection(
         subtasks.forEachIndexed { index, subtask ->
             SubtaskRow(
                 subtask = subtask,
-                isReordering = isReordering,
+                mode = mode,
+                revealed = subtask.id == revealedId,
                 isFirst = index == 0,
                 isLast = index == subtasks.lastIndex,
                 onRename = { onRename(subtask) },
                 onToggle = { onToggle(subtask.id) },
-                onDelete = { onDelete(subtask.id) },
-                onStartReorder = onStartReorder,
+                onDelete = {
+                    onRevealChange(null)
+                    onDelete(subtask.id)
+                },
+                onStartReorder = {
+                    onRevealChange(null)
+                    onModeChange(SubtaskMode.REORDER)
+                },
+                onReveal = { onRevealChange(subtask.id) },
+                onHide = { onRevealChange(null) },
                 onMoveUp = { onMove(subtask.id, -1) },
                 onMoveDown = { onMove(subtask.id, 1) },
             )
         }
-        if (isReordering) return@Column
+        if (mode != SubtaskMode.NORMAL) return@Column
         // just the icon, no label, the tappable row still spans full width, so tapping
         // the empty space to the right of the icon also works, not just the icon itself.
         Row(
@@ -82,23 +100,52 @@ fun SubtasksSection(
 @Composable
 private fun SubtaskRow(
     subtask: Subtask,
-    isReordering: Boolean,
+    mode: SubtaskMode,
+    revealed: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
     onRename: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
     onStartReorder: () -> Unit,
+    onReveal: () -> Unit,
+    onHide: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
 ) {
+    val reordering = mode == SubtaskMode.REORDER
+    val showDelete = revealed && !reordering
+    val swipeThresholdPx = with(LocalDensity.current) { 2.5f.gridUnitsAsDp().toPx() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            // right-to-left reveals this row's delete icon, left-to-right hides it. fires
+            // as soon as the finger has travelled far enough, no need to lift.
+            .pointerInput(reordering, revealed) {
+                if (reordering) return@pointerInput
+                var total = 0f
+                var fired = false
+                detectHorizontalDragGestures(
+                    onDragStart = { total = 0f; fired = false },
+                    onDragCancel = { total = 0f; fired = false },
+                    onHorizontalDrag = { _, dx ->
+                        total += dx
+                        if (!fired) {
+                            if (total <= -swipeThresholdPx && !revealed) {
+                                fired = true
+                                onReveal()
+                            } else if (total >= swipeThresholdPx && revealed) {
+                                fired = true
+                                onHide()
+                            }
+                        }
+                    },
+                )
+            }
             .padding(start = 0.5f.gridUnitsAsDp(), end = FIELD_END_INSET.gridUnitsAsDp()),
         verticalAlignment = Alignment.Top,
     ) {
-        if (!isReordering) {
+        if (!reordering && !showDelete) {
             // top offset tuned against this row's Paragraph text, not copied from
             // TaskRowView's checkbox, different line metrics (AkkuratText there).
             TaskCheckboxIcon(
@@ -121,18 +168,18 @@ private fun SubtaskRow(
             modifier = Modifier
                 .weight(1f)
                 .combinedClickable(
-                    enabled = !isReordering,
+                    enabled = !reordering,
                     onClick = onRename,
                     onLongClick = onStartReorder,
                 )
                 // replaces the left margin the checkbox normally provides, same as
                 // TaskRowView does while reordering.
-                .padding(start = if (isReordering) 1f.gridUnitsAsDp() else 0.dp, top = 0.65f.gridUnitsAsDp(), bottom = 0.65f.gridUnitsAsDp())
+                .padding(start = if (reordering || showDelete) 1f.gridUnitsAsDp() else 0.dp, top = 0.65f.gridUnitsAsDp(), bottom = 0.65f.gridUnitsAsDp())
                 .alpha(if (subtask.completed) 0.4f else 1f),
         )
-        if (isReordering) {
+        if (reordering) {
             SubtaskReorderArrows(isFirst = isFirst, isLast = isLast, onMoveUp = onMoveUp, onMoveDown = onMoveDown)
-        } else {
+        } else if (showDelete) {
             DeleteIcon(
                 size = 14.dp,
                 modifier = Modifier
