@@ -15,6 +15,35 @@ class RemindersLogicTest {
     private fun task(id: String, listId: String, order: Int) =
         Task(id = id, title = id, listId = listId, createdAt = 0L, order = order)
 
+    // ── moveSubtask ────────────────────────────────────────────────────────────
+
+    private fun subs(vararg ids: String) = ids.map { Subtask(id = it, title = it, createdAt = 0L) }
+
+    @Test
+    fun moveSubtaskDownSwapsWithNext() {
+        val moved = RemindersLogic.moveSubtask(subs("a", "b", "c"), "a", 1)
+        assertEquals(listOf("b", "a", "c"), moved.map { it.id })
+    }
+
+    @Test
+    fun moveSubtaskUpSwapsWithPrevious() {
+        val moved = RemindersLogic.moveSubtask(subs("a", "b", "c"), "c", -1)
+        assertEquals(listOf("a", "c", "b"), moved.map { it.id })
+    }
+
+    @Test
+    fun moveSubtaskPastEitherEndIsNoOp() {
+        val list = subs("a", "b", "c")
+        assertEquals(list, RemindersLogic.moveSubtask(list, "a", -1))
+        assertEquals(list, RemindersLogic.moveSubtask(list, "c", 1))
+    }
+
+    @Test
+    fun moveSubtaskUnknownIdIsNoOp() {
+        val list = subs("a", "b")
+        assertEquals(list, RemindersLogic.moveSubtask(list, "zzz", 1))
+    }
+
     // ── applyOrder (LIST_TASK_ORDER_MIGRATION.md fallback rule) ────────────────
 
     @Test

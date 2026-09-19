@@ -41,6 +41,7 @@ import com.zacksimpson.reminders.data.generateId
 import com.zacksimpson.reminders.dataStateIn
 import com.zacksimpson.reminders.ui.ClearableField
 import com.zacksimpson.reminders.ui.RemindersTheme
+import com.zacksimpson.reminders.ui.SubtaskUiState
 import com.zacksimpson.reminders.ui.SubtasksSection
 import com.zacksimpson.reminders.ui.SwipeBackContainer
 import com.zacksimpson.reminders.ui.TapField
@@ -63,6 +64,7 @@ class AddTaskViewModel(
     val time = MutableStateFlow<String?>(null)
     val recurrence = MutableStateFlow<Recurrence?>(null)
     val subtasks = MutableStateFlow<List<Subtask>>(emptyList())
+    val subtaskUi = SubtaskUiState()
     val state = repo.dataStateIn(viewModelScope, initialData?.let { DataState.Ready(it) } ?: DataState.Loading)
 
     fun setTitle(value: String) {
@@ -119,6 +121,10 @@ class AddTaskViewModel(
         subtasks.value = subtasks.value.filter { it.id != id }
     }
 
+    fun moveSubtask(id: String, delta: Int) {
+        subtasks.value = RemindersLogic.moveSubtask(subtasks.value, id, delta)
+    }
+
     fun save(onSaved: () -> Unit) {
         val t = title.value.trim()
         if (t.isEmpty()) return
@@ -142,6 +148,7 @@ class AddTaskViewModel(
         time.value = null
         recurrence.value = null
         subtasks.value = emptyList()
+        subtaskUi.reset()
     }
 }
 
@@ -177,6 +184,7 @@ class AddTaskScreen(
             val time by viewModel.time.collectAsState()
             val recurrence by viewModel.recurrence.collectAsState()
             val subtasks by viewModel.subtasks.collectAsState()
+            val reorderingSubtasks by viewModel.subtaskUi.isReordering.collectAsState()
             val state by viewModel.state.collectAsState()
             val lists = (state as? DataState.Ready)?.data?.lists.orEmpty()
             val listOrder = (state as? DataState.Ready)?.data?.settings?.listOrder
@@ -208,7 +216,9 @@ class AddTaskScreen(
                 LightTopBar(
                     leftButton = if (isModal) null else LightBarButton.LightIcon(LightIcons.BACK, onClick = { goBack(null) }),
                     center = LightTopBarCenter.Text("New Task"),
-                    rightButton = if (!isModal && title.isNotBlank()) {
+                    rightButton = if (reorderingSubtasks) {
+                        LightBarButton.Text("DONE", onClick = viewModel.subtaskUi::stopReorder)
+                    } else if (!isModal && title.isNotBlank()) {
                         // ACCEPT's artwork fills its box edge-to-edge, unlike BACK's,
                         // sized down to match BACK's visual weight.
                         LightBarButton.LightIcon(LightIcons.ACCEPT, onClick = onSave, sizeUnits = 1.5f)
@@ -303,6 +313,8 @@ class AddTaskScreen(
                         },
                         onToggle = { viewModel.toggleSubtask(it) },
                         onDelete = { viewModel.removeSubtask(it) },
+                        uiState = viewModel.subtaskUi,
+                        onMove = { id, delta -> viewModel.moveSubtask(id, delta) },
                     )
                 }
 

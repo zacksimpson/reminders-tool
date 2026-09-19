@@ -22,6 +22,14 @@ internal object RemindersLogic {
         return known.sortedBy { rank.getValue(id(it)) } + unknown.sortedBy(fallback)
     }
 
+    /** moves the subtask [id] by [delta] slots (-1 up, +1 down), unchanged if it would leave the list. */
+    fun moveSubtask(subtasks: List<Subtask>, id: String, delta: Int): List<Subtask> {
+        val from = subtasks.indexOfFirst { it.id == id }
+        val to = from + delta
+        if (from < 0 || to !in subtasks.indices) return subtasks
+        return subtasks.toMutableList().apply { add(to, removeAt(from)) }
+    }
+
     /** TOP -> below the lowest existing order; BOTTOM -> above the highest. */
     fun computeOrder(tasks: List<Task>, listId: String, position: AddPosition): Int {
         val orders = tasks.filter { it.listId == listId }.map { it.order }
