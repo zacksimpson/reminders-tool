@@ -35,6 +35,34 @@ object SyncLogic {
         return CollectionMergeResult(merged, toPush)
     }
 
+    /** merge for a pull of only remote changes, pushes local edits made after [pushSince]. */
+    fun <T : SyncableDocument> mergeDelta(
+        local: List<T>,
+        remoteChanged: List<T>,
+        pushSince: Long,
+    ): CollectionMergeResult<T> {
+        val remoteById = remoteChanged.associateBy { it.id }
+        val localIds = local.map { it.id }.toSet()
+
+        val merged = mutableListOf<T>()
+        val toPush = mutableListOf<T>()
+
+        for (l in local) {
+            val r = remoteById[l.id]
+            when {
+                r == null -> {
+                    merged += l
+                    if (l.updatedAt > pushSince) toPush += l
+                }
+                r.updatedAt > l.updatedAt -> merged += r
+                l.updatedAt > r.updatedAt -> { merged += l; toPush += l }
+                else -> merged += l
+            }
+        }
+        merged += remoteChanged.filter { it.id !in localIds }
+        return CollectionMergeResult(merged, toPush)
+    }
+
     /** [remote] is null when the user has never synced settings before, local always
      *  wins that case (and needs pushing) since there's nothing to compare against. */
     fun mergeSettings(local: Settings, remote: Settings?): SettingsMergeResult = when {

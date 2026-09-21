@@ -128,4 +128,78 @@ class SyncLogicTest {
         assertEquals("work", result.merged.defaultListId)
         assertTrue(!result.needsPush)
     }
+
+    // ── mergeDelta ───────────────────────────────────────────────────────────────
+
+    @Test
+    fun `delta merge keeps an untouched local document and pushes nothing`() {
+        val result = SyncLogic.mergeDelta(
+            local = listOf(list("a", updatedAt = 5)),
+            remoteChanged = emptyList(),
+            pushSince = 10,
+        )
+
+        assertEquals(listOf("a"), result.merged.map { it.id })
+        assertTrue(result.toPush.isEmpty())
+    }
+
+    @Test
+    fun `delta merge pushes a local document edited since the last sync`() {
+        val result = SyncLogic.mergeDelta(
+            local = listOf(list("a", updatedAt = 20), list("b", updatedAt = 5)),
+            remoteChanged = emptyList(),
+            pushSince = 10,
+        )
+
+        assertEquals(listOf("a"), result.toPush.map { it.id })
+        assertEquals(listOf("a", "b"), result.merged.map { it.id })
+    }
+
+    @Test
+    fun `delta merge adopts a remote document that is new locally`() {
+        val result = SyncLogic.mergeDelta(
+            local = emptyList(),
+            remoteChanged = listOf(list("a", updatedAt = 5)),
+            pushSince = 10,
+        )
+
+        assertEquals(listOf("a"), result.merged.map { it.id })
+        assertTrue(result.toPush.isEmpty())
+    }
+
+    @Test
+    fun `delta merge takes a newer remote copy without pushing`() {
+        val result = SyncLogic.mergeDelta(
+            local = listOf(list("a", updatedAt = 1, order = 0)),
+            remoteChanged = listOf(list("a", updatedAt = 5, order = 9)),
+            pushSince = 10,
+        )
+
+        assertEquals(9, result.merged.single().order)
+        assertTrue(result.toPush.isEmpty())
+    }
+
+    @Test
+    fun `delta merge pushes a local copy that beats the changed remote copy`() {
+        val result = SyncLogic.mergeDelta(
+            local = listOf(list("a", updatedAt = 8, order = 9)),
+            remoteChanged = listOf(list("a", updatedAt = 3, order = 0)),
+            pushSince = 10,
+        )
+
+        assertEquals(9, result.merged.single().order)
+        assertEquals(listOf("a"), result.toPush.map { it.id })
+    }
+
+    @Test
+    fun `delta merge treats equal timestamps as already in sync`() {
+        val result = SyncLogic.mergeDelta(
+            local = listOf(list("a", updatedAt = 5)),
+            remoteChanged = listOf(list("a", updatedAt = 5)),
+            pushSince = 10,
+        )
+
+        assertEquals(1, result.merged.size)
+        assertTrue(result.toPush.isEmpty())
+    }
 }

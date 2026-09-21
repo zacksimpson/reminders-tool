@@ -6,6 +6,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
+import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -14,6 +15,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -65,6 +67,43 @@ class FirestoreClient(private val authRepo: AuthRepository) {
             pageToken = body["nextPageToken"]?.jsonPrimitive?.contentOrNull
         } while (pageToken != null)
         return documents
+    }
+
+    /** documents whose updatedAt is newer than [since], an empty result still bills one read */
+    suspend fun listChangedSince(uid: String, collection: String, since: Long): List<FirestoreDocument> {
+        val token = validToken()
+        val query = buildJsonObject {
+            put(
+                "structuredQuery",
+                buildJsonObject {
+                    put("from", buildJsonArray { add(buildJsonObject { put("collectionId", collection) }) })
+                    put(
+                        "where",
+                        buildJsonObject {
+                            put(
+                                "fieldFilter",
+                                buildJsonObject {
+                                    put("field", buildJsonObject { put("fieldPath", "updatedAt") })
+                                    put("op", "GREATER_THAN")
+                                    put("value", buildJsonObject { put("integerValue", since.toString()) })
+                                },
+                            )
+                        },
+                    )
+                },
+            )
+        }
+        val response = http.post("$baseUrl/users/$uid:runQuery") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(query.toString())
+        }
+        val text = response.bodyAsText()
+        if (!response.status.isSuccess()) throw FirestoreException(errorMessage(text, response.status.value))
+        // an empty result still comes back as one element, without a document
+        return json.parseToJsonElement(text).jsonArray
+            .mapNotNull { it.jsonObject["document"]?.jsonObject }
+            .map { toFirestoreDocument(it) }
     }
 
     /** the singleton settings document, or null if the user has never synced settings
