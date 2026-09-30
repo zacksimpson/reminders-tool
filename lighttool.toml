@@ -1,7 +1,7 @@
 [tool]
 id = "com.zacksimpson.reminders"
 label = "Reminders"
-versionCode = 3
+versionCode = 11
 versionName = "2.0.0"
 orientation = "portrait"
 # Notifications are deferred (the SDK has no exact-time local alarm yet); see README.
