@@ -95,7 +95,7 @@ class SyncEngine(
     }
 
     private companion object {
-        const val FULL_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000L
+        const val FULL_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000L
 
         // other devices stamp updatedAt from their own clocks, so look back a little
         const val FETCH_OVERLAP_MS = 10 * 60 * 1000L
