@@ -202,4 +202,74 @@ class SyncLogicTest {
         assertEquals(1, result.merged.size)
         assertTrue(result.toPush.isEmpty())
     }
+
+    // ── partitionStaleTombstones ────────────────────────────────────────────────
+
+    @Test
+    fun `a tombstone younger than the purge window is kept`() {
+        val result = SyncLogic.partitionStaleTombstones(
+            docs = listOf(list("a", updatedAt = 100, deleted = true)),
+            now = 100 + 6 * DAY_MS,
+            purgeAfterMs = 7 * DAY_MS,
+        )
+
+        assertEquals(listOf("a"), result.keep.map { it.id })
+        assertTrue(result.purge.isEmpty())
+    }
+
+    @Test
+    fun `a tombstone older than the purge window is purged`() {
+        val result = SyncLogic.partitionStaleTombstones(
+            docs = listOf(list("a", updatedAt = 100, deleted = true)),
+            now = 100 + 8 * DAY_MS,
+            purgeAfterMs = 7 * DAY_MS,
+        )
+
+        assertTrue(result.keep.isEmpty())
+        assertEquals(listOf("a"), result.purge.map { it.id })
+    }
+
+    @Test
+    fun `a tombstone exactly at the purge window is purged`() {
+        val result = SyncLogic.partitionStaleTombstones(
+            docs = listOf(list("a", updatedAt = 100, deleted = true)),
+            now = 100 + 7 * DAY_MS,
+            purgeAfterMs = 7 * DAY_MS,
+        )
+
+        assertEquals(listOf("a"), result.purge.map { it.id })
+    }
+
+    @Test
+    fun `an old but undeleted document is never purged`() {
+        val result = SyncLogic.partitionStaleTombstones(
+            docs = listOf(list("a", updatedAt = 0, deleted = false)),
+            now = 365 * DAY_MS,
+            purgeAfterMs = 7 * DAY_MS,
+        )
+
+        assertEquals(listOf("a"), result.keep.map { it.id })
+        assertTrue(result.purge.isEmpty())
+    }
+
+    @Test
+    fun `only stale tombstones are purged out of a mixed set`() {
+        val now = 8 * DAY_MS
+        val result = SyncLogic.partitionStaleTombstones(
+            docs = listOf(
+                list("fresh-tombstone", updatedAt = now - 1 * DAY_MS, deleted = true),
+                list("stale-tombstone", updatedAt = 0, deleted = true),
+                list("active", updatedAt = 0, deleted = false),
+            ),
+            now = now,
+            purgeAfterMs = 7 * DAY_MS,
+        )
+
+        assertEquals(setOf("fresh-tombstone", "active"), result.keep.map { it.id }.toSet())
+        assertEquals(listOf("stale-tombstone"), result.purge.map { it.id })
+    }
+
+    private companion object {
+        const val DAY_MS = 24 * 60 * 60 * 1000L
+    }
 }

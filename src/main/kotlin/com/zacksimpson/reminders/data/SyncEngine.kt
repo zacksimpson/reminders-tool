@@ -9,7 +9,9 @@ class SyncException(message: String) : Exception(message)
 /**
  * one sync pass: pull remote, merge with local via [SyncLogic], push what local won.
  * most passes only pull changes, with a full pull every [FULL_SYNC_INTERVAL_MS] to
- * catch documents an offline device stamped with an old updatedAt.
+ * catch documents an offline device stamped with an old updatedAt. a full pass also
+ * purges tombstones older than [TOMBSTONE_PURGE_AFTER_MS] for good, locally and on
+ * Firestore, so deleted rows don't pile up forever.
  */
 class SyncEngine(
     private val remindersRepo: RemindersRepository,
@@ -59,16 +61,38 @@ class SyncEngine(
         }
         val settingsResult = SyncLogic.mergeSettings(local.settings, remoteSettings)
 
-        remindersRepo.applySyncedState(listsResult.merged, tasksResult.merged, settingsResult.merged)
+        // purging is only safe right after a full merge, see partitionStaleTombstones
+        val lists = withTombstonesPurged(listsResult, full, startedAt)
+        val tasks = withTombstonesPurged(tasksResult, full, startedAt)
 
-        listsResult.toPush.forEach { pushDocument(uid, "lists", it.id, ReminderList.serializer(), it) }
-        tasksResult.toPush.forEach { pushDocument(uid, "tasks", it.id, Task.serializer(), it) }
+        remindersRepo.applySyncedState(lists.toPersist, tasks.toPersist, settingsResult.merged)
+
+        lists.toPush.forEach { pushDocument(uid, "lists", it.id, ReminderList.serializer(), it) }
+        tasks.toPush.forEach { pushDocument(uid, "tasks", it.id, Task.serializer(), it) }
         if (settingsResult.needsPush) {
             pushDocument(uid, "settings", "singleton", Settings.serializer(), settingsResult.merged)
         }
+        lists.toPurge.forEach { firestore.deleteDocument(uid, "lists", it.id) }
+        tasks.toPurge.forEach { firestore.deleteDocument(uid, "tasks", it.id) }
 
         authRepo.recordSyncSuccess(startedAt, full)
     }
+
+    /** on a full pass, splits a merge result's tombstones old enough to purge out of
+     *  what gets persisted and pushed; a delta pass never purges, see
+     *  [SyncLogic.partitionStaleTombstones]. */
+    private fun <T> withTombstonesPurged(
+        result: CollectionMergeResult<T>,
+        full: Boolean,
+        now: Long,
+    ): PurgeOutcome<T> where T : SyncableDocument, T : SoftDeletable {
+        if (!full) return PurgeOutcome(result.merged, result.toPush, emptyList())
+        val (keep, purge) = SyncLogic.partitionStaleTombstones(result.merged, now, TOMBSTONE_PURGE_AFTER_MS)
+        val purgedIds = purge.map { it.id }.toSet()
+        return PurgeOutcome(keep, result.toPush.filterNot { it.id in purgedIds }, purge)
+    }
+
+    private data class PurgeOutcome<T>(val toPersist: List<T>, val toPush: List<T>, val toPurge: List<T>)
 
     private suspend fun <T> fetchAll(uid: String, collection: String, serializer: KSerializer<T>): List<T> =
         firestore.listDocuments(uid, collection)
@@ -100,5 +124,9 @@ class SyncEngine(
         // other devices stamp updatedAt from their own clocks, so look back a little
         const val FETCH_OVERLAP_MS = 10 * 60 * 1000L
         const val PUSH_OVERLAP_MS = 60 * 1000L
+
+        // a device offline longer than this that never saw a deletion could resurrect
+        // it once its tombstone is gone, seven days is long enough that's unlikely
+        const val TOMBSTONE_PURGE_AFTER_MS = 7 * 24 * 60 * 60 * 1000L
     }
 }

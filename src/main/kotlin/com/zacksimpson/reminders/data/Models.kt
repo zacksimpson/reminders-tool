@@ -36,6 +36,12 @@ interface SyncableDocument {
     val updatedAt: Long
 }
 
+/** a row with a soft-delete flag, old tombstones are eventually purged for good by
+ *  [SyncLogic.partitionStaleTombstones]. */
+interface SoftDeletable {
+    val deleted: Boolean
+}
+
 // ─── models ─────────────────────────────────────────────────────────────────
 // every optional field has a default so partial/older JSON still decodes.
 
@@ -70,8 +76,8 @@ data class Task(
     // createdAt/false so tasks persisted before this field existed still
     // decode, treated as "unmodified since creation."
     override val updatedAt: Long = createdAt,
-    val deleted: Boolean = false,
-) : SyncableDocument
+    override val deleted: Boolean = false,
+) : SyncableDocument, SoftDeletable
 
 @Serializable
 data class ReminderList(
@@ -82,12 +88,12 @@ data class ReminderList(
     // sync bookkeeping (matches reminders-web's ReminderList shape), same
     // backward-compatible defaulting as Task.
     override val updatedAt: Long = createdAt,
-    val deleted: Boolean = false,
+    override val deleted: Boolean = false,
     // ordered ids of this list's active tasks, written as a single field on
     // reorder instead of rewriting each task's own `order` (LIST_TASK_ORDER_MIGRATION.md
     // in reminders-web). null/empty means "fall back to `order`", see RemindersLogic.applyOrder.
     val taskOrder: List<String>? = null,
-) : SyncableDocument
+) : SyncableDocument, SoftDeletable
 
 @Serializable
 data class Settings(

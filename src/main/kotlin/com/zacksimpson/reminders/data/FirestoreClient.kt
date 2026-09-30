@@ -2,6 +2,7 @@ package com.zacksimpson.reminders.data
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -132,6 +133,20 @@ class FirestoreClient(private val authRepo: AuthRepository) {
         }
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) throw FirestoreException(errorMessage(text, response.status.value))
+    }
+
+    /** removes a document for good, not a soft delete. used only to purge tombstones
+     *  already old enough that no other device still needs to see them go. a 404 (some
+     *  other device purged it first) is not an error. */
+    suspend fun deleteDocument(uid: String, collection: String, docId: String) {
+        val token = validToken()
+        val response = http.delete("$baseUrl/users/$uid/$collection/$docId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+        if (response.status.value == 404) return
+        if (!response.status.isSuccess()) {
+            throw FirestoreException(errorMessage(response.bodyAsText(), response.status.value))
+        }
     }
 
     private suspend fun validToken(): String =
