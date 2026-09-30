@@ -28,8 +28,10 @@ interface StoredSession {
   email: string;
   expiresAt: number;
   idToken: string;
+  lastFullSyncAt: number | null;
   lastSyncedAt: number | null;
   refreshToken: string;
+  syncStartedAt: number | null;
   uid: string;
 }
 
@@ -66,7 +68,15 @@ async function readSession(): Promise<StoredSession | null> {
     return null;
   }
   try {
-    return JSON.parse(raw) as StoredSession;
+    const parsed = JSON.parse(raw) as StoredSession;
+    // A session stored before the sync cursor fields existed has them missing
+    // rather than null, which would otherwise be mistaken for a real cursor
+    // (undefined !== null) and skip the forced first full sync below.
+    return {
+      ...parsed,
+      syncStartedAt: parsed.syncStartedAt ?? null,
+      lastFullSyncAt: parsed.lastFullSyncAt ?? null,
+    };
   } catch {
     return null;
   }
@@ -75,7 +85,11 @@ async function readSession(): Promise<StoredSession | null> {
 function sessionFromTokens(
   email: string,
   tokens: AuthTokens,
-  lastSyncedAt: number | null
+  cursor: {
+    lastFullSyncAt: number | null;
+    lastSyncedAt: number | null;
+    syncStartedAt: number | null;
+  }
 ): StoredSession {
   return {
     uid: tokens.uid,
@@ -83,13 +97,16 @@ function sessionFromTokens(
     idToken: tokens.idToken,
     refreshToken: tokens.refreshToken,
     expiresAt: tokens.expiresAt,
-    lastSyncedAt,
+    ...cursor,
   };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { loaded: remindersLoaded, snapshotForSync, applySyncedState } =
-    useReminders();
+  const {
+    loaded: remindersLoaded,
+    snapshotForSync,
+    applySyncedState,
+  } = useReminders();
   // undefined = not loaded from AsyncStorage yet, null = signed out
   const [session, setSession] = useState<StoredSession | null | undefined>(
     undefined
@@ -129,7 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return current.idToken;
     }
     const tokens = await refreshIdToken(current.refreshToken);
-    await persistSession(sessionFromTokens(current.email, tokens, current.lastSyncedAt));
+    await persistSession(
+      sessionFromTokens(current.email, tokens, {
+        lastSyncedAt: current.lastSyncedAt,
+        syncStartedAt: current.syncStartedAt,
+        lastFullSyncAt: current.lastFullSyncAt,
+      })
+    );
     return tokens.idToken;
   }, [persistSession]);
 
@@ -143,7 +166,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       signInWithPassword(trimmedEmail, password)
         .then((tokens) =>
-          persistSession(sessionFromTokens(trimmedEmail, tokens, null))
+          persistSession(
+            sessionFromTokens(trimmedEmail, tokens, {
+              lastSyncedAt: null,
+              syncStartedAt: null,
+              lastFullSyncAt: null,
+            })
+          )
         )
         .catch((e) => {
           setError(
@@ -178,11 +207,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uid: current.uid,
       snapshotForSync,
       applySyncedState,
+      cursor: {
+        startedAt: current.syncStartedAt,
+        lastFullAt: current.lastFullSyncAt,
+      },
     })
-      .then(() => {
+      .then(({ startedAt, full }) => {
         const latest = sessionRef.current;
         if (latest) {
-          return persistSession({ ...latest, lastSyncedAt: Date.now() });
+          return persistSession({
+            ...latest,
+            lastSyncedAt: Date.now(),
+            syncStartedAt: startedAt,
+            lastFullSyncAt: full ? startedAt : latest.lastFullSyncAt,
+          });
         }
       })
       .catch((e) => {

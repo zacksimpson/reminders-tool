@@ -82,6 +82,73 @@ export class FirestoreClient {
     return documents;
   }
 
+  /** Documents whose updatedAt is newer than `since`. An empty result still bills
+   *  one read. */
+  async listChangedSince(
+    uid: string,
+    collection: string,
+    since: number
+  ): Promise<FirestoreDocument[]> {
+    const token = await this.validToken();
+    const query = {
+      structuredQuery: {
+        from: [{ collectionId: collection }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: "updatedAt" },
+            op: "GREATER_THAN",
+            value: { integerValue: String(since) },
+          },
+        },
+      },
+    };
+    const response = await fetch(`${baseUrl()}/users/${uid}:runQuery`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(query),
+    });
+    if (!response.ok) {
+      throw new FirestoreException(await errorMessage(response));
+    }
+    const body = (await response.json()) as Array<{
+      document?: { fields?: Record<string, unknown>; name: string };
+    }>;
+    return body
+      .filter((entry) => entry.document)
+      .map((entry) =>
+        toFirestoreDocument(
+          entry.document as { fields?: Record<string, unknown>; name: string }
+        )
+      );
+  }
+
+  /** Removes a document for good, not a soft delete. Used only to purge tombstones
+   *  already old enough that no other device still needs to see them go. A 404
+   *  (some other device purged it first) is not an error. */
+  async deleteDocument(
+    uid: string,
+    collection: string,
+    docId: string
+  ): Promise<void> {
+    const token = await this.validToken();
+    const response = await fetch(
+      `${baseUrl()}/users/${uid}/${collection}/${docId}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    if (response.status === 404) {
+      return;
+    }
+    if (!response.ok) {
+      throw new FirestoreException(await errorMessage(response));
+    }
+  }
+
   /** The singleton settings document, or null if the user has never synced settings
    *  before. */
   async getDocument(
