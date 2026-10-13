@@ -145,7 +145,7 @@ class MainScreen(sealedActivity: SealedLightActivity) :
     private fun updateSyncSchedule(auth: AuthState) {
         when (auth) {
             is AuthState.SignedIn -> {
-                LightWork.enqueuePeriodic(lightContext, SYNC_JOB_KEY, repeatInterval = 15.minutes)
+                LightWork.enqueuePeriodic(lightContext, SYNC_JOB_KEY, repeatInterval = 30.minutes)
                 if (!hasPokedSyncOnLaunch) {
                     hasPokedSyncOnLaunch = true
                     LightWork.enqueue(lightContext, SYNC_JOB_KEY, tag = SYNC_NOW_TAG)

@@ -1,19 +1,16 @@
 package com.zacksimpson.reminders.data
 
-import com.zacksimpson.reminders.BuildConfig
-
 /**
  * the reminders-web Firebase project this app syncs against.
  *
- * [API_KEY] comes from [BuildConfig.FIREBASE_API_KEY], set via the gitignored
- * `local.properties`, never hardcode it here. it's Android-app restricted (scoped to
- * [ANDROID_PACKAGE] + [ANDROID_CERT_SHA1]), a separate key from reminders-web's own web
- * key since a Google Cloud API key can't be both referrer- and Android-restricted.
- * a build signed with a different cert will need its SHA-1 added to the key's allowed
- * applications via `gcloud services api-keys update`.
+ * [API_KEY] is committed on purpose: Light's builder only sees the tool's source, and a
+ * Firebase API key identifies the project rather than guarding it (Firestore rules and
+ * Auth do that). it's Android-app restricted (scoped to [ANDROID_PACKAGE] +
+ * [ANDROID_CERT_SHA1]), a separate key from reminders-web's own web key since a Google
+ * Cloud API key can't be both referrer- and Android-restricted.
  */
 object FirebaseConfig {
-    val API_KEY: String = BuildConfig.FIREBASE_API_KEY
+    const val API_KEY = "AIzaSyCBdNrZWgQ4LjaekiqxxRlNM9JYojEXq0o"
     const val PROJECT_ID = "reminders-web-zs2026"
 
     // sent as X-Android-Package/X-Android-Cert on every request, a raw REST call has

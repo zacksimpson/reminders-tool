@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import com.thelightphone.sdk.LightJobState
 import com.thelightphone.sdk.LightScreen
 import com.thelightphone.sdk.LightViewModel
+import com.thelightphone.sdk.LIGHT_FAIL_REASON
 import com.thelightphone.sdk.LightWork
 import com.thelightphone.sdk.SealedLightActivity
 import com.thelightphone.sdk.SealedLightContext
@@ -30,6 +31,8 @@ import com.zacksimpson.reminders.data.AuthException
 import com.zacksimpson.reminders.data.AuthRepository
 import com.zacksimpson.reminders.data.AuthState
 import com.zacksimpson.reminders.data.SYNC_JOB_KEY
+import com.zacksimpson.reminders.data.SYNC_MANUAL_KEY
+import com.zacksimpson.reminders.data.SYNC_OFFLINE_REASON
 import com.zacksimpson.reminders.data.SYNC_NOW_TAG
 import com.zacksimpson.reminders.data.authStateIn
 import com.zacksimpson.reminders.data.formatLastSyncedAt
@@ -74,11 +77,18 @@ class AccountViewModel(
     /** true once the job gives up for good (see [SyncJob]'s [AuthException] handling),
      *  shows "Error. Tap to try again" instead of leaving "Syncing…" up forever. */
     val syncFailed = syncJobState
-        .map { it is LightJobState.Failed }
+        .map { it is LightJobState.Failed && !it.isOffline() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    /** the manual sync was refused because the device has no connection. */
+    val syncOffline = syncJobState
+        .map { it is LightJobState.Failed && it.isOffline() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private fun LightJobState.Failed.isOffline() = outputData[LIGHT_FAIL_REASON] == SYNC_OFFLINE_REASON
+
     fun syncNow() {
-        LightWork.enqueue(lightContext, SYNC_JOB_KEY, tag = SYNC_NOW_TAG)
+        LightWork.enqueue(lightContext, SYNC_JOB_KEY, mapOf(SYNC_MANUAL_KEY to "true"), tag = SYNC_NOW_TAG)
     }
 
     fun setEmail(value: String) {
@@ -154,6 +164,7 @@ class AccountScreen(
             val lastSyncedAt by viewModel.lastSyncedAt.collectAsState()
             val isSyncing by viewModel.isSyncing.collectAsState()
             val syncFailed by viewModel.syncFailed.collectAsState()
+            val syncOffline by viewModel.syncOffline.collectAsState()
 
             Column(
                 modifier = Modifier
@@ -189,6 +200,7 @@ class AccountScreen(
                         lastSyncedAt = lastSyncedAt,
                         isSyncing = isSyncing,
                         syncFailed = syncFailed,
+                        syncOffline = syncOffline,
                         onSyncNow = { viewModel.syncNow() },
                         onSignOut = { viewModel.signOut() },
                         modifier = Modifier.weight(1f),
@@ -252,6 +264,7 @@ class AccountScreen(
         lastSyncedAt: Long?,
         isSyncing: Boolean,
         syncFailed: Boolean,
+        syncOffline: Boolean,
         onSyncNow: () -> Unit,
         onSignOut: () -> Unit,
         modifier: Modifier = Modifier,
@@ -278,6 +291,7 @@ class AccountScreen(
                     label = "Last Synced",
                     value = when {
                         isSyncing -> "Syncing…"
+                        syncOffline -> "Device offline. Connect to a network and tap to try again"
                         syncFailed -> "Error. Tap to try again"
                         lastSyncedAt != null -> formatLastSyncedAt(lastSyncedAt)
                         else -> "Never, tap to sync now"

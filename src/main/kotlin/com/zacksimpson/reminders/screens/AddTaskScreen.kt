@@ -325,9 +325,9 @@ class AddTaskScreen(
                         LightIcon(
                             // 2.2f (TimePickerScreen's dismiss size) was tuned against
                             // that screen's 48px numpad digits, too heavy paired with
-                            // SAVE's small Button-variant text here.
+                            // SAVE's small Button-variant text here. 1.5f read slightly small.
                             icon = LightIcons.CLOSE,
-                            size = 1.5f,
+                            size = 1.75f,
                             modifier = Modifier
                                 .align(Alignment.Center)
                                 .lightClickable { goBack(null) },
