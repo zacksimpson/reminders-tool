@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -21,9 +22,12 @@ import com.thelightphone.sdk.ui.LightBarButton
 import com.thelightphone.sdk.ui.LightBottomBar
 import com.thelightphone.sdk.ui.LightIcons
 import com.thelightphone.sdk.ui.LightThemeTokens
+import com.zacksimpson.reminders.data.AuthRepository
+import com.zacksimpson.reminders.data.AuthState
 import com.zacksimpson.reminders.data.RemindersRepository
 import com.zacksimpson.reminders.data.SYNC_JOB_KEY
 import com.zacksimpson.reminders.data.SYNC_NOW_TAG
+import com.zacksimpson.reminders.data.authStateIn
 import com.zacksimpson.reminders.screens.AccountScreen
 import com.zacksimpson.reminders.screens.AddTaskScreen
 import com.zacksimpson.reminders.screens.ListAction
@@ -48,9 +52,13 @@ import kotlin.time.Duration.Companion.minutes
 
 enum class Tab { LISTS, TODAY, SETTINGS }
 
-class MainViewModel(private val repo: RemindersRepository) : LightViewModel<Unit>() {
+class MainViewModel(
+    private val repo: RemindersRepository,
+    private val authRepo: AuthRepository,
+) : LightViewModel<Unit>() {
     val selectedTab = MutableStateFlow(Tab.LISTS)
     val state = repo.dataStateIn(viewModelScope)
+    val authState = authRepo.authStateIn(viewModelScope)
 
     /** forces the Today tab's date/overdue math to re-run: once a minute while visible,
      *  and immediately whenever this screen is (re)shown (e.g. app resumed from
@@ -111,6 +119,9 @@ class MainViewModel(private val repo: RemindersRepository) : LightViewModel<Unit
         viewModelScope.launch { repo.moveListDown(id) }
     }
 
+    override fun onCleared() {
+        authRepo.close()
+    }
 }
 
 /** boot screen: the four-tab host, Lists, Today, Settings, and the Add action. */
@@ -121,19 +132,27 @@ class MainScreen(sealedActivity: SealedLightActivity) :
     override val viewModelClass: Class<MainViewModel>
         get() = MainViewModel::class.java
 
-    override fun createViewModel() = MainViewModel(RemindersRepository(lightContext.dataStore))
+    override fun createViewModel() = MainViewModel(
+        RemindersRepository(lightContext.dataStore),
+        AuthRepository(lightContext.dataStore),
+    )
 
     // scheduling lives here, on the Screen, not in MainViewModel: a SealedLightContext
-    // is only reachable via LightScreen's protected lightContext, not from a ViewModel's
-    // onScreenShow. willShow() fires on every return to MainScreen (e.g. backing out of
-    // Account), not just true app launch, so the one-shot poke is guarded to once per
-    // process. enqueuePeriodic stays unguarded; its UPDATE policy is idempotent by design.
-    override fun willShow() {
-        super.willShow()
-        LightWork.enqueuePeriodic(lightContext, SYNC_JOB_KEY, repeatInterval = 15.minutes)
-        if (!hasPokedSyncOnLaunch) {
-            hasPokedSyncOnLaunch = true
-            LightWork.enqueue(lightContext, SYNC_JOB_KEY, tag = SYNC_NOW_TAG)
+    // is only reachable via LightScreen's protected lightContext. the periodic sync only
+    // exists while signed in; signing out cancels it. the one-shot poke is guarded to once
+    // per process since this re-runs on every return to MainScreen. enqueuePeriodic stays
+    // unguarded; its UPDATE policy is idempotent by design.
+    private fun updateSyncSchedule(auth: AuthState) {
+        when (auth) {
+            is AuthState.SignedIn -> {
+                LightWork.enqueuePeriodic(lightContext, SYNC_JOB_KEY, repeatInterval = 15.minutes)
+                if (!hasPokedSyncOnLaunch) {
+                    hasPokedSyncOnLaunch = true
+                    LightWork.enqueue(lightContext, SYNC_JOB_KEY, tag = SYNC_NOW_TAG)
+                }
+            }
+            AuthState.SignedOut -> LightWork.cancel(lightContext, SYNC_JOB_KEY)
+            AuthState.Loading -> Unit
         }
     }
 
@@ -144,6 +163,9 @@ class MainScreen(sealedActivity: SealedLightActivity) :
     @Composable
     override fun Content() {
         RemindersTheme {
+            val authState by viewModel.authState.collectAsState()
+            LaunchedEffect(authState) { updateSyncSchedule(authState) }
+
             val tab by viewModel.selectedTab.collectAsState()
             val dataState by viewModel.state.collectAsState()
             val refreshTick by viewModel.refreshTick.collectAsState()

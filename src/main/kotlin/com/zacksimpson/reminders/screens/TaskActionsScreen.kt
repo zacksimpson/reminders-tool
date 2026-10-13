@@ -29,7 +29,7 @@ import com.zacksimpson.reminders.dataStateIn
 import com.zacksimpson.reminders.ui.ConfirmScreen
 import com.zacksimpson.reminders.ui.RemindersTheme
 import com.zacksimpson.reminders.ui.SwipeBackContainer
-import com.zacksimpson.reminders.ui.ToastScreen
+import com.zacksimpson.reminders.ui.showToast
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -126,13 +126,8 @@ class TaskActionsScreen(
                             resultCallback = { confirmed ->
                                 if (confirmed == true) {
                                     viewModel.delete {
-                                        // pushed from here, not by the caller after this
-                                        // screen pops, so the list doesn't flash on screen
-                                        // between the pop and the toast push.
-                                        navigateTo(
-                                            screenFactory = { ToastScreen(it, "deleted") },
-                                            resultCallback = { goBack(TaskAction.DELETED) },
-                                        )
+                                        showToast("deleted")
+                                        goBack(TaskAction.DELETED)
                                     }
                                 }
                             },

@@ -48,7 +48,7 @@ import com.zacksimpson.reminders.ui.TapField
 import com.zacksimpson.reminders.ui.TextEditorRequest
 import com.zacksimpson.reminders.ui.TextEditorScreen
 import com.zacksimpson.reminders.ui.TitleField
-import com.zacksimpson.reminders.ui.ToastScreen
+import com.zacksimpson.reminders.ui.showToast
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -197,12 +197,8 @@ class AddTaskScreen(
                         goBack(null)
                         navigateTo(screenFactory = { ListDetailScreen(it, listId, selectedListTitle, initialData = d) })
                     } else {
-                        navigateTo(
-                            screenFactory = { ToastScreen(it, "added") },
-                            resultCallback = {
-                                if (honorAfterAddBehavior) viewModel.resetForNextAdd() else goBack(null)
-                            },
-                        )
+                        showToast("added")
+                        if (honorAfterAddBehavior) viewModel.resetForNextAdd() else goBack(null)
                     }
                 }
             }
