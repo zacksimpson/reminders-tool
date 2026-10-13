@@ -13,4 +13,4 @@ If any of my tools have been useful to you, I'd love to hear from you! Feel free
 
 ## Credits
 
-* [The Light Phone](https://www.thelightphone.com) — for building a phone worth making apps for
+* [The Light Phone](https://www.thelightphone.com): for building a phone worth making tools for
