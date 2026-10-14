@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.datastore.preferences)
     // Phone<->desktop sync: Firebase has no Android SDK on the light-sdk allow-list,
-    // so auth/Firestore are hit over their plain REST APIs instead (see SYNC_PLAN.md).
+    // so auth/Firestore are hit over their plain REST APIs instead.
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     testImplementation(libs.kotlin.test)

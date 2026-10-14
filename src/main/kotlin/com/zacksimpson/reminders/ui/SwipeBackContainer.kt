@@ -20,7 +20,7 @@ private val EDGE_WIDTH = 10.dp
 private val DRAG_THRESHOLD = 80.dp
 
 /**
- * left-edge swipe-to-go-back gesture, LightOS has no OS-level back-swipe, and Compose's
+ * left-edge swipe-to-go-back gesture. the SDK provides none and says not to assume a system back swipe is enabled, and Compose's
  * plain pointerInput has no built-in gesture arbitration for this, so it's hand-rolled here.
  *
  * the gesture lives on a narrow strip along the left edge, layered on top of [content]

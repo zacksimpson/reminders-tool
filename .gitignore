@@ -11,3 +11,10 @@ local.properties
 
 # macOS
 .DS_Store
+
+# leftovers from the old expo app
+/.expo/
+/android/
+/node_modules/
+/expo-env.d.ts
+.env.local

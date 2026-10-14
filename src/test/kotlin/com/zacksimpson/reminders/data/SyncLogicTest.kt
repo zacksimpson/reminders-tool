@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Unit tests for [SyncLogic]'s pure last-write-wins merge (SYNC_PLAN.md §3 step 4). */
+/** Unit tests for [SyncLogic]'s pure last-write-wins merge. */
 class SyncLogicTest {
 
     private fun list(id: String, updatedAt: Long, deleted: Boolean = false, order: Int = 0) =

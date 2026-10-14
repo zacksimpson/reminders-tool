@@ -31,7 +31,7 @@ class FirestoreException(message: String) : Exception(message)
 data class FirestoreDocument(val id: String, val fields: JsonObject)
 
 /**
- * talks to Firestore's REST API directly (see SYNC_PLAN.md §3). light-sdk has no
+ * talks to Firestore's REST API directly. light-sdk has no
  * Firestore Android SDK allow-listed, so this is a thin client over
  * firestore.googleapis.com, authenticated with the ID token [AuthRepository] manages.
  *

@@ -86,14 +86,14 @@ class AuthClient {
         try {
             json.decodeFromString(serializer, text)
         } catch (e: Exception) {
-            Log.e(TAG, "$call: unexpected response shape: $text", e)
+            Log.e(TAG, "$call: unexpected response shape", e)
             throw AuthException("Sign-in failed — unexpected server response")
         }
 
     // falls back to a generic message if the error body isn't the shape Identity
     // Toolkit normally returns (e.g. a 5xx from an upstream proxy, not Firebase itself).
     private fun errorMessage(text: String, statusCode: Int): String {
-        Log.e(TAG, "request failed ($statusCode): $text")
+        Log.e(TAG, "request failed ($statusCode)")
         return try {
             json.decodeFromString(IdentityToolkitErrorBody.serializer(), text).error.message
         } catch (e: Exception) {

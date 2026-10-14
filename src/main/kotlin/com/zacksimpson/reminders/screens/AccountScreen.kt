@@ -137,8 +137,8 @@ class AccountViewModel(
 }
 
 /**
- * sign in with the same account used on reminders-web, for phone<->desktop sync (see
- * SYNC_PLAN.md). LightTextInputEditor has no password-masking mode, so the entry screen
+ * sign in with the same account used on reminders-web, for phone<->desktop sync.
+ * LightTextInputEditor has no password-masking mode, so the entry screen
  * shows the password in plain text while typing; this screen's own row masks it as
  * bullets once captured.
  */

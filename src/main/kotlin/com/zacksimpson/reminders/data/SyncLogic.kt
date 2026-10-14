@@ -12,7 +12,7 @@ data class SettingsMergeResult(val merged: Settings, val needsPush: Boolean)
 data class TombstonePurgeResult<T>(val keep: List<T>, val purge: List<T>)
 
 /**
- * pure last-write-wins merge for phone<->desktop sync (SYNC_PLAN.md §3 step 4).
+ * pure last-write-wins merge for phone<->desktop sync.
  * whole-document, not per-field: a delete just sets `deleted = true` and bumps
  * `updatedAt` like any other mutation, so comparing `updatedAt` per id is enough.
  * [SyncEngine] is the impure layer that fetches real data and applies the result.
