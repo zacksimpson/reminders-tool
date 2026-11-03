@@ -1,6 +1,6 @@
 # Reminders
 
-A reminders tool for the Light Phone III.
+A simple task management tool for the Light Phone III.
 
 Organize tasks into lists, add due dates and times, check things off as you go, and get notified when it matters.
 
