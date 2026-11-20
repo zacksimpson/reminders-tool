@@ -13,7 +13,7 @@ import com.thelightphone.sdk.ui.LightThemeTokens
 data class TextEditorRequest(
     val title: String,
     val initialValue: String = "",
-    val initialCaps: Boolean = true,
+    val autoCapitalize: Boolean = true,
 )
 
 /**
@@ -40,7 +40,7 @@ class TextEditorScreen(
                 onSubmit = { goBack(it.toString()) },
                 onBack = { goBack(null) },
                 submitLabel = "DONE",
-                initialCaps = request.initialCaps,
+                autoCapitalize = request.autoCapitalize,
                 // default is multi-line, where Return inserts "\n", every field here is
                 // single-line, so Return should submit instead.
                 singleLine = true,
