@@ -1,15 +1,13 @@
 package com.zacksimpson.reminders.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
 import com.thelightphone.sdk.SealedLightActivity
 import com.thelightphone.sdk.SimpleLightScreen
@@ -59,7 +57,7 @@ class OptionPickerScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     options.forEach { option ->
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .lightClickable { goBack(option.key) }
@@ -69,14 +67,15 @@ class OptionPickerScreen(
                                     top = 0.75f.gridUnitsAsDp(),
                                     bottom = 0.75f.gridUnitsAsDp(),
                                 ),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
+                            option.detail?.let {
+                                LightText(text = it, variant = LightTextVariant.Detail)
+                                Spacer(modifier = Modifier.height(0.25f.gridUnitsAsDp()))
+                            }
                             UnderlinedHeading(
                                 text = option.label,
                                 underlined = option.key == selectedKey,
                             )
-                            option.detail?.let { LightText(text = it, variant = LightTextVariant.Detail) }
                         }
                     }
                 }
