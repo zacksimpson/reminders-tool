@@ -1,5 +1,14 @@
 package com.zacksimpson.reminders
 
+import android.util.Log
+import com.zacksimpson.reminders.data.AlertInbox
+import com.zacksimpson.reminders.data.AlertSnoozeStore
+import com.zacksimpson.reminders.data.alertInfoFor
+import com.zacksimpson.reminders.screens.AlertScreen
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
+import java.lang.ref.WeakReference
+import java.time.ZoneId
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +66,7 @@ enum class Tab { LISTS, TODAY, SETTINGS }
 class MainViewModel(
     private val repo: RemindersRepository,
     private val authRepo: AuthRepository,
+    private val snoozeStore: AlertSnoozeStore,
 ) : LightViewModel<Unit>() {
     val selectedTab = MutableStateFlow(Tab.LISTS)
     val state = repo.dataStateIn(viewModelScope)
@@ -75,6 +85,9 @@ class MainViewModel(
     // same reasoning as todayShowCompleted.
     val listsReordering = MutableStateFlow(false)
 
+    // weak since the screen holds the activity
+    private var screenRef = WeakReference<SimpleLightScreen<Unit>>(null)
+
     init {
         viewModelScope.launch {
             while (true) {
@@ -82,11 +95,62 @@ class MainViewModel(
                 refreshTick.value++
             }
         }
+        viewModelScope.launch { AlertInbox.pending.collect { routePendingAlerts() } }
     }
 
     override fun onScreenShow(screen: SimpleLightScreen<Unit>) {
         super.onScreenShow(screen)
+        screenRef = WeakReference(screen)
         refreshTick.value++
+        routePendingAlerts()
+    }
+
+    /** shows waiting alerts one at a time, then closes the tool if the alerts are what opened it */
+    private fun routePendingAlerts() {
+        val screen = screenRef.get() ?: return
+        if (AlertInbox.showing) return
+        val alert = AlertInbox.takeNext()
+        if (alert == null) {
+            closeIfAlertsOpenedTheTool(screen)
+            return
+        }
+        AlertInbox.showing = true
+        viewModelScope.launch {
+            val info = try {
+                val data = repo.appData.first()
+                alertInfoFor(alert.id, alert.text, data.tasks, data.lists, snoozeStore.all(), ZoneId.systemDefault())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "couldn't load alert", e)
+                null
+            }
+            if (info == null) {
+                // nothing left to show, like a task finished on the desktop
+                alert.dismiss()
+                AlertInbox.showing = false
+                routePendingAlerts()
+                return@launch
+            }
+            screen.navigateTo(
+                screenFactory = { AlertScreen(it, alert, info) },
+                resultCallback = {
+                    AlertInbox.showing = false
+                    routePendingAlerts()
+                },
+            )
+        }
+    }
+
+    private fun closeIfAlertsOpenedTheTool(screen: SimpleLightScreen<Unit>) {
+        if (!AlertInbox.closeWhenDone || AlertInbox.showing) return
+        AlertInbox.closeWhenDone = false
+        val wait = AlertInbox.closeDelayMs
+        AlertInbox.closeDelayMs = 0
+        viewModelScope.launch {
+            delay(wait)
+            screen.goBack(null)
+        }
     }
 
     fun select(tab: Tab) {
@@ -137,6 +201,7 @@ class MainScreen(sealedActivity: SealedLightActivity) :
     override fun createViewModel() = MainViewModel(
         RemindersRepository(lightContext.dataStore),
         AuthRepository(lightContext.dataStore),
+        AlertSnoozeStore(lightContext.dataStore),
     )
 
     // alerts are kept in line from here too, and the periodic run is the heartbeat for
