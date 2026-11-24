@@ -14,36 +14,62 @@ data class NotificationSettings(
 
 data class PlannedAlert(val id: String, val atMillis: Long, val title: String, val text: String)
 
+/** a task's alert moved to [untilMillis]. the task keeps its own due time, [dueAtMillis] is the one it was saved against */
+data class Snooze(val dueAtMillis: Long, val untilMillis: Long)
+
 /** pure: which alerts should exist right now, given the tasks and settings */
 object AlertPlanner {
     const val SUMMARY_ID = "daily-summary"
     const val TITLE = "Reminders"
+    const val TASK_PREFIX = "task-"
 
     /** android caps how many alarms an app can hold, so only the soonest are scheduled */
     const val MAX_TASK_ALERTS = 50
 
-    fun plan(tasks: List<Task>, settings: NotificationSettings, now: Long, zone: ZoneId): List<PlannedAlert> {
+    fun plan(
+        tasks: List<Task>,
+        settings: NotificationSettings,
+        now: Long,
+        zone: ZoneId,
+        snoozes: Map<String, Snooze> = emptyMap(),
+    ): List<PlannedAlert> {
         if (!settings.enabled) return emptyList()
-        return taskAlerts(tasks, now, zone) + listOfNotNull(summaryAlert(tasks, settings, now, zone))
+        return taskAlerts(tasks, now, zone, snoozes) + listOfNotNull(summaryAlert(tasks, settings, now, zone))
     }
 
-    /** the notification has one slot, so tasks due at the same minute share an alert */
-    fun taskAlerts(tasks: List<Task>, now: Long, zone: ZoneId): List<PlannedAlert> =
+    /** one alert per task, at its due time or at the saved snooze time */
+    fun taskAlerts(
+        tasks: List<Task>,
+        now: Long,
+        zone: ZoneId,
+        snoozes: Map<String, Snooze> = emptyMap(),
+    ): List<PlannedAlert> =
         tasks.asSequence()
-            .filter { isOpen(it) && it.date != null && it.time != null }
-            .map { it to dueAt(it.date!!, it.time!!, zone) }
-            .filter { (_, at) -> at > now }
-            .groupBy({ (_, at) -> at }, { (t, _) -> t })
-            .toSortedMap()
-            .entries
-            .take(MAX_TASK_ALERTS)
-            .map { (at, due) ->
-                if (due.size == 1) {
-                    PlannedAlert("task-${due[0].id}", at, TITLE, due[0].title)
-                } else {
-                    PlannedAlert("group-$at", at, TITLE, "${due.size} reminders due")
-                }
+            .filter { isOpen(it) }
+            .mapNotNull { task ->
+                val due = dueAtMillis(task, zone) ?: return@mapNotNull null
+                val at = activeSnooze(task, snoozes, zone)?.untilMillis ?: due
+                PlannedAlert("$TASK_PREFIX${task.id}", at, TITLE, task.title)
             }
+            .filter { it.atMillis > now }
+            .sortedWith(compareBy({ it.atMillis }, { it.id }))
+            .take(MAX_TASK_ALERTS)
+            .toList()
+
+    /** a saved snooze only counts while the task still has the due time it was saved against */
+    fun activeSnooze(task: Task, snoozes: Map<String, Snooze>, zone: ZoneId): Snooze? {
+        val due = dueAtMillis(task, zone) ?: return null
+        return snoozes[task.id]?.takeIf { it.dueAtMillis == due }
+    }
+
+    fun isSnoozed(task: Task, snoozes: Map<String, Snooze>, zone: ZoneId): Boolean =
+        isOpen(task) && activeSnooze(task, snoozes, zone) != null
+
+    fun dueAtMillis(task: Task, zone: ZoneId): Long? {
+        val date = task.date ?: return null
+        val time = task.time ?: return null
+        return dueAt(date, time, zone)
+    }
 
     /** one alert at the next summary time, skipped when nothing is dated that day */
     fun summaryAlert(tasks: List<Task>, settings: NotificationSettings, now: Long, zone: ZoneId): PlannedAlert? {

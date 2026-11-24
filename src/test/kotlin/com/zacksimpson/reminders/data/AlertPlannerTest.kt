@@ -45,13 +45,46 @@ class AlertPlannerTest {
     }
 
     @Test
-    fun tasksDueAtTheSameTimeShareOneAlert() {
+    fun everyTaskGetsItsOwnAlertEvenAtTheSameTime() {
         val tasks = listOf(task("a", "2026-11-05", "13:00"), task("b", "2026-11-05", "13:00"), task("c", "2026-11-05", "14:00"))
         val got = AlertPlanner.taskAlerts(tasks, 0L, zone)
-        assertEquals(2, got.size)
-        assertEquals("2 reminders due", got[0].text)
-        assertEquals("group-${at("2026-11-05", "13:00")}", got[0].id)
-        assertEquals("c", got[1].text)
+        assertEquals(listOf("task-a", "task-b", "task-c"), got.map { it.id })
+        assertEquals(listOf("a", "b", "c"), got.map { it.text })
+    }
+
+    @Test
+    fun aSavedSnoozeMovesTheAlertButNotTheTask() {
+        val tasks = listOf(task("a", "2026-11-05", "09:00"))
+        val now = at("2026-11-05", "09:05")
+        val snooze = Snooze(dueAtMillis = at("2026-11-05", "09:00"), untilMillis = at("2026-11-05", "15:00"))
+        val got = AlertPlanner.taskAlerts(tasks, now, zone, mapOf("a" to snooze))
+        assertEquals(listOf(at("2026-11-05", "15:00")), got.map { it.atMillis })
+    }
+
+    @Test
+    fun aSnoozeThatAlreadyPassedPlansNothing() {
+        val tasks = listOf(task("a", "2026-11-05", "09:00"))
+        val snooze = Snooze(at("2026-11-05", "09:00"), at("2026-11-05", "15:00"))
+        assertTrue(AlertPlanner.taskAlerts(tasks, at("2026-11-05", "15:01"), zone, mapOf("a" to snooze)).isEmpty())
+    }
+
+    @Test
+    fun editingTheDueTimeDropsTheSnooze() {
+        val moved = task("a", "2026-11-06", "09:00")
+        val snooze = Snooze(at("2026-11-05", "09:00"), at("2026-11-05", "15:00"))
+        val now = at("2026-11-05", "09:05")
+        val got = AlertPlanner.taskAlerts(listOf(moved), now, zone, mapOf("a" to snooze))
+        assertEquals(listOf(at("2026-11-06", "09:00")), got.map { it.atMillis })
+        assertEquals(false, AlertPlanner.isSnoozed(moved, mapOf("a" to snooze), zone))
+    }
+
+    @Test
+    fun isSnoozedOnlyForOpenTasksWithAMatchingSnooze() {
+        val snooze = Snooze(at("2026-11-05", "09:00"), at("2026-11-05", "15:00"))
+        val map = mapOf("a" to snooze, "b" to snooze)
+        assertEquals(true, AlertPlanner.isSnoozed(task("a", "2026-11-05", "09:00"), map, zone))
+        assertEquals(false, AlertPlanner.isSnoozed(task("b", "2026-11-05", "09:00", done = true), map, zone))
+        assertEquals(false, AlertPlanner.isSnoozed(task("c", "2026-11-05", "09:00"), map, zone))
     }
 
     @Test
