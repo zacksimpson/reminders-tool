@@ -56,4 +56,9 @@ class SnoozePresetsTest {
         assertEquals(at("2026-11-06", "10:30"), got[2].atMillis)
         assertEquals(listOf("In 1 hour", "This afternoon", "Tomorrow"), got.map { it.label })
     }
+
+    @Test
+    fun aPickedDateAndTimeBecomeOneMoment() {
+        assertEquals(at("2026-11-07", "14:05"), SnoozePresets.customAt("2026-11-07", "14:05", zone))
+    }
 }

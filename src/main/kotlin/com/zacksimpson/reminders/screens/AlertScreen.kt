@@ -55,9 +55,13 @@ import com.zacksimpson.reminders.ui.showToast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 
 private const val TAG = "AlertScreen"
+
+private const val CUSTOM_KEY = "custom"
 
 /** taps and back are ignored this long, with no visible change, so a tap meant for what was on screen can't land here */
 private const val ARM_DELAY_MS = 1_000L
@@ -136,16 +140,48 @@ class AlertScreen(
         val now = System.currentTimeMillis()
         val zone = ZoneId.systemDefault()
         val choices = SnoozePresets.choices(now, zone)
+        val options = choices.map { c -> PickerOption(c.key, c.label, detail = formatAlertAt(c.atMillis, now, zone)) } +
+            PickerOption(CUSTOM_KEY, "Custom")
+        navigateTo(
+            screenFactory = { OptionPickerScreen(it, "Remind later", options, selectedKey = "") },
+            resultCallback = { key ->
+                if (key == CUSTOM_KEY) {
+                    pickCustomDate(task)
+                } else {
+                    choices.firstOrNull { it.key == key }?.let { saveSnooze(task, it) }
+                }
+            },
+        )
+    }
+
+    // backing out of either picker lands back on the presets
+    private fun pickCustomDate(task: AlertInfo.Reminder) {
+        val today = LocalDate.now()
+        navigateTo(
+            screenFactory = { DatePickerScreen(it, today.toString(), minDate = today) },
+            resultCallback = { date -> if (date != null) pickCustomTime(task, date) else remindLater(task) },
+        )
+    }
+
+    private fun pickCustomTime(task: AlertInfo.Reminder, date: String) {
+        val zone = ZoneId.systemDefault()
+        val seed = LocalTime.now().plusHours(1).let { "%02d:%02d".format(it.hour, it.minute) }
         navigateTo(
             screenFactory = {
-                OptionPickerScreen(
+                TimePickerScreen(
                     it,
-                    "Remind later",
-                    choices.map { c -> PickerOption(c.key, c.label, detail = formatAlertAt(c.atMillis, now, zone)) },
-                    selectedKey = "",
+                    seed,
+                    canSave = { time -> SnoozePresets.customAt(date, time, zone) > System.currentTimeMillis() },
                 )
             },
-            resultCallback = { key -> choices.firstOrNull { it.key == key }?.let { saveSnooze(task, it) } },
+            resultCallback = { time ->
+                if (time != null) {
+                    val at = SnoozePresets.customAt(date, time, zone)
+                    saveSnooze(task, SnoozeChoice(CUSTOM_KEY, "Custom", at))
+                } else {
+                    remindLater(task)
+                }
+            },
         )
     }
 

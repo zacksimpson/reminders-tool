@@ -1,6 +1,7 @@
 package com.zacksimpson.reminders.data
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -37,4 +38,8 @@ object SnoozePresets {
         val at = today.plusDays(1).atTime(TOMORROW_MORNING).atZone(now.zone)
         return SnoozeChoice("slot", "Tomorrow morning", at.toInstant().toEpochMilli())
     }
+
+    /** epoch millis for a picked "YYYY-MM-DD" and "HH:MM" */
+    fun customAt(date: String, time: String, zone: ZoneId): Long =
+        LocalDate.parse(date).atTime(LocalTime.parse(time)).atZone(zone).toInstant().toEpochMilli()
 }
