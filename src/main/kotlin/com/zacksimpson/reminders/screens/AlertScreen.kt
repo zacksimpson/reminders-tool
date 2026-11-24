@@ -20,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,7 +59,7 @@ import java.time.ZoneId
 
 private const val TAG = "AlertScreen"
 
-/** taps and back are ignored this long, so a tap meant for what was on screen can't land here */
+/** taps and back are ignored this long, with no visible change, so a tap meant for what was on screen can't land here */
 private const val ARM_DELAY_MS = 1_000L
 
 /** same as showToast's default, the tool waits this long before closing so the toast shows */
@@ -170,7 +169,6 @@ class AlertScreen(
                 delay(ARM_DELAY_MS)
                 armed = true
             }
-            val dim = if (armed) 1f else 0.4f
             SwipeBackContainer(onSwipeBack = { dismiss() }) {
                 Column(
                     modifier = Modifier
@@ -183,12 +181,11 @@ class AlertScreen(
                         rightButton = null,
                     )
                     when (val shown = info) {
-                        is AlertInfo.Reminder -> ReminderBody(shown, dim)
+                        is AlertInfo.Reminder -> ReminderBody(shown)
                         is AlertInfo.Summary -> SummaryBody(shown)
                     }
                     LightBottomBar(
                         items = listOf(LightBarButton.LightIcon(LightIcons.CLOSE, onClick = { dismiss() })),
-                        modifier = Modifier.alpha(dim),
                     )
                 }
             }
@@ -196,7 +193,7 @@ class AlertScreen(
     }
 
     @Composable
-    private fun ColumnScope.ReminderBody(task: AlertInfo.Reminder, dim: Float) {
+    private fun ColumnScope.ReminderBody(task: AlertInfo.Reminder) {
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -226,8 +223,8 @@ class AlertScreen(
             Spacer(Modifier.height(0.5f.gridUnitsAsDp()))
             AlertDetails(task.listTitle, task.due)
             Spacer(Modifier.weight(1f))
-            AlertAction("COMPLETE", dim) { complete(task) }
-            AlertAction("REMIND LATER", dim) { remindLater(task) }
+            AlertAction("COMPLETE") { complete(task) }
+            AlertAction("REMIND LATER") { remindLater(task) }
             Spacer(Modifier.height(1.5f.gridUnitsAsDp()))
         }
     }
@@ -287,13 +284,12 @@ private fun AlertDetails(list: String?, due: String) {
 }
 
 @Composable
-private fun AlertAction(label: String, alpha: Float, onClick: () -> Unit) {
+private fun AlertAction(label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .lightClickable(onClick = onClick)
-            .padding(vertical = 1.25f.gridUnitsAsDp())
-            .alpha(alpha),
+            .padding(vertical = 1.25f.gridUnitsAsDp()),
         contentAlignment = Alignment.Center,
     ) {
         LightText(text = label, variant = LightTextVariant.Button)
