@@ -12,9 +12,9 @@ data class SnoozeChoice(val key: String, val label: String, val atMillis: Long)
 /** the remind later options, worked out from when the alert is on screen */
 object SnoozePresets {
     private val SLOTS = listOf(
-        LocalTime.of(9, 0) to "This morning",
-        LocalTime.of(15, 0) to "This afternoon",
-        LocalTime.of(18, 0) to "This evening",
+        LocalTime.of(9, 0) to "This Morning",
+        LocalTime.of(15, 0) to "This Afternoon",
+        LocalTime.of(18, 0) to "This Evening",
     )
     private val TOMORROW_MORNING = LocalTime.of(9, 0)
 
@@ -22,7 +22,7 @@ object SnoozePresets {
         val minute = Instant.ofEpochMilli(now).truncatedTo(ChronoUnit.MINUTES)
         val local = minute.atZone(zone)
         return listOf(
-            SnoozeChoice("hour", "In 1 hour", minute.plus(1, ChronoUnit.HOURS).toEpochMilli()),
+            SnoozeChoice("hour", "In 1 Hour", minute.plus(1, ChronoUnit.HOURS).toEpochMilli()),
             nextSlot(local),
             SnoozeChoice("tomorrow", "Tomorrow", minute.plus(24, ChronoUnit.HOURS).toEpochMilli()),
         )
@@ -36,7 +36,7 @@ object SnoozePresets {
             if (at.isAfter(now)) return SnoozeChoice("slot", label, at.toInstant().toEpochMilli())
         }
         val at = today.plusDays(1).atTime(TOMORROW_MORNING).atZone(now.zone)
-        return SnoozeChoice("slot", "Tomorrow morning", at.toInstant().toEpochMilli())
+        return SnoozeChoice("slot", "Tomorrow Morning", at.toInstant().toEpochMilli())
     }
 
     /** epoch millis for a picked "YYYY-MM-DD" and "HH:MM" */

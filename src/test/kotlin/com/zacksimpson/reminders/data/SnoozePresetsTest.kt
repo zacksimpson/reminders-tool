@@ -17,34 +17,34 @@ class SnoozePresetsTest {
     @Test
     fun beforeNineTheSlotIsThisMorning() {
         val slot = choices("2026-11-05", "07:30")[1]
-        assertEquals("This morning", slot.label)
+        assertEquals("This Morning", slot.label)
         assertEquals(at("2026-11-05", "09:00"), slot.atMillis)
     }
 
     @Test
     fun midMorningTheSlotIsThisAfternoon() {
         val slot = choices("2026-11-05", "10:30")[1]
-        assertEquals("This afternoon", slot.label)
+        assertEquals("This Afternoon", slot.label)
         assertEquals(at("2026-11-05", "15:00"), slot.atMillis)
     }
 
     @Test
     fun midAfternoonTheSlotIsThisEvening() {
         val slot = choices("2026-11-05", "16:00")[1]
-        assertEquals("This evening", slot.label)
+        assertEquals("This Evening", slot.label)
         assertEquals(at("2026-11-05", "18:00"), slot.atMillis)
     }
 
     @Test
     fun aSlotRightNowIsAlreadyPast() {
-        assertEquals("This evening", choices("2026-11-05", "15:00")[1].label)
-        assertEquals("Tomorrow morning", choices("2026-11-05", "18:00")[1].label)
+        assertEquals("This Evening", choices("2026-11-05", "15:00")[1].label)
+        assertEquals("Tomorrow Morning", choices("2026-11-05", "18:00")[1].label)
     }
 
     @Test
     fun afterSixTheSlotIsTomorrowMorning() {
         val slot = choices("2026-11-05", "21:10")[1]
-        assertEquals("Tomorrow morning", slot.label)
+        assertEquals("Tomorrow Morning", slot.label)
         assertEquals(at("2026-11-06", "09:00"), slot.atMillis)
     }
 
@@ -54,7 +54,7 @@ class SnoozePresetsTest {
         val got = SnoozePresets.choices(now, zone)
         assertEquals(at("2026-11-05", "11:30"), got[0].atMillis)
         assertEquals(at("2026-11-06", "10:30"), got[2].atMillis)
-        assertEquals(listOf("In 1 hour", "This afternoon", "Tomorrow"), got.map { it.label })
+        assertEquals(listOf("In 1 Hour", "This Afternoon", "Tomorrow"), got.map { it.label })
     }
 
     @Test

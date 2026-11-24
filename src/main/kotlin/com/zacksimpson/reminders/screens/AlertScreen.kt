@@ -143,7 +143,7 @@ class AlertScreen(
         val options = choices.map { c -> PickerOption(c.key, c.label, detail = formatAlertAt(c.atMillis, now, zone)) } +
             PickerOption(CUSTOM_KEY, "Custom")
         navigateTo(
-            screenFactory = { OptionPickerScreen(it, "Remind later", options, selectedKey = "") },
+            screenFactory = { OptionPickerScreen(it, "Remind Later", options, selectedKey = "") },
             resultCallback = { key ->
                 if (key == CUSTOM_KEY) {
                     pickCustomDate(task)
