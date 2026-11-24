@@ -63,10 +63,10 @@ private const val TAG = "AlertScreen"
 
 private const val CUSTOM_KEY = "custom"
 
-/** taps and back are ignored this long, with no visible change, so a tap meant for what was on screen can't land here */
+/** taps and back are ignored this long, with no visible change, so a stray tap can't land */
 private const val ARM_DELAY_MS = 1_000L
 
-/** same as showToast's default, the tool waits this long before closing so the toast shows */
+/** the default toast length, the tool waits this long before closing so the toast shows */
 private const val TOAST_MS = 1_000L
 
 class AlertViewModel(

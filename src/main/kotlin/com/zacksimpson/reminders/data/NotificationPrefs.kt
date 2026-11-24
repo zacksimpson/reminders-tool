@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/** notification settings live outside [Settings] so they never sync, permissions are per phone */
+/** notification settings stay out of the synced settings, permissions are per phone */
 class NotificationPrefs(private val dataStore: DataStore<Preferences>) {
     val settings: Flow<NotificationSettings> = dataStore.data.map { p ->
         NotificationSettings(

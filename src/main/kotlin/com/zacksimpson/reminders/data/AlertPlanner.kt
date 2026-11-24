@@ -14,7 +14,7 @@ data class NotificationSettings(
 
 data class PlannedAlert(val id: String, val atMillis: Long, val title: String, val text: String)
 
-/** a task's alert moved to [untilMillis]. the task keeps its own due time, [dueAtMillis] is the one it was saved against */
+/** an alert moved to a later time, saved against the due time the task had then */
 data class Snooze(val dueAtMillis: Long, val untilMillis: Long)
 
 /** pure: which alerts should exist right now, given the tasks and settings */
