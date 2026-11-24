@@ -23,10 +23,12 @@ import com.thelightphone.sdk.ui.LightBottomBar
 import com.thelightphone.sdk.ui.LightIcons
 import com.thelightphone.sdk.ui.LightThemeTokens
 import com.zacksimpson.reminders.data.AuthRepository
+import com.zacksimpson.reminders.data.AlertSync
 import com.zacksimpson.reminders.data.AuthState
 import com.zacksimpson.reminders.data.RemindersRepository
 import com.zacksimpson.reminders.data.SYNC_JOB_KEY
 import com.zacksimpson.reminders.data.SYNC_NOW_TAG
+import com.zacksimpson.reminders.data.RECONCILE_JOB_KEY
 import com.zacksimpson.reminders.data.authStateIn
 import com.zacksimpson.reminders.screens.AccountScreen
 import com.zacksimpson.reminders.screens.AddTaskScreen
@@ -136,6 +138,14 @@ class MainScreen(sealedActivity: SealedLightActivity) :
         RemindersRepository(lightContext.dataStore),
         AuthRepository(lightContext.dataStore),
     )
+
+    // alerts are kept in line from here too, and the periodic run is the heartbeat for
+    // local-only users, so tomorrow's summary gets scheduled without the app open.
+    override fun willShow() {
+        super.willShow()
+        AlertSync.attach(lightContext)
+        LightWork.enqueuePeriodic(lightContext, RECONCILE_JOB_KEY, repeatInterval = 30.minutes)
+    }
 
     // scheduling lives here, on the Screen, not in MainViewModel: a SealedLightContext
     // is only reachable via LightScreen's protected lightContext. the periodic sync only
