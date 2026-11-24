@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.thelightphone.sdk.SealedLightActivity
@@ -56,6 +57,8 @@ private val DAY_HEADERS = listOf("S", "M", "T", "W", "T", "F", "S")
 class DatePickerScreen(
     sealedActivity: SealedLightActivity,
     private val initialValue: String?,
+    /** days before this can't be picked, and show dimmed */
+    private val minDate: LocalDate? = null,
 ) : SimpleLightScreen<String?>(sealedActivity) {
 
     @Composable
@@ -82,6 +85,8 @@ class DatePickerScreen(
                     viewMonth += 1
                 }
             }
+
+            fun isAllowed(day: Int) = minDate == null || !LocalDate.of(viewYear, viewMonth, day).isBefore(minDate)
 
             val firstDayOfWeek = LocalDate.of(viewYear, viewMonth, 1).dayOfWeek.value % 7 // Sun=0..Sat=6
             val daysInMonth = YearMonth.of(viewYear, viewMonth).lengthOfMonth()
@@ -151,7 +156,7 @@ class DatePickerScreen(
                                         .fillMaxHeight()
                                         .padding(vertical = 0.55f.gridUnitsAsDp())
                                         .let {
-                                            if (day != null) {
+                                            if (day != null && isAllowed(day)) {
                                                 it.lightClickable {
                                                     val dateStr = "%04d-%02d-%02d".format(viewYear, viewMonth, day)
                                                     goBack(dateStr)
@@ -166,7 +171,10 @@ class DatePickerScreen(
                                         val dateStr = "%04d-%02d-%02d".format(viewYear, viewMonth, day)
                                         val isSelected = dateStr == initialValue
                                         val showUnderline = isSelected || (initialValue == null && dateStr == today.toString())
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Column(
+                                            modifier = Modifier.alpha(if (isAllowed(day)) 1f else 0.4f),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        ) {
                                             AkkuratText(text = day.toString(), fontSizeDesignPx = DAY_NUMBER_DESIGN_PX)
                                             Box(
                                                 modifier = Modifier
