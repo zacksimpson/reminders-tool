@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.thelightphone.sdk.SealedLightActivity
@@ -57,7 +56,7 @@ private val DAY_HEADERS = listOf("S", "M", "T", "W", "T", "F", "S")
 class DatePickerScreen(
     sealedActivity: SealedLightActivity,
     private val initialValue: String?,
-    /** days before this can't be picked, and show dimmed */
+    /** days before this can't be picked, they look the same and just don't respond */
     private val minDate: LocalDate? = null,
 ) : SimpleLightScreen<String?>(sealedActivity) {
 
@@ -171,10 +170,7 @@ class DatePickerScreen(
                                         val dateStr = "%04d-%02d-%02d".format(viewYear, viewMonth, day)
                                         val isSelected = dateStr == initialValue
                                         val showUnderline = isSelected || (initialValue == null && dateStr == today.toString())
-                                        Column(
-                                            modifier = Modifier.alpha(if (isAllowed(day)) 1f else 0.4f),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                        ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             AkkuratText(text = day.toString(), fontSizeDesignPx = DAY_NUMBER_DESIGN_PX)
                                             Box(
                                                 modifier = Modifier
