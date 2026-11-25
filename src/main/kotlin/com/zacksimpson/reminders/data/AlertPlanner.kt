@@ -68,13 +68,14 @@ object AlertPlanner {
     fun dueAtMillis(task: Task, zone: ZoneId): Long? {
         val date = task.date ?: return null
         val time = task.time ?: return null
-        return dueAt(date, time, zone)
+        return runCatching { dueAt(date, time, zone) }.getOrNull()
     }
 
     /** one alert at the next summary time, skipped when nothing is dated that day */
     fun summaryAlert(tasks: List<Task>, settings: NotificationSettings, now: Long, zone: ZoneId): PlannedAlert? {
         if (!settings.summaryEnabled) return null
-        val at = nextSummaryAt(now, LocalTime.parse(settings.summaryTime), zone)
+        val summaryTime = runCatching { LocalTime.parse(settings.summaryTime) }.getOrNull() ?: return null
+        val at = nextSummaryAt(now, summaryTime, zone)
         val day = Instant.ofEpochMilli(at).atZone(zone).toLocalDate().toString()
         val count = tasks.count { isOpen(it) && it.date == day }
         if (count == 0) return null

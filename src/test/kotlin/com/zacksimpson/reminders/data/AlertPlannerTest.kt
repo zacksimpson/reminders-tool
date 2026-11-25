@@ -145,4 +145,17 @@ class AlertPlannerTest {
         val got = AlertPlanner.summaryAlert(listOf(task("a", "2026-11-06")), settings, at("2026-11-05", "20:00"), zone)!!
         assertEquals("1 reminder today", got.text)
     }
+
+    @Test
+    fun aTaskWithAnUnreadableTimeIsSkippedNotACrash() {
+        val bad = Task(id = "bad", title = "bad", listId = "inbox", date = "2026-11-05", time = "12:90", createdAt = 0L, order = 0)
+        assertTrue(AlertPlanner.taskAlerts(listOf(bad), 0L, zone).isEmpty())
+        assertNull(AlertPlanner.dueAtMillis(bad, zone))
+    }
+
+    @Test
+    fun anUnreadableSummaryTimeMeansNoSummary() {
+        val settings = NotificationSettings(enabled = true, summaryEnabled = true, summaryTime = "25:99")
+        assertNull(AlertPlanner.summaryAlert(listOf(task("a", "2026-11-06")), settings, at("2026-11-05", "20:00"), zone))
+    }
 }
