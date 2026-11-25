@@ -22,7 +22,7 @@ class AlertInfoTest {
     private val lists = listOf(ReminderList(id = "life", title = "My Life", createdAt = 0L, order = 0))
 
     private fun info(id: String, tasks: List<Task>, snoozes: Map<String, Snooze> = emptyMap()) =
-        alertInfoFor(id, "text", tasks, lists, snoozes, zone)
+        alertInfoFor(id, tasks, lists, snoozes, zone)
 
     @Test
     fun taskAlertShowsTheTaskAndItsOriginalDueTime() {
@@ -50,14 +50,34 @@ class AlertInfoTest {
         assertNull(info("group-123", listOf(task("a"))))
     }
 
+    private fun dated(id: String, date: LocalDate, time: String? = null, done: Boolean = false) = Task(
+        id = id, title = id, listId = "life", date = date.toString(), time = time,
+        completed = done, createdAt = 0L, order = 0,
+    )
+
     @Test
-    fun summaryAlertShowsItsOwnText() {
-        assertEquals(AlertInfo.Summary("text"), info(AlertPlanner.SUMMARY_ID, emptyList()))
+    fun summaryShowsWhenSomethingIsDueToday() {
+        val tasks = listOf(dated("a", LocalDate.now()))
+        assertEquals(AlertInfo.Summary, info(AlertPlanner.SUMMARY_ID, tasks))
+    }
+
+    @Test
+    fun summaryHasNothingToShowWhenTodayIsDone() {
+        val tasks = listOf(dated("a", LocalDate.now(), done = true), dated("b", LocalDate.now().plusDays(1)))
+        assertNull(info(AlertPlanner.SUMMARY_ID, tasks))
+        assertNull(info(AlertPlanner.SUMMARY_ID, emptyList()))
+    }
+
+    @Test
+    fun summaryCountsOverdueOnlyWhenTheTodayViewShowsIt() {
+        val tasks = listOf(dated("old", LocalDate.now().minusDays(2)))
+        assertEquals(AlertInfo.Summary, alertInfoFor(AlertPlanner.SUMMARY_ID, tasks, lists, emptyMap(), zone, showOverdue = true))
+        assertNull(alertInfoFor(AlertPlanner.SUMMARY_ID, tasks, lists, emptyMap(), zone, showOverdue = false))
     }
 
     @Test
     fun aMissingListLeavesTheListOut() {
-        val got = alertInfoFor("task-a", "t", listOf(task("a")), emptyList(), emptyMap(), zone) as AlertInfo.Reminder
+        val got = alertInfoFor("task-a", listOf(task("a")), emptyList(), emptyMap(), zone) as AlertInfo.Reminder
         assertNull(got.listTitle)
     }
 

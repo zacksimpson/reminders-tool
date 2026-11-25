@@ -118,7 +118,14 @@ class MainViewModel(
         viewModelScope.launch {
             val info = try {
                 val data = repo.appData.first()
-                alertInfoFor(alert.id, alert.text, data.tasks, data.lists, snoozeStore.all(), ZoneId.systemDefault())
+                alertInfoFor(
+                    alert.id,
+                    data.tasks,
+                    data.lists,
+                    snoozeStore.all(),
+                    ZoneId.systemDefault(),
+                    data.settings.showOverdue,
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

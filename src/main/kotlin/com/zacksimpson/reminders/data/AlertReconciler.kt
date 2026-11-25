@@ -29,7 +29,8 @@ suspend fun reconcileAlerts(ctx: SealedLightContext) {
     val notifications = ctx.notifications
     val store = ctx.dataStore
     val settings = NotificationPrefs(store).settings.first()
-    val tasks = RemindersRepository(store).snapshotForSync().tasks
+    val data = RemindersRepository(store).snapshotForSync()
+    val tasks = data.tasks
     val zone = ZoneId.systemDefault()
 
     val snoozeStore = AlertSnoozeStore(store)
@@ -38,7 +39,7 @@ suspend fun reconcileAlerts(ctx: SealedLightContext) {
 
     // without notifications allowed nothing can fire, so drop whatever was scheduled
     val planned = if (notifications.canPostNotifications()) {
-        AlertPlanner.plan(tasks, settings, System.currentTimeMillis(), zone, snoozes)
+        AlertPlanner.plan(tasks, settings, System.currentTimeMillis(), zone, snoozes, data.settings.showOverdue)
     } else {
         emptyList()
     }
@@ -83,7 +84,7 @@ object AlertSync {
             val store = ctx.dataStore
             scope.launch {
                 combine(
-                    RemindersRepository(store).appData.map { it.tasks },
+                    RemindersRepository(store).appData.map { it.tasks to it.settings.showOverdue },
                     NotificationPrefs(store).settings,
                     AlertSnoozeStore(store).snoozes,
                 ) { tasks, settings, snoozes -> Triple(tasks, settings, snoozes) }

@@ -147,6 +147,24 @@ class AlertPlannerTest {
     }
 
     @Test
+    fun summaryCountsOverdueTasksWhenTheyAreShown() {
+        val settings = NotificationSettings(enabled = true, summaryEnabled = true)
+        val tasks = listOf(task("old", "2026-11-03"), task("today", "2026-11-06"), task("later", "2026-11-09"))
+        val now = at("2026-11-05", "20:00")
+        assertEquals("2 reminders today", AlertPlanner.summaryAlert(tasks, settings, now, zone)!!.text)
+        assertEquals("1 reminder today", AlertPlanner.summaryAlert(tasks, settings, now, zone, showOverdue = false)!!.text)
+    }
+
+    @Test
+    fun summaryFiresForOnlyOverdueTasksUnlessHidden() {
+        val settings = NotificationSettings(enabled = true, summaryEnabled = true)
+        val tasks = listOf(task("old", "2026-11-03"))
+        val now = at("2026-11-05", "20:00")
+        assertEquals("1 reminder today", AlertPlanner.summaryAlert(tasks, settings, now, zone)!!.text)
+        assertNull(AlertPlanner.summaryAlert(tasks, settings, now, zone, showOverdue = false))
+    }
+
+    @Test
     fun summaryIsSkippedWhenNothingIsDatedThatDay() {
         val settings = NotificationSettings(enabled = true, summaryEnabled = true)
         assertNull(AlertPlanner.summaryAlert(listOf(task("a", "2026-11-09")), settings, at("2026-11-05", "20:00"), zone))

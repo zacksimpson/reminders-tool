@@ -1,6 +1,7 @@
 package com.zacksimpson.reminders.data
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 /** what the alert screen shows */
@@ -15,19 +16,24 @@ sealed interface AlertInfo {
         val snoozed: Boolean,
     ) : AlertInfo
 
-    data class Summary(val text: String) : AlertInfo
+    /** the morning summary, its screen reads the tasks live */
+    data object Summary : AlertInfo
 }
 
 /** null when the alert has nothing left to show, like a task finished or deleted since it was scheduled */
 fun alertInfoFor(
     alertId: String,
-    alertText: String,
     tasks: List<Task>,
     lists: List<ReminderList>,
     snoozes: Map<String, Snooze>,
     zone: ZoneId,
+    showOverdue: Boolean = true,
 ): AlertInfo? {
-    if (alertId == AlertPlanner.SUMMARY_ID) return AlertInfo.Summary(alertText)
+    if (alertId == AlertPlanner.SUMMARY_ID) {
+        val today = LocalDate.now().toString()
+        val any = todayOverdueTasks(tasks, showOverdue).isNotEmpty() || todayActiveTasks(tasks, today).isNotEmpty()
+        return if (any) AlertInfo.Summary else null
+    }
     if (!alertId.startsWith(AlertPlanner.TASK_PREFIX)) return null
     val taskId = alertId.removePrefix(AlertPlanner.TASK_PREFIX)
     val task = tasks.firstOrNull { it.id == taskId && !it.completed && !it.deleted } ?: return null

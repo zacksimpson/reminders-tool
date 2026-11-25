@@ -32,9 +32,11 @@ object AlertPlanner {
         now: Long,
         zone: ZoneId,
         snoozes: Map<String, Snooze> = emptyMap(),
+        showOverdue: Boolean = true,
     ): List<PlannedAlert> {
         if (!settings.enabled) return emptyList()
-        return taskAlerts(tasks, now, zone, snoozes) + listOfNotNull(summaryAlert(tasks, settings, now, zone))
+        return taskAlerts(tasks, now, zone, snoozes) +
+            listOfNotNull(summaryAlert(tasks, settings, now, zone, showOverdue))
     }
 
     /** one alert per task, at its due time or at the saved snooze time */
@@ -71,13 +73,22 @@ object AlertPlanner {
         return runCatching { dueAt(date, time, zone) }.getOrNull()
     }
 
-    /** one alert at the next summary time, skipped when nothing is dated that day */
-    fun summaryAlert(tasks: List<Task>, settings: NotificationSettings, now: Long, zone: ZoneId): PlannedAlert? {
+    /** one alert at the next summary time, skipped when nothing is due that day (or overdue, if shown) */
+    fun summaryAlert(
+        tasks: List<Task>,
+        settings: NotificationSettings,
+        now: Long,
+        zone: ZoneId,
+        showOverdue: Boolean = true,
+    ): PlannedAlert? {
         if (!settings.summaryEnabled) return null
         val summaryTime = runCatching { LocalTime.parse(settings.summaryTime) }.getOrNull() ?: return null
         val at = nextSummaryAt(now, summaryTime, zone)
         val day = Instant.ofEpochMilli(at).atZone(zone).toLocalDate().toString()
-        val count = tasks.count { isOpen(it) && it.date == day }
+        val count = tasks.count { t ->
+            val date = t.date
+            isOpen(t) && date != null && (date == day || (showOverdue && date < day))
+        }
         if (count == 0) return null
         return PlannedAlert(SUMMARY_ID, at, TITLE, if (count == 1) "1 reminder today" else "$count reminders today")
     }

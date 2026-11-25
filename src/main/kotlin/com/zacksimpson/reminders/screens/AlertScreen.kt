@@ -25,6 +25,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
+import com.zacksimpson.reminders.ui.TaskRowView
+import com.zacksimpson.reminders.data.todayOverdueTasks
+import com.zacksimpson.reminders.data.todayActiveTasks
+import com.zacksimpson.reminders.dataStateIn
+import com.zacksimpson.reminders.DataState
+import com.thelightphone.sdk.ui.LightScrollView
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import com.thelightphone.sdk.LightAlert
 import com.thelightphone.sdk.LightScreen
 import com.thelightphone.sdk.LightViewModel
@@ -73,6 +81,9 @@ class AlertViewModel(
     private val repo: RemindersRepository,
     private val snoozes: AlertSnoozeStore,
 ) : LightViewModel<Unit>() {
+    /** the summary screen lists tasks live, so finishing one drops its row */
+    val state = repo.dataStateIn(viewModelScope)
+
     fun complete(taskId: String, then: () -> Unit) {
         viewModelScope.launch {
             val task = repo.appData.first().tasks.firstOrNull { it.id == taskId }
@@ -111,7 +122,7 @@ class AlertScreen(
 
     private var armed by mutableStateOf(false)
     private var busy = false
-    private var listOpened = false
+    private var listOpened by mutableStateOf(false)
 
     override val viewModelClass: Class<AlertViewModel>
         get() = AlertViewModel::class.java
@@ -147,16 +158,21 @@ class AlertScreen(
     }
 
     // the alert stays open underneath, so back returns to it unless the task changed meanwhile
-    private fun openList(task: AlertInfo.Reminder) {
+    private fun openList(listId: String, title: String?) {
         if (!armed || busy) return
         listOpened = true
-        navigateTo(screenFactory = { ListDetailScreen(it, task.listId, task.listTitle ?: "List") })
+        navigateTo(screenFactory = { ListDetailScreen(it, listId, title ?: "List") })
     }
 
     // the list goes back without a result, so check the task when this screen shows again
     override fun willShow() {
         super.willShow()
-        val task = info as? AlertInfo.Reminder ?: return
+        val task = info as? AlertInfo.Reminder
+        if (task == null) {
+            // the summary reads the tasks live, nothing to recheck
+            listOpened = false
+            return
+        }
         if (!listOpened) return
         listOpened = false
         viewModel.stillDue(task.taskId, task.dueAtMillis) { open ->
@@ -248,12 +264,12 @@ class AlertScreen(
                 ) {
                     LightTopBar(
                         leftButton = null,
-                        center = LightTopBarCenter.Text("Reminders"),
+                        center = LightTopBarCenter.Text(if (info is AlertInfo.Summary) "Today's Tasks" else "Reminders"),
                         rightButton = null,
                     )
                     when (val shown = info) {
                         is AlertInfo.Reminder -> ReminderBody(shown)
-                        is AlertInfo.Summary -> SummaryBody(shown)
+                        AlertInfo.Summary -> SummaryBody()
                     }
                     LightBottomBar(
                         items = listOf(LightBarButton.LightIcon(LightIcons.CLOSE, onClick = { dismiss() })),
@@ -276,7 +292,7 @@ class AlertScreen(
             Spacer(Modifier.height(3f.gridUnitsAsDp()))
             // the whole block opens the task's list, with no visual hint
             Column(
-                modifier = Modifier.fillMaxWidth().lightClickable(onClick = { openList(task) }),
+                modifier = Modifier.fillMaxWidth().lightClickable(onClick = { openList(task.listId, task.listTitle) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(
@@ -308,15 +324,32 @@ class AlertScreen(
     }
 
     @Composable
-    private fun ColumnScope.SummaryBody(summary: AlertInfo.Summary) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 1.5f.gridUnitsAsDp()),
-            contentAlignment = Alignment.Center,
-        ) {
-            LightText(text = summary.text, variant = LightTextVariant.Heading, align = TextAlign.Center)
+    private fun ColumnScope.SummaryBody() {
+        val state by viewModel.state.collectAsState()
+        val data = (state as? DataState.Ready)?.data
+        val tasks = data?.tasks.orEmpty()
+        val shown = todayOverdueTasks(tasks, data?.settings?.showOverdue ?: true) +
+            todayActiveTasks(tasks, remember { LocalDate.now().toString() })
+        val empty = data != null && shown.isEmpty()
+        // done once nothing is left, but not while a list is open on top of this screen
+        LaunchedEffect(empty, listOpened) {
+            if (empty && !listOpened && !busy) {
+                busy = true
+                AlertInbox.closeDelayMs = 0
+                alert.dismiss()
+                leave()
+            }
+        }
+        LightScrollView(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            shown.forEach { task ->
+                val listTitle = data?.lists?.firstOrNull { it.id == task.listId }?.title
+                TaskRowView(
+                    task = task,
+                    listTitle = listTitle ?: "",
+                    onToggle = { if (armed && !busy) viewModel.complete(task.id) {} },
+                    onPress = { openList(task.listId, listTitle) },
+                )
+            }
         }
     }
 }
