@@ -7,6 +7,7 @@ import java.time.ZoneId
 sealed interface AlertInfo {
     data class Reminder(
         val taskId: String,
+        val listId: String,
         val title: String,
         val listTitle: String?,
         val due: String,
@@ -34,6 +35,7 @@ fun alertInfoFor(
     val time = task.time ?: return null
     return AlertInfo.Reminder(
         taskId = task.id,
+        listId = task.listId,
         title = task.title,
         listTitle = lists.firstOrNull { it.id == task.listId && !it.deleted }?.title,
         due = "Due ${formatDate(date)}, ${formatTime(time)}",

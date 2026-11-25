@@ -81,6 +81,16 @@ class AlertViewModel(
         }
     }
 
+    /** false once the task is finished, deleted or moved to another due time */
+    fun stillDue(taskId: String, dueAtMillis: Long, then: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val task = repo.appData.first().tasks.firstOrNull { it.id == taskId }
+            val open = task != null && !task.completed && !task.deleted &&
+                AlertPlanner.dueAtMillis(task, ZoneId.systemDefault()) == dueAtMillis
+            then(open)
+        }
+    }
+
     fun saveSnooze(taskId: String, snooze: Snooze, then: () -> Unit) {
         viewModelScope.launch {
             snoozes.save(taskId, snooze)
@@ -101,6 +111,7 @@ class AlertScreen(
 
     private var armed by mutableStateOf(false)
     private var busy = false
+    private var listOpened = false
 
     override val viewModelClass: Class<AlertViewModel>
         get() = AlertViewModel::class.java
@@ -132,6 +143,27 @@ class AlertScreen(
             AlertInbox.closeDelayMs = TOAST_MS
             alert.dismiss()
             leave()
+        }
+    }
+
+    // the alert stays open underneath, so back returns to it unless the task changed meanwhile
+    private fun openList(task: AlertInfo.Reminder) {
+        if (!armed || busy) return
+        listOpened = true
+        navigateTo(screenFactory = { ListDetailScreen(it, task.listId, task.listTitle ?: "List") })
+    }
+
+    // the list goes back without a result, so check the task when this screen shows again
+    override fun willShow() {
+        super.willShow()
+        val task = info as? AlertInfo.Reminder ?: return
+        if (!listOpened) return
+        listOpened = false
+        viewModel.stillDue(task.taskId, task.dueAtMillis) { open ->
+            if (!open) {
+                alert.dismiss()
+                leave()
+            }
         }
     }
 
@@ -241,30 +273,37 @@ class AlertScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // fixed start, so a longer title pushes the details down and the title stays put
-            Spacer(Modifier.height(4f.gridUnitsAsDp()))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.Center,
+            Spacer(Modifier.height(3f.gridUnitsAsDp()))
+            // the whole block opens the task's list, with no visual hint
+            Column(
+                modifier = Modifier.fillMaxWidth().lightClickable(onClick = { openList(task) }),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (task.snoozed) {
-                    OverdueAsteriskIcon(size = 22.dp, modifier = Modifier.padding(top = 14.dp, end = 10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    if (task.snoozed) {
+                        OverdueAsteriskIcon(size = 22.dp, modifier = Modifier.padding(top = 14.dp, end = 10.dp))
+                    }
+                    LightText(
+                        text = task.title,
+                        variant = LightTextVariant.Heading,
+                        align = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
                 }
-                LightText(
-                    text = task.title,
-                    variant = LightTextVariant.Heading,
-                    align = TextAlign.Center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
+                Spacer(Modifier.height(0.5f.gridUnitsAsDp()))
+                AlertDetails(task.listTitle, task.due)
             }
-            Spacer(Modifier.height(0.5f.gridUnitsAsDp()))
-            AlertDetails(task.listTitle, task.due)
             Spacer(Modifier.weight(1f))
-            AlertAction("COMPLETE") { complete(task) }
+            // the gap is trimmed from complete's bottom and added below, so remind later rises
+            AlertAction("COMPLETE", bottomPadding = 0.55f) { complete(task) }
             AlertAction("REMIND LATER") { remindLater(task) }
-            Spacer(Modifier.height(1.5f.gridUnitsAsDp()))
+            Spacer(Modifier.height(3.7f.gridUnitsAsDp()))
         }
     }
 
@@ -323,12 +362,12 @@ private fun AlertDetails(list: String?, due: String) {
 }
 
 @Composable
-private fun AlertAction(label: String, onClick: () -> Unit) {
+private fun AlertAction(label: String, bottomPadding: Float = 1.25f, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .lightClickable(onClick = onClick)
-            .padding(vertical = 1.25f.gridUnitsAsDp()),
+            .padding(top = 1.25f.gridUnitsAsDp(), bottom = bottomPadding.gridUnitsAsDp()),
         contentAlignment = Alignment.Center,
     ) {
         LightText(text = label, variant = LightTextVariant.Button)
