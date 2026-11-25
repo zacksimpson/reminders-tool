@@ -15,6 +15,7 @@ Organize tasks into lists, add due dates and times, check things off as you go, 
 * Completed tasks move to a collapsible group at the bottom
 * Long-press a list to rename, reorder, clear completed, or delete it
 * Set recurring reminders for routine tasks
+* Alerts at a task's due time open the tool so you can complete it or remind yourself later, plus an optional morning summary
 
 ---
 

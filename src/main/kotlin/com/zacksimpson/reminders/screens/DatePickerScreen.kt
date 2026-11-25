@@ -56,6 +56,8 @@ private val DAY_HEADERS = listOf("S", "M", "T", "W", "T", "F", "S")
 class DatePickerScreen(
     sealedActivity: SealedLightActivity,
     private val initialValue: String?,
+    /** days before this can't be picked, they look the same and just don't respond */
+    private val minDate: LocalDate? = null,
 ) : SimpleLightScreen<String?>(sealedActivity) {
 
     @Composable
@@ -82,6 +84,8 @@ class DatePickerScreen(
                     viewMonth += 1
                 }
             }
+
+            fun isAllowed(day: Int) = minDate == null || !LocalDate.of(viewYear, viewMonth, day).isBefore(minDate)
 
             val firstDayOfWeek = LocalDate.of(viewYear, viewMonth, 1).dayOfWeek.value % 7 // Sun=0..Sat=6
             val daysInMonth = YearMonth.of(viewYear, viewMonth).lengthOfMonth()
@@ -151,7 +155,7 @@ class DatePickerScreen(
                                         .fillMaxHeight()
                                         .padding(vertical = 0.55f.gridUnitsAsDp())
                                         .let {
-                                            if (day != null) {
+                                            if (day != null && isAllowed(day)) {
                                                 it.lightClickable {
                                                     val dateStr = "%04d-%02d-%02d".format(viewYear, viewMonth, day)
                                                     goBack(dateStr)

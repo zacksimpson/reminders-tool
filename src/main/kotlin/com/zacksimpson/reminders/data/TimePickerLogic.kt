@@ -55,6 +55,10 @@ object TimePickerLogic {
         return h in minH..maxH && m in 0..59
     }
 
+    /** a full time is 4 digits, or 3 that don't start with 0 (a leading 0 is still on the way to 4) */
+    fun isComplete(digits: String): Boolean =
+        digits.length == 4 || (digits.length == 3 && digits[0] != '0')
+
     /** whether appending [next] to [current] produces a digit string that's still a valid
      *  prefix toward some eventual 3- or 4-digit time. */
     fun isValidNextDigit(current: String, next: Char, use24Hour: Boolean): Boolean {

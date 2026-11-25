@@ -45,6 +45,8 @@ class TimePickerScreen(
     sealedActivity: SealedLightActivity,
     private val initialValue: String?,
     private val use24Hour: Boolean = false,
+    /** times this rejects can't be saved, the SAVE slot stays blank like mid-entry */
+    private val canSave: (String) -> Boolean = { true },
 ) : SimpleLightScreen<String?>(sealedActivity) {
 
     @Composable
@@ -55,7 +57,8 @@ class TimePickerScreen(
             var ampm by remember { mutableStateOf(seed?.second ?: "AM") }
 
             val hasDigits = digits.isNotEmpty()
-            val canConfirm = digits.length == 3 || digits.length == 4
+            val canConfirm = TimePickerLogic.isComplete(digits) &&
+                canSave(digitsToTime(digits, ampm, use24Hour))
 
             fun tapDigit(d: Char) {
                 if (digits.length >= 4) return

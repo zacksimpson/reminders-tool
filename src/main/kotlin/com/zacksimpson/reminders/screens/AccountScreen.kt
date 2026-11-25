@@ -214,7 +214,7 @@ class AccountScreen(
                             onClick = {
                                 navigateTo(
                                     screenFactory = {
-                                        TextEditorScreen(it, TextEditorRequest("Email", email, initialCaps = false))
+                                        TextEditorScreen(it, TextEditorRequest("Email", email, autoCapitalize = false))
                                     },
                                     resultCallback = { viewModel.setEmail(it) },
                                 )
@@ -228,7 +228,7 @@ class AccountScreen(
                             onClick = {
                                 navigateTo(
                                     screenFactory = {
-                                        TextEditorScreen(it, TextEditorRequest("Password", password, initialCaps = false))
+                                        TextEditorScreen(it, TextEditorRequest("Password", password, autoCapitalize = false))
                                     },
                                     resultCallback = { viewModel.setPassword(it) },
                                 )

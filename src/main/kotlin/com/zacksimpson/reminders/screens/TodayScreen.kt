@@ -22,9 +22,9 @@ import com.thelightphone.sdk.ui.lightClickable
 import com.zacksimpson.reminders.DataState
 import com.zacksimpson.reminders.R
 import com.zacksimpson.reminders.data.Task
-import com.zacksimpson.reminders.data.compareTasksByDateThenTime
-import com.zacksimpson.reminders.data.compareTasksByDateTime
 import com.zacksimpson.reminders.data.isOverdue
+import com.zacksimpson.reminders.data.todayActiveTasks
+import com.zacksimpson.reminders.data.todayOverdueTasks
 import com.zacksimpson.reminders.ui.TaskRowView
 import java.time.LocalDate
 
@@ -70,15 +70,8 @@ fun TodayTab(
                 val tasks = state.data.tasks
                 fun listTitle(listId: String) = state.data.lists.firstOrNull { it.id == listId }?.title ?: ""
 
-                val overdueTasks = if (showOverdue) {
-                    tasks.filter { !it.completed && isOverdue(it.date, it.time) }
-                        .sortedWith(::compareTasksByDateThenTime)
-                } else {
-                    emptyList()
-                }
-                val activeTasks = tasks
-                    .filter { it.date == todayStr && !it.completed && !isOverdue(it.date, it.time) }
-                    .sortedWith(::compareTasksByDateTime)
+                val overdueTasks = todayOverdueTasks(tasks, showOverdue)
+                val activeTasks = todayActiveTasks(tasks, todayStr)
                 val completedTasks = tasks
                     .filter { it.completed && (it.date == todayStr || (showOverdue && isOverdue(it.date, it.time))) }
                     .sortedByDescending { it.completedAt ?: 0L }

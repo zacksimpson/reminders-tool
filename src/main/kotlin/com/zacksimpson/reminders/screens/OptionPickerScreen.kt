@@ -1,10 +1,11 @@
 package com.zacksimpson.reminders.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,7 +25,7 @@ import com.zacksimpson.reminders.ui.RemindersTheme
 import com.zacksimpson.reminders.ui.SwipeBackContainer
 import com.zacksimpson.reminders.ui.UnderlinedHeading
 
-data class PickerOption(val key: String, val label: String)
+data class PickerOption(val key: String, val label: String, val detail: String? = null)
 
 /**
  * single-select list. tapping an option returns its key as the screen result, the current
@@ -56,16 +57,21 @@ class OptionPickerScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     options.forEach { option ->
-                        Box(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .lightClickable { goBack(option.key) }
                                 .padding(
                                     start = 1.5f.gridUnitsAsDp(),
+                                    end = 1.5f.gridUnitsAsDp(),
                                     top = 0.75f.gridUnitsAsDp(),
                                     bottom = 0.75f.gridUnitsAsDp(),
                                 ),
                         ) {
+                            option.detail?.let {
+                                LightText(text = it, variant = LightTextVariant.Detail)
+                                Spacer(modifier = Modifier.height(0.25f.gridUnitsAsDp()))
+                            }
                             UnderlinedHeading(
                                 text = option.label,
                                 underlined = option.key == selectedKey,

@@ -4,9 +4,10 @@ label = "Reminders"
 versionCode = 11
 versionName = "2.0.0"
 orientation = "portrait"
-# Notifications are deferred (the SDK has no exact-time local alarm yet); see README.
-# INTERNET/ACCESS_NETWORK_STATE added for phone<->desktop sync over Firebase's REST APIs.
+# internet and network state are for phone to desktop sync over firebase's rest apis.
 permissions = ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"]
-# LightOS server package on real LP3 hardware.
-# For the local LightOS emulator instead, use "com.thelightphone.sdk.emulator".
+# alerts covers exact alarms, notifications and boot restore for task reminders.
+capabilities = ["alerts"]
+# lightos server package on real lp3 hardware.
+# for the local lightos emulator instead, use "com.thelightphone.sdk.emulator".
 serverPackage = "com.lightos"
