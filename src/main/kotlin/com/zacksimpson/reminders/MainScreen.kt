@@ -66,6 +66,10 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.minutes
 
+/** how many screens the tool backs out of after alerts, and how long it waits between each */
+private const val MAX_CLOSE_STEPS = 8
+private const val CLOSE_STEP_MS = 300L
+
 enum class Tab { LISTS, TODAY, SETTINGS }
 
 class MainViewModel(
@@ -91,6 +95,9 @@ class MainViewModel(
     // same reasoning as todayShowCompleted.
     val listsReordering = MutableStateFlow(false)
 
+    // set while the tool is backing out after alerts opened it
+    private var closingAfterAlerts = false
+
     // weak since the screen holds the activity
     private var screenRef = WeakReference<SimpleLightScreen<Unit>>(null)
 
@@ -108,20 +115,27 @@ class MainViewModel(
     override fun onScreenShow(screen: SimpleLightScreen<Unit>) {
         super.onScreenShow(screen)
         screenRef = WeakReference(screen)
+        if (closingAfterAlerts) {
+            // everything above this screen is gone, so going back now closes the tool
+            closingAfterAlerts = false
+            screen.goBack(null)
+            return
+        }
+        AlertInbox.becomeCurrent(this)
         refreshTick.value++
         routePendingAlerts()
     }
 
     /** shows waiting alerts one at a time, then closes the tool if the alerts are what opened it */
     private fun routePendingAlerts() {
-        val screen = screenRef.get() ?: return
+        val screen = screenRef.get()
+        if (screen == null || !AlertInbox.isCurrent(this)) return
         if (AlertInbox.showing) return
-        val alert = AlertInbox.takeNext()
+        val alert = AlertInbox.takeNext(this)
         if (alert == null) {
             closeIfAlertsOpenedTheTool(screen)
             return
         }
-        AlertInbox.showing = true
         viewModelScope.launch {
             val info = try {
                 val data = repo.appData.first()
@@ -142,14 +156,14 @@ class MainViewModel(
             if (info == null) {
                 // nothing left to show, like a task finished on the desktop
                 alert.dismiss()
-                AlertInbox.showing = false
+                AlertInbox.handled(this@MainViewModel)
                 routePendingAlerts()
                 return@launch
             }
             screen.navigateTo(
                 screenFactory = { AlertScreen(it, alert, info) },
                 resultCallback = {
-                    AlertInbox.showing = false
+                    AlertInbox.handled(this@MainViewModel)
                     routePendingAlerts()
                 },
             )
@@ -163,7 +177,14 @@ class MainViewModel(
         AlertInbox.closeDelayMs = 0
         viewModelScope.launch {
             delay(wait)
-            screen.goBack(null)
+            // screens left under the alerts come off one by one, then the main screen closes the tool
+            closingAfterAlerts = true
+            var tries = 0
+            while (closingAfterAlerts && tries++ < MAX_CLOSE_STEPS) {
+                screen.goBack(null)
+                delay(CLOSE_STEP_MS)
+            }
+            closingAfterAlerts = false
         }
     }
 
@@ -207,6 +228,7 @@ class MainViewModel(
     }
 
     override fun onCleared() {
+        AlertInbox.release(this)
         authRepo.close()
     }
 }
