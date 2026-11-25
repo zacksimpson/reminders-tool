@@ -98,6 +98,18 @@ object AlertPlanner {
     fun staleIds(previous: Set<String>, planned: List<PlannedAlert>): Set<String> =
         previous - planned.map { it.id }.toSet()
 
+    /**
+     * ids whose fired notification is out of date: the task is finished or gone, or it has a
+     * newer alert planned. open overdue tasks are left alone so their alert stays up.
+     */
+    fun outdatedIds(tasks: List<Task>, planned: List<PlannedAlert>): Set<String> {
+        val plannedIds = planned.map { it.id }.toSet()
+        return tasks.map { "$TASK_PREFIX${it.id}" to it }
+            .filter { (id, task) -> !isOpen(task) || id in plannedIds }
+            .map { it.first }
+            .toSet()
+    }
+
     private fun isOpen(t: Task) = !t.completed && !t.deleted
 
     private fun dueAt(date: String, time: String, zone: ZoneId): Long =

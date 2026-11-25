@@ -43,7 +43,10 @@ suspend fun reconcileAlerts(ctx: SealedLightContext) {
         emptyList()
     }
 
-    AlertPlanner.staleIds(notifications.scheduledAlertIds.value, planned).forEach { notifications.cancel(it) }
+    // cancel also clears a notification that already fired, which the scheduled ids no longer list
+    val stale = AlertPlanner.staleIds(notifications.scheduledAlertIds.value, planned) +
+        AlertPlanner.outdatedIds(tasks, planned)
+    stale.forEach { notifications.cancel(it) }
     planned.forEach { p ->
         runCatching { notifications.schedule(p.id, p.atMillis, p.title, p.text) }
             .onFailure { Log.e(TAG, "couldn't schedule ${p.id}", it) }

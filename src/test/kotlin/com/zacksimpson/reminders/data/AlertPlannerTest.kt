@@ -100,6 +100,25 @@ class AlertPlannerTest {
     }
 
     @Test
+    fun finishedAndDeletedTasksAreOutdated() {
+        val tasks = listOf(task("a", done = true), task("b", deleted = true), task("c"))
+        assertEquals(setOf("task-a", "task-b"), AlertPlanner.outdatedIds(tasks, emptyList()))
+    }
+
+    @Test
+    fun anOverdueOpenTaskKeepsItsAlert() {
+        val tasks = listOf(task("a", "2026-11-05", "08:00"))
+        assertEquals(emptySet<String>(), AlertPlanner.outdatedIds(tasks, emptyList()))
+    }
+
+    @Test
+    fun aTaskWithANewerAlertPlannedIsOutdated() {
+        val tasks = listOf(task("a", "2026-11-06", "08:00"))
+        val planned = listOf(PlannedAlert("task-a", 1L, "t", "a"))
+        assertEquals(setOf("task-a"), AlertPlanner.outdatedIds(tasks, planned))
+    }
+
+    @Test
     fun summaryUsesTodayIfTheTimeHasntPassed() {
         val nine = LocalTime.of(9, 0)
         assertEquals(at("2026-11-05", "09:00"), AlertPlanner.nextSummaryAt(at("2026-11-05", "08:00"), nine, zone))
