@@ -45,6 +45,13 @@ val ADD_POSITION_OPTIONS = listOf(
     PickerOption("bottom", "Bottom of List"),
 )
 
+val TIME_FORMAT_OPTIONS = listOf(
+    PickerOption("12", "Standard (AM/PM)"),
+    PickerOption("24", "24-Hour"),
+)
+
+fun timeFormatKey(use24Hour: Boolean) = if (use24Hour) "24" else "12"
+
 fun afterAddKey(v: AfterAddBehavior) = if (v == AfterAddBehavior.GO_TO_LIST) "go-to-list" else "toast"
 fun addPositionKey(v: AddPosition) = if (v == AddPosition.TOP) "top" else "bottom"
 
@@ -85,7 +92,10 @@ class TaskBehaviorsScreen(
         get() = TaskBehaviorsViewModel::class.java
 
     override fun createViewModel() =
-        TaskBehaviorsViewModel(RemindersRepository(lightContext.dataStore), initialData)
+        TaskBehaviorsViewModel(
+            RemindersRepository(lightContext.dataStore),
+            initialData,
+        )
 
     @Composable
     override fun Content() {

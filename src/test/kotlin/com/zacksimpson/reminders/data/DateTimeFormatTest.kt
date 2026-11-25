@@ -93,4 +93,12 @@ class DateTimeFormatTest {
         val dated = task(date = "2026-01-01")
         assertTrue(compareTasksByDateThenTime(noDate, dated) < 0)
     }
+
+    @Test
+    fun formatTimeFollowsTheTimeFormat() {
+        assertEquals("3:30 PM", formatTime("15:30", use24Hour = false))
+        assertEquals("12:05 AM", formatTime("00:05", use24Hour = false))
+        assertEquals("15:30", formatTime("15:30", use24Hour = true))
+        assertEquals("00:05", formatTime("00:05", use24Hour = true))
+    }
 }

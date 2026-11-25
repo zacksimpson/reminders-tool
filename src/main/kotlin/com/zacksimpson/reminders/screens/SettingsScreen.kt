@@ -25,6 +25,7 @@ fun SettingsTab(
     onOpenTaskBehaviors: () -> Unit,
     onOpenAccount: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenTimeFormat: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         LightTopBar(
@@ -50,6 +51,7 @@ fun SettingsTab(
                     SettingsLinkRow("Account", onOpenAccount)
                     SettingsLinkRow("Notifications", onOpenNotifications)
                     SettingsLinkRow("Task Behaviors", onOpenTaskBehaviors)
+                    SettingsLinkRow("Time Format", onOpenTimeFormat)
                 }
             }
         }
