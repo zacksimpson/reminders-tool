@@ -30,6 +30,7 @@ import com.thelightphone.sdk.ui.LightTextVariant
 import com.thelightphone.sdk.ui.LightThemeTokens
 import com.thelightphone.sdk.ui.gridUnitsAsDp
 import com.thelightphone.sdk.ui.lightClickable
+import com.zacksimpson.reminders.data.TimeFormat
 import com.zacksimpson.reminders.data.TimePickerLogic
 import com.zacksimpson.reminders.data.digitsToTime
 import com.zacksimpson.reminders.data.timeToDisplayParts
@@ -44,7 +45,7 @@ import com.zacksimpson.reminders.ui.RemindersTheme
 class TimePickerScreen(
     sealedActivity: SealedLightActivity,
     private val initialValue: String?,
-    private val use24Hour: Boolean = false,
+    private val use24Hour: Boolean = TimeFormat.use24Hour,
     /** times this rejects can't be saved, the SAVE slot stays blank like mid-entry */
     private val canSave: (String) -> Boolean = { true },
 ) : SimpleLightScreen<String?>(sealedActivity) {

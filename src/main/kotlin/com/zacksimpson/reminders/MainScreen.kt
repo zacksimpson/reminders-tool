@@ -34,6 +34,8 @@ import com.thelightphone.sdk.ui.LightThemeTokens
 import com.zacksimpson.reminders.data.AuthRepository
 import com.zacksimpson.reminders.data.AlertSync
 import com.zacksimpson.reminders.data.AuthState
+import com.zacksimpson.reminders.data.TimeFormat
+import com.zacksimpson.reminders.data.TimeFormatPrefs
 import com.zacksimpson.reminders.data.RemindersRepository
 import com.zacksimpson.reminders.data.SYNC_JOB_KEY
 import com.zacksimpson.reminders.data.SYNC_NOW_TAG
@@ -46,12 +48,15 @@ import com.zacksimpson.reminders.screens.ListActionsScreen
 import com.zacksimpson.reminders.screens.ListDetailScreen
 import com.zacksimpson.reminders.screens.ListsTab
 import com.zacksimpson.reminders.screens.NotificationsScreen
+import com.zacksimpson.reminders.screens.OptionPickerScreen
 import com.zacksimpson.reminders.screens.SettingsTab
+import com.zacksimpson.reminders.screens.TIME_FORMAT_OPTIONS
 import com.zacksimpson.reminders.screens.TaskAction
 import com.zacksimpson.reminders.screens.TaskActionsScreen
 import com.zacksimpson.reminders.screens.TaskBehaviorsScreen
 import com.zacksimpson.reminders.screens.TaskDetailScreen
 import com.zacksimpson.reminders.screens.TodayTab
+import com.zacksimpson.reminders.screens.timeFormatKey
 import com.zacksimpson.reminders.ui.RemindersTheme
 import com.zacksimpson.reminders.ui.TextEditorRequest
 import com.zacksimpson.reminders.ui.TextEditorScreen
@@ -67,6 +72,7 @@ class MainViewModel(
     private val repo: RemindersRepository,
     private val authRepo: AuthRepository,
     private val snoozeStore: AlertSnoozeStore,
+    private val timeFormatPrefs: TimeFormatPrefs,
 ) : LightViewModel<Unit>() {
     val selectedTab = MutableStateFlow(Tab.LISTS)
     val state = repo.dataStateIn(viewModelScope)
@@ -96,6 +102,7 @@ class MainViewModel(
             }
         }
         viewModelScope.launch { AlertInbox.pending.collect { routePendingAlerts() } }
+        viewModelScope.launch { timeFormatPrefs.use24Hour.collect { TimeFormat.use24Hour = it } }
     }
 
     override fun onScreenShow(screen: SimpleLightScreen<Unit>) {
@@ -160,6 +167,13 @@ class MainViewModel(
         }
     }
 
+    fun setTimeFormat(key: String) {
+        val use24Hour = key == "24"
+        // shown right away, the saved value follows
+        TimeFormat.use24Hour = use24Hour
+        viewModelScope.launch { timeFormatPrefs.setUse24Hour(use24Hour) }
+    }
+
     fun select(tab: Tab) {
         selectedTab.value = tab
     }
@@ -209,6 +223,7 @@ class MainScreen(sealedActivity: SealedLightActivity) :
         RemindersRepository(lightContext.dataStore),
         AuthRepository(lightContext.dataStore),
         AlertSnoozeStore(lightContext.dataStore),
+        TimeFormatPrefs(lightContext.dataStore),
     )
 
     // alerts are kept in line from here too, and the periodic run is the heartbeat for
@@ -353,6 +368,19 @@ class MainScreen(sealedActivity: SealedLightActivity) :
                             },
                             onOpenNotifications = {
                                 navigateTo(screenFactory = { NotificationsScreen(it) })
+                            },
+                            onOpenTimeFormat = {
+                                navigateTo(
+                                    screenFactory = { activity ->
+                                        OptionPickerScreen(
+                                            activity,
+                                            "Time Format",
+                                            TIME_FORMAT_OPTIONS,
+                                            timeFormatKey(TimeFormat.use24Hour),
+                                        )
+                                    },
+                                    resultCallback = { key -> viewModel.setTimeFormat(key) },
+                                )
                             },
                         )
                     }

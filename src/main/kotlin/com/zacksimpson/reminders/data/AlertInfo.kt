@@ -51,9 +51,9 @@ fun alertInfoFor(
 }
 
 /** "Nov 13, 2:30 PM", or just the time when [millis] is today */
-fun formatAlertAt(millis: Long, now: Long, zone: ZoneId): String {
+fun formatAlertAt(millis: Long, now: Long, zone: ZoneId, use24Hour: Boolean = TimeFormat.use24Hour): String {
     val at = Instant.ofEpochMilli(millis).atZone(zone)
-    val time = formatTime("%02d:%02d".format(at.hour, at.minute))
+    val time = formatTime("%02d:%02d".format(at.hour, at.minute), use24Hour)
     if (at.toLocalDate() == Instant.ofEpochMilli(now).atZone(zone).toLocalDate()) return time
     return "${formatDate("%04d-%02d-%02d".format(at.year, at.monthValue, at.dayOfMonth))}, $time"
 }

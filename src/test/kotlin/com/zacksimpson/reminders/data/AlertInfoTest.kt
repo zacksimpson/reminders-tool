@@ -88,4 +88,11 @@ class AlertInfoTest {
         assertEquals("Nov 14, 9:00 AM", formatAlertAt(at("2026-11-14", "09:00"), now, zone))
         assertTrue(formatAlertAt(at("2026-11-14", "10:30"), now, zone).startsWith("Nov 14"))
     }
+
+    @Test
+    fun alertTimeFollowsTheTimeFormat() {
+        val now = at("2026-11-13", "10:30")
+        assertEquals("15:00", formatAlertAt(at("2026-11-13", "15:00"), now, zone, use24Hour = true))
+        assertEquals("Nov 14, 09:00", formatAlertAt(at("2026-11-14", "09:00"), now, zone, use24Hour = true))
+    }
 }

@@ -31,11 +31,8 @@ fun formatLastSyncedAt(epochMillis: Long): String {
     return "${formatDate(dateStr)}, ${formatTime(timeStr)}"
 }
 
-/** "HH:MM" 24h -> "h:mm AM/PM" (or unchanged when use24Hour is true).
- *  TODO: use24Hour should read the device's clock format, but the SDK has no sanctioned
- *  API for it yet (android.text.format.DateFormat.is24HourFormat needs a Context, and
- *  android.content.Context is a blocked import), defaults to 12-hour until then. */
-fun formatTime(time24: String, use24Hour: Boolean = false): String {
+/** "HH:MM" 24h -> "h:mm AM/PM", or unchanged for the 24 hour setting */
+fun formatTime(time24: String, use24Hour: Boolean = TimeFormat.use24Hour): String {
     if (use24Hour) return time24
     val (hStr, mStr) = time24.split(":")
     val h = hStr.toInt()
