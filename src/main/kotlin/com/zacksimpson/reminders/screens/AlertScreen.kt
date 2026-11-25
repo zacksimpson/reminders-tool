@@ -171,7 +171,10 @@ class AlertScreen(
                 TimePickerScreen(
                     it,
                     seed,
-                    canSave = { time -> SnoozePresets.customAt(date, time, zone) > System.currentTimeMillis() },
+                    canSave = { time ->
+                        runCatching { SnoozePresets.customAt(date, time, zone) > System.currentTimeMillis() }
+                            .getOrDefault(false)
+                    },
                 )
             },
             resultCallback = { time ->

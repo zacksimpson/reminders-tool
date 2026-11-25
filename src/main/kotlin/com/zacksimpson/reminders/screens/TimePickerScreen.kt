@@ -57,7 +57,7 @@ class TimePickerScreen(
             var ampm by remember { mutableStateOf(seed?.second ?: "AM") }
 
             val hasDigits = digits.isNotEmpty()
-            val canConfirm = (digits.length == 3 || digits.length == 4) &&
+            val canConfirm = TimePickerLogic.isComplete(digits) &&
                 canSave(digitsToTime(digits, ampm, use24Hour))
 
             fun tapDigit(d: Char) {
