@@ -14,6 +14,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import com.thelightphone.sdk.ui.designVerticalPxToSp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material3.Text
+import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -295,23 +305,7 @@ class AlertScreen(
                 modifier = Modifier.fillMaxWidth().lightClickable(onClick = { openList(task.listId, task.listTitle) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    if (task.snoozed) {
-                        OverdueAsteriskIcon(size = 22.dp, modifier = Modifier.padding(top = 14.dp, end = 10.dp))
-                    }
-                    LightText(
-                        text = task.title,
-                        variant = LightTextVariant.Heading,
-                        align = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                }
+                AlertTitle(task)
                 Spacer(Modifier.height(0.5f.gridUnitsAsDp()))
                 AlertDetails(task.listTitle, task.due)
             }
@@ -352,6 +346,46 @@ class AlertScreen(
             }
         }
     }
+}
+
+/** the theme's heading in screen pixels, the way LightText scales it before drawing */
+@Composable
+private fun headingStyle(): TextStyle {
+    val base = LightThemeTokens.typography.heading
+    @Composable fun TextUnit.scaled() = if (this == TextUnit.Unspecified) this else value.designVerticalPxToSp()
+    return base.copy(
+        fontSize = base.fontSize.scaled(),
+        lineHeight = base.lineHeight.scaled(),
+        letterSpacing = base.letterSpacing.scaled(),
+    )
+}
+
+/** the title, with the snoozed asterisk inline before the first word so the whole title stays centered */
+@Composable
+private fun AlertTitle(task: AlertInfo.Reminder) {
+    val star = "snoozed"
+    val size = 18.7.dp // the heading's cap height, so the asterisk matches the letters
+    val sizeSp = with(LocalDensity.current) { size.toSp() }
+    val text = buildAnnotatedString {
+        if (task.snoozed) {
+            appendInlineContent(star, "*")
+            append(" ")
+        }
+        append(task.title)
+    }
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth(),
+        color = LightThemeTokens.colors.content,
+        style = headingStyle().copy(textAlign = TextAlign.Center),
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        inlineContent = mapOf(
+            star to InlineTextContent(
+                Placeholder(sizeSp, sizeSp, PlaceholderVerticalAlign.TextCenter),
+            ) { OverdueAsteriskIcon(size = size) },
+        ),
+    )
 }
 
 /** list and due time on one line, or the list on its own line when they don't fit together */
